@@ -13,7 +13,7 @@ from app.models.herlog import (
 )
 from app.models.member import MemberAuth, MemberAuthSession
 from app.models.home import HomePreference
-from app.models.wellness import Checkin, GroupMembership, GroupShare, ShareReport, SkinJournal
+from app.models.wellness import Checkin, DiscussionReply, DiscussionReplyReport, GroupMembership, GroupShare, ShareReport, SkinJournal
 
 __all__ = [
     "CyclePreference",
@@ -22,6 +22,8 @@ __all__ = [
     "HomePreference",
     "Feeling",
     "Checkin",
+    "DiscussionReply",
+    "DiscussionReplyReport",
     "GroupMembership",
     "GroupShare",
     "Meal",

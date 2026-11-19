@@ -75,7 +75,8 @@
         </view>
       </template>
       <ExerciseSpace v-else-if="section === 'movement'" @share="openShare" />
-      <WellnessGroup v-else topic="exercise" :reference="shareReference" @published="shareReference = null" />
+      <ExerciseDiscussion v-else-if="pageVisible && auth.token" :key="auth.token" :reference="shareReference"
+        @clear-reference="shareReference = null" />
     </view>
     <WeightForm :visible="formVisible" @close="formVisible = false" @saved="onSaved" />
     <TabBar current="/pages/weight/index" />
@@ -90,7 +91,7 @@ import { onHide, onShow } from '@dcloudio/uni-app'
 import TabBar from '../../components/TabBar.vue'
 import WeightForm from '../../components/WeightForm.vue'
 import TrendChart from '../../components/TrendChart.vue'
-import WellnessGroup from '../../components/WellnessGroup.vue'
+import ExerciseDiscussion from './ExerciseDiscussion.vue'
 import ExerciseSpace from './ExerciseSpace.vue'
 import { formatDayLabel, formatMoment } from '../../shared/dates'
 import { formatDelta, formatKg } from '../../shared/weight'
@@ -101,7 +102,7 @@ import { phaseNames } from '../../services/wellnessService'
 import type { ShareReference } from '../../services/wellnessService'
 import { useAuthStore } from '../../stores/auth'
 
-const tabs = [{ code: 'overview', label: '体重记录' }, { code: 'movement', label: '运动专区' }, { code: 'group', label: '运动分享' }] as const
+const tabs = [{ code: 'overview', label: '体重记录' }, { code: 'movement', label: '运动专区' }, { code: 'discussion', label: '运动讨论' }] as const
 const intervals = [7, 30] as const
 type Section = typeof tabs[number]['code']
 const section = ref<Section>('overview')
@@ -117,6 +118,7 @@ const loading = ref(false)
 const error = ref('')
 const compareError = ref('')
 const formVisible = ref(false)
+const pageVisible = ref(false)
 const shareReference = ref<ShareReference | null>(null)
 const auth = useAuthStore()
 let summaryVersion = 0
@@ -182,12 +184,12 @@ function setDays(interval: 7 | 30) {
   if (comparing.value) void loadComparison()
 }
 function navigate(next: Section) {
-  if (next !== 'group') shareReference.value = null
+  if (next !== 'discussion') shareReference.value = null
   section.value = next
 }
 function openShare(reference: ShareReference) {
   shareReference.value = reference
-  section.value = 'group'
+  section.value = 'discussion'
 }
 function openDetail() { uni.navigateTo({ url: '/pages/weight/detail' }) }
 function onSaved() {
@@ -195,8 +197,12 @@ function onSaved() {
   void load()
   if (comparing.value) void loadComparison()
 }
-onShow(() => { if (auth.token) void load() })
-onHide(() => { formVisible.value = false })
+onShow(() => {
+  pageVisible.value = true
+  if (auth.token) void load()
+  else uni.reLaunch({ url: '/pages/login/index' })
+})
+onHide(() => { formVisible.value = false; pageVisible.value = false; shareReference.value = null })
 </script>
 
 <style scoped>

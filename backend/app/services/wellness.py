@@ -82,8 +82,9 @@ def create_checkin(session: Session, customer_id: str, payload: CheckinIn) -> di
     return checkin_out(row)
 
 
-def member_checkin(session: Session, customer_id: str, checkin_id: int) -> Checkin:
-    row = session.scalar(select(Checkin).where(Checkin.customer_id == customer_id, Checkin.id == checkin_id))
+def member_checkin(session: Session, customer_id: str, checkin_id: int, *, lock: bool = False) -> Checkin:
+    query = select(Checkin).where(Checkin.customer_id == customer_id, Checkin.id == checkin_id)
+    row = session.scalar(query.with_for_update() if lock else query)
     if row is None:
         raise not_found()
     return row

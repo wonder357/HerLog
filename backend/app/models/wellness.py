@@ -89,3 +89,30 @@ class GroupReply(Base):
     share_id: Mapped[int] = mapped_column(_ROW_ID, sa.ForeignKey(f"{GroupShare.__tablename__}.id"), primary_key=True)
     customer_id: Mapped[str] = mapped_column(sa.String(32), sa.ForeignKey(MEMBER), primary_key=True)
     reply_code: Mapped[str] = mapped_column(sa.String(20), nullable=False)
+
+
+class DiscussionReply(Base):
+    __tablename__ = PREFIX + "discussion_reply"
+
+    id: Mapped[int] = mapped_column(_ROW_ID, primary_key=True, autoincrement=True)
+    public_id: Mapped[str] = mapped_column(sa.String(32), unique=True, nullable=False)
+    share_id: Mapped[int] = mapped_column(_ROW_ID, sa.ForeignKey(f"{GroupShare.__tablename__}.id"), nullable=False)
+    customer_id: Mapped[str] = mapped_column(sa.String(32), sa.ForeignKey(MEMBER), nullable=False)
+    client_key: Mapped[str] = mapped_column(sa.String(36), nullable=False)
+    body: Mapped[str] = mapped_column(sa.String(300), nullable=False)
+    status: Mapped[str] = mapped_column(sa.String(12), nullable=False)
+    published_at: Mapped[datetime] = mapped_column(_MOMENT, nullable=False)
+
+    __table_args__ = (
+        sa.UniqueConstraint("share_id", "customer_id", "client_key", name="uq_herlog_discussion_reply_key"),
+        sa.Index("ix_herlog_discussion_replies", "share_id", "status", "id"),
+    )
+
+
+class DiscussionReplyReport(Base):
+    __tablename__ = PREFIX + "discussion_reply_report"
+
+    reply_id: Mapped[int] = mapped_column(_ROW_ID, sa.ForeignKey(f"{DiscussionReply.__tablename__}.id"), primary_key=True)
+    customer_id: Mapped[str] = mapped_column(sa.String(32), sa.ForeignKey(MEMBER), primary_key=True)
+    reason_code: Mapped[str] = mapped_column(sa.String(20), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(_MOMENT, nullable=False)

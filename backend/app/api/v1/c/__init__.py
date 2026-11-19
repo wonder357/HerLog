@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.api.v1.c import auth, fertility, herlog, home, skin, weight_plus, weights, wellness
+from app.api.v1.c import auth, exercise_discussion, fertility, herlog, home, skin, weight_plus, weights, wellness
 
 router = APIRouter()
 router.include_router(auth.router)
@@ -13,4 +13,5 @@ router.include_router(home.router)
 router.include_router(weight_plus.router)
 router.include_router(weights.router)
 router.include_router(skin.router)
+router.include_router(exercise_discussion.router)
 router.include_router(wellness.router)

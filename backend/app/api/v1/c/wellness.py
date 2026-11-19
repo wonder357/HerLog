@@ -20,6 +20,8 @@ from app.schemas.wellness import (
 )
 from app.services import wellness
 from app.services.auth_service import CurrentUser
+from app.services.exercise_discussion import DISCUSSION_KEY
+from app.services.period_service import lock_member
 
 router = APIRouter(prefix="/herlog", tags=["wellness"])
 Db = Annotated[Session, Depends(get_session)]
@@ -47,7 +49,8 @@ def exercise_create(payload: CheckinIn, db: Db, user: User):
 
 @router.delete("/exercise/checkins/{checkin_id}", response_model=ApiResponse[None])
 def exercise_delete(checkin_id: int, db: Db, user: User):
-    row = wellness.member_checkin(db, user.customer_id, checkin_id)
+    lock_member(db, user.customer_id)
+    row = wellness.member_checkin(db, user.customer_id, checkin_id, lock=True)
     wellness.withdraw_reference(db, user.customer_id, "exercise", str(row.id))
     db.delete(row)
     db.commit()
@@ -131,7 +134,7 @@ def group_feed(
 def my_shares(topic: Topic, db: Db, user: User, response: Response):
     response.headers["Cache-Control"] = "private, no-store"
     rows = db.scalars(select(GroupShare).where(
-        GroupShare.customer_id == user.customer_id, GroupShare.topic == topic
+        GroupShare.customer_id == user.customer_id, GroupShare.topic == topic, GroupShare.group_key != DISCUSSION_KEY,
     ).order_by(GroupShare.id.desc()).limit(40))
     return ApiResponse(data=[wellness.share_out(row, user.customer_id) for row in rows])
 

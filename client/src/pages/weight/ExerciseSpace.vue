@@ -41,7 +41,7 @@
           <view class="quiet">{{ formatMoment(entry.started_at) }}<text v-if="entry.duration_minutes"> · {{ entry.duration_minutes }} 分钟</text><text v-if="entry.effort"> · {{ effortNames[entry.effort] }}</text></view>
         </view>
         <view class="buttons">
-          <H5Button class="soft" @click="share(entry)">预览分享</H5Button>
+          <H5Button class="soft" @click="share(entry)">发起讨论</H5Button>
           <H5Button class="soft" @click="remove(entry.id)">删除</H5Button>
         </view>
       </view>
@@ -132,12 +132,12 @@ async function save() {
 }
 
 function share(entry: Checkin) {
-  emit('share', { checkin_id: entry.id, activity: activities[entry.activity_code], duration: entry.duration_minutes })
+  emit('share', { checkin_id: entry.id, activity: activities[entry.activity_code] })
 }
 
 function remove(id: number) {
   uni.showModal({
-    title: '删除这次打卡？', content: '这次打卡的相关分享也会撤回。',
+    title: '删除这次打卡？', content: '关联这次打卡的讨论和分享也会撤回。',
     success: async result => {
       if (!result.confirm || !isActive()) return
       try {
