@@ -1,6 +1,6 @@
 <template>
   <view class="studio">
-    <HerlogHeading title="皮肤" description="护理日记与照片观察">
+    <HerlogHeading title="皮肤">
       <template #actions><SkinButton class="hr-action" @click="emit('history', false)">照片历史</SkinButton></template>
     </HerlogHeading>
     <view class="studio-tabs" aria-label="皮肤模块">
@@ -13,13 +13,11 @@
         <view class="hero-copy">
           <view class="date-line">{{ formatDayLabel(today) }}</view>
           <view class="hero-title">今天，皮肤感觉怎样？</view>
-          <view class="hero-text">记下肤质、当下感受和做过的护理，过几天再一起回看。</view>
           <view class="hero-actions">
             <SkinButton class="studio-primary" @click="openEditor(today)">{{ todayEntry ? '更新今日记录' : '记今日状态' }}</SkinButton>
             <SkinButton class="studio-secondary" @click="emit('capture')">拍照观察</SkinButton>
           </view>
         </view>
-        <view class="hero-art" aria-hidden="true"><view class="art-moon" /><view class="art-leaf" /><view class="art-leaf next" /></view>
       </view>
 
       <view v-if="loadError" class="studio-alert" role="alert">{{ loadError }} <SkinButton class="studio-text" @click="loadToday">重试</SkinButton></view>
@@ -84,10 +82,9 @@
         </view>
         <view class="studio-muted legend"><i /> 日记 <i class="photo-dot" /> 照片</view>
       </view>
-      <view v-if="calendarLoading" class="studio-muted" role="status">正在读取日历…</view>
-      <view v-else-if="calendarError" class="studio-alert" role="alert">这个月没有加载成功。<SkinButton class="studio-text" @click="loadMonth">重试</SkinButton></view>
-      <view v-else class="studio-panel">
-        <view class="panel-header"><view class="panel-title">{{ formatDayLabel(dateSelected) }}</view><SkinButton class="studio-text" @click="openEditor(dateSelected)">{{ selectedEntry ? '编辑日记' : '补记日记' }}</SkinButton></view>
+      <view v-if="calendarError" class="studio-alert" role="alert">这个月没有加载成功。<SkinButton class="studio-text" @click="loadMonth">重试</SkinButton></view>
+      <view class="studio-panel" :aria-busy="calendarLoading">
+        <view class="panel-header"><view class="panel-title">{{ formatDayLabel(dateSelected) }}</view><SkinButton class="studio-text" :disabled="calendarLoading || calendarError" @click="openEditor(dateSelected)">{{ selectedEntry ? '编辑日记' : '补记日记' }}</SkinButton></view>
         <view v-if="selectedEntry" class="comparison-facts">
           <view>肤质自评 <strong>{{ typeTitle(selectedEntry.skin_type) }}</strong></view>
           <view>舒适度 <strong>{{ selectedEntry.comfort ? comfortNames[selectedEntry.comfort] + ' · ' + selectedEntry.comfort + '/5' : '未记录' }}</strong></view>
@@ -96,7 +93,7 @@
           <view v-if="selectedEntry.note" class="studio-muted">{{ selectedEntry.note }}</view>
           <SkinButton class="studio-secondary" @click="chooseDay(selectedEntry)">{{ comparedDays.some(item => item.day === dateSelected) ? '取消选择这天' : '选作日期对比' }}</SkinButton>
         </view>
-        <view v-else class="studio-muted">这天还没有护理日记。</view>
+        <view v-else class="studio-muted">{{ calendarLoading ? '正在读取日历…' : calendarError ? '日期记录暂不可用' : '这天还没有护理日记。' }}</view>
         <SkinButton v-if="photoDays.has(dateSelected)" class="studio-text" @click="emit('history', false, dateSelected)">查看当天照片 ↗</SkinButton>
       </view>
       <view v-if="comparedDays.length" class="studio-panel">
@@ -140,7 +137,6 @@
         <a class="studio-source" href="https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-select-sunscreen" target="_blank" rel="noopener noreferrer">护理参考来源 · 美国皮肤科学会</a>
       </view>
     </template>
-    <WellnessGroup v-else topic="skin" :reference="shareReference" @published="shareReference = null" />
 
     <HerlogSheet v-if="editor" title="护理日记" :context="formatDayLabel(editDay)" :busy="saving" @close="closeEditor">
         <view class="field-block">
@@ -188,7 +184,6 @@
         <view v-if="editorError" class="studio-alert" role="alert">{{ editorError }}</view>
         <template #actions>
           <SkinButton v-if="editingExisting" class="studio-text" :disabled="saving" @click="removeEntry">删除</SkinButton>
-          <SkinButton v-if="editingExisting" class="studio-secondary" :disabled="saving" @click="startShare(editDay)">预览分享</SkinButton>
           <SkinButton class="studio-primary" :disabled="saving" @click="submit">{{ saving ? '保存中…' : '保存日记' }}</SkinButton>
         </template>
     </HerlogSheet>
@@ -203,18 +198,17 @@ import HerlogIcon from '../../components/HerlogIcon.vue'
 import HerlogSheet from '../../components/HerlogSheet.vue'
 import ObservationCopy from './ObservationCopy.vue'
 import PrivateSkinImage from './PrivateSkinImage.vue'
-import WellnessGroup from '../../components/WellnessGroup.vue'
 import { formatDayLabel, formatMoment, formatMonthLabel, monthGrid, shiftMonth, startOfMonth, todayString } from '../../shared/dates'
 import { groupSkinDays, selfAssessedSkinType, skinMonthRange } from '../../shared/skin'
 import { listObservations } from '../../services/skinService'
 import { deleteJournal, latestJournal, listJournal, saveJournal } from '../../services/wellnessService'
 import { currentEpoch } from '../../services/httpClient'
 import type { SkinSummaryItem } from '../../services/types'
-import type { JournalDay, JournalInput, ShareReference, SkinRoutine, SkinSensation, SkinType } from '../../services/wellnessService'
+import type { JournalDay, JournalInput, SkinRoutine, SkinSensation, SkinType } from '../../services/wellnessService'
 
 defineProps<{ latest: SkinSummaryItem | null; photoLoading: boolean; photoError: boolean }>()
 const emit = defineEmits<{ capture: []; history: [compare: boolean, day?: string]; 'refresh-photo': [] }>()
-const tabs = [{ key: 'today', label: '今日' }, { key: 'calendar', label: '日历' }, { key: 'care', label: '护理指南' }, { key: 'group', label: '护理交流' }] as const
+const tabs = [{ key: 'today', label: '今日' }, { key: 'calendar', label: '日历' }, { key: 'care', label: '护理指南' }] as const
 type Tab = typeof tabs[number]['key']
 const tab = ref<Tab>('today')
 const today = todayString()
@@ -238,7 +232,6 @@ const photoDays = ref(new Map<string, SkinSummaryItem[]>())
 const todayEntry = ref<JournalDay | null>(null)
 const latestEntry = ref<JournalDay | null>(null)
 const comparedDays = ref<JournalDay[]>([])
-const shareReference = ref<ShareReference | null>(null)
 const loadError = ref('')
 const calendarLoading = ref(false)
 const calendarError = ref(false)
@@ -290,8 +283,6 @@ async function loadMonth() {
   const version = ++loadVersion
   calendarLoading.value = true
   calendarError.value = false
-  journalDays.value = new Map()
-  photoDays.value = new Map()
   const range = skinMonthRange(month.value)
   try {
     const [entries, photos] = await Promise.all([listJournal(range.from, range.to), listObservations(range)])
@@ -305,7 +296,6 @@ async function loadMonth() {
   }
 }
 function switchTab(value: Tab) {
-  if (value !== 'group') shareReference.value = null
   tab.value = value
   if (value === 'calendar') void loadMonth()
 }
@@ -322,6 +312,7 @@ function chooseDay(entry: JournalDay) {
   } else uni.showToast({ title: '请先取消一天，再选新日期', icon: 'none' })
 }
 function openEditor(day: string, quiz = false, prefillSun = false) {
+  if (tab.value === 'calendar' && (calendarLoading.value || calendarError.value)) return
   const entry = day === today ? todayEntry.value ?? journalDays.value.get(day) : journalDays.value.get(day)
   editDay.value = day
   edit.value = entry ? {
@@ -394,11 +385,6 @@ function removeEntry() {
       }
     }
   })
-}
-function startShare(day: string) {
-  editor.value = false
-  shareReference.value = { day }
-  tab.value = 'group'
 }
 </script>
 

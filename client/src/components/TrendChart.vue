@@ -5,7 +5,7 @@
       <rect v-for="band in bands" :key="band.day" :x="band.x" y="15" :width="band.width" height="98" :fill="band.fill" />
       <line v-for="line in gridLines" :key="line" :x1="24" :x2="308" :y1="line" :y2="line" stroke="var(--hr-line)" stroke-width="1" />
       <polyline v-for="(segment, index) in segments" :key="index" :points="segment" fill="none" stroke="var(--hr-rose)" stroke-width="2" stroke-linejoin="round" />
-      <circle v-for="dot in dots" :key="dot.key" :cx="dot.x" :cy="dot.y" r="3.2" fill="var(--hr-rose-deep)" />
+      <circle v-for="dot in dots" :key="dot.key" :cx="dot.x" :cy="dot.y" r="3.2" fill="var(--hr-surface)" stroke="var(--hr-rose-deep)" stroke-width="1.5" />
       <text x="24" y="132" class="axis">{{ firstLabel }}</text>
       <text x="308" y="132" class="axis" text-anchor="end">{{ lastLabel }}</text>
     </svg>
@@ -26,7 +26,7 @@ interface Point {
 const props = defineProps<{ points: Point[]; context?: CycleDay[] | null }>()
 
 const colors: Record<Phase, string> = {
-  menstrual: '#f7dbe4', follicular: '#e9eddf', ovulatory: '#faebd9', luteal: '#ece2f2', unknown: 'transparent',
+  menstrual: '#f7dbe4', follicular: 'var(--hr-follicular)', ovulatory: '#faebd9', luteal: '#ece2f2', unknown: 'transparent',
 }
 const rangeStart = computed(() => props.context?.[0]?.day ?? props.points[0]?.day)
 const rangeEnd = computed(() => props.context?.at(-1)?.day ?? props.points.at(-1)?.day)

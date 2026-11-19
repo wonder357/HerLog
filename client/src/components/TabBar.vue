@@ -3,7 +3,7 @@
     <H5Button v-for="item in items" :key="item.path" class="tab"
       :class="{ active: item.path === current }" :aria-current="item.path === current ? 'page' : undefined"
       @click="go(item.path)">
-      <span class="tab-symbol"><HerlogIcon :name="item.icon" class="icon" /></span>
+      <span class="tab-symbol"><HerlogIcon :name="item.icon" :active="item.path === current" class="icon" /></span>
       <span class="label">{{ item.label }}</span>
     </H5Button>
   </nav>
@@ -32,18 +32,19 @@ function go(path: string) {
   position: fixed;
   z-index: 10;
   left: 50%;
-  bottom: 0;
+  bottom: calc(10px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   box-sizing: border-box;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 3px;
-  width: min(100%, calc(var(--hr-shell-width) + 32px));
-  min-height: var(--hr-tab-height);
-  padding: 6px max(9px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(9px, env(safe-area-inset-left));
-  background: var(--hr-surface);
-  border-top: 1px solid var(--hr-line);
-  box-shadow: 0 -8px 24px -22px #60404c79;
+  width: min(calc(100% - 24px), var(--hr-shell-width));
+  min-height: calc(var(--hr-tab-height) - 10px);
+  padding: 4px;
+  background: rgba(255, 255, 255, .94);
+  border: 1px solid var(--hr-line);
+  border-radius: 22px;
+  box-shadow: 0 14px 30px -14px #7846465c;
 }
 .tab {
   display: grid;
@@ -61,9 +62,9 @@ function go(path: string) {
 .tab-symbol {
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 27px;
-  border-radius: 11px;
+  width: 38px;
+  height: 28px;
+  border-radius: 999px;
 }
 .tab.active { color: var(--hr-rose-deep); }
 .tab.active .tab-symbol { background: var(--hr-rose-soft); }

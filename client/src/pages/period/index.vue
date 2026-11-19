@@ -2,7 +2,9 @@
   <view class="hr-page hr-tab-page cycle-page">
     <HerlogHeading title="经期" />
     <view class="status-card">
-      <view class="status-title">{{ overview?.status.message || '正在读取周期记录…' }}</view>
+      <view v-if="loadError" class="status-title" role="alert">{{ loadError }}</view>
+      <view v-else class="status-title">{{ overview?.status.message || '正在读取周期记录…' }}</view>
+      <H5Button v-if="loadError" class="hr-action" @click="load">重试</H5Button>
       <view v-if="predictionHint" class="muted">{{ predictionHint }}</view>
       <H5Button v-if="overview?.prediction.status === 'overdue'" class="hr-action" @click="openPeriodForm">
         补记经期开始
@@ -122,6 +124,7 @@ const today = todayString()
 const month = ref(startOfMonth(today))
 const selected = ref(today)
 const overview = ref<PeriodOverview | null>(null)
+const loadError = ref('')
 const feelings = ref<FeelingItem[]>([])
 const periodFormVisible = ref(false)
 const feelingFormVisible = ref(false)
@@ -242,6 +245,7 @@ async function loadFeelings() {
 }
 
 async function load() {
+  loadError.value = ''
   try {
     overview.value = await getOverview()
     await loadFeelings()
@@ -249,10 +253,7 @@ async function load() {
     if (failure instanceof StaleSessionError) {
       return
     }
-    uni.showToast({
-      title: failure instanceof ApiRequestError ? failure.message : '加载失败',
-      icon: 'none'
-    })
+    loadError.value = failure instanceof ApiRequestError ? `周期记录加载失败：${failure.message}` : '周期记录加载失败'
   }
 }
 
@@ -312,8 +313,8 @@ onShow(load)
 
 <style scoped>
 .status-card {
-  padding: 10px 13px 13px; margin-bottom: 13px; border-left: 2px solid var(--hr-rose);
-  border-radius: 0 13px 13px 0; background: color-mix(in srgb, var(--hr-surface) 72%, transparent);
+  padding: 14px 16px; margin-bottom: 12px;
+  border: 1px solid var(--hr-line); border-radius: var(--hr-radius); background: var(--hr-rose-soft);
 }
 .status-title { margin: 0 0 3px; color: var(--hr-rose-deep); font-size: 16px; font-weight: 650; }
 .status-card .hr-action { padding-left: 0; }
@@ -321,7 +322,7 @@ onShow(load)
 .month-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
 .month-nav {
   display: grid; place-items: center; width: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 10px;
-  color: var(--hr-rose-deep); background: var(--hr-paper-deep); font: 26px var(--hr-font);
+  color: var(--hr-rose-deep); background: transparent; font: 26px var(--hr-font);
 }
 .month-label {
   margin: 0; font-family: var(--hr-serif); font-size: 19px; font-weight: 650; font-variant-numeric: tabular-nums;
@@ -338,13 +339,13 @@ onShow(load)
 .cell.start { background: var(--hr-rose); color: #fff; }
 .cell.predicted-day .day-number { padding: 4px 6px; border: 1px dashed var(--hr-plum); border-radius: 8px; color: var(--hr-plum); }
 .cell.selected { border-color: var(--hr-rose-deep); box-shadow: inset 0 0 0 1px var(--hr-rose-deep); }
-.dot { position: absolute; bottom: 5px; width: 5px; height: 5px; background: var(--hr-sage); border-radius: 50%; }
+.dot { position: absolute; bottom: 5px; width: 5px; height: 5px; background: var(--hr-taupe); border-radius: 50%; }
 .cell.start .dot { background: #fff; }
 .legend { display: flex; flex-wrap: wrap; gap: 7px 12px; margin: 11px 0 0; color: var(--hr-ink-2); font-size: 12px; }
 .legend view, .legend uni-view { display: flex; align-items: center; gap: 5px; }
 .swatch { display: inline-block; width: 11px; height: 11px; border-radius: 4px; }
 .swatch.actual { background: var(--hr-rose-soft); border: 1px solid var(--hr-rose); }
-.swatch.feeling { width: 6px; height: 6px; border-radius: 50%; background: var(--hr-sage); }
+.swatch.feeling { width: 6px; height: 6px; border-radius: 50%; background: var(--hr-taupe); }
 .swatch.predicted { border: 1px dashed var(--hr-plum); }
 .section-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0 0 8px; }
 .section-head h2 { margin: 0; }

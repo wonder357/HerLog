@@ -2,8 +2,10 @@
   width: 100%;
   margin-inline: auto;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   color: var(--hr-ink);
+  overflow-wrap: anywhere;
 }
 .studio button { cursor: pointer; font-family: inherit; }
 .studio button:focus-visible { outline: 2px solid var(--hr-rose-deep); outline-offset: 2px; }
@@ -16,64 +18,51 @@
   color: var(--hr-rose-deep);
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: .07em;
 }
 .studio-text,.month-nav {
   border: 0; background: transparent; color: var(--hr-rose-deep); font-size: 13px;
   padding: 9px 3px; min-height: 44px; border-radius: 10px;
 }
 .studio-tabs {
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px;
-  padding: 4px; background: var(--hr-surface); border-radius: 17px; border: 1px solid var(--hr-line);
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px;
+  padding: 3px; background: var(--hr-surface); border-radius: 999px; border: 1px solid var(--hr-line);
 }
 .studio-tab {
   padding: 10px 2px; min-height: 44px;
-  border: 0; border-radius: 13px; background: transparent; color: var(--hr-ink-2); font-size: 13px; font-weight: 500;
+  border: 0; border-radius: 999px; background: transparent; color: var(--hr-ink-2); font-size: 13px; font-weight: 500;
 }
-.studio-tab.current { background: var(--hr-rose-deep); color: #fff; }
+.studio-tab.current { background: var(--hr-rose-soft); color: var(--hr-rose-deep); font-weight: 650; }
 .today-hero {
   position: relative; isolation: isolate; overflow: hidden;
-  padding: clamp(17px, 5vw, 34px); border-radius: 27px;
-  background: linear-gradient(120deg, var(--hr-surface) 24%, var(--hr-rose-soft));
+  padding: 18px; border-radius: var(--hr-radius);
+  background: var(--hr-surface);
   border: 1px solid var(--hr-line); box-shadow: var(--hr-shadow); color: var(--hr-ink);
 }
 .hero-copy { position: relative; z-index: 1; }
 .date-line { color: var(--hr-rose-deep); font-family: Georgia, "Songti SC", serif; font-size: 15px; }
-.hero-title { margin: 5px 0 7px; font: 700 clamp(23px, 5.4vw, 29px)/1.25 var(--hr-font); }
-.hero-text { max-width: 275px; color: var(--hr-ink-2); font-size: 13px; line-height: 1.58; }
+.hero-title { margin: 5px 0 7px; font: 650 22px/28px var(--hr-font); }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 17px; }
 .studio-primary,.studio-secondary {
   border-radius: 999px; min-height: 44px; padding: 9px 14px; font-size: 13px; font-weight: 600;
   border: 1px solid var(--hr-line-strong); color: var(--hr-rose-deep); background: var(--hr-surface);
 }
-.studio-primary { background: var(--hr-rose); border-color: var(--hr-rose); color: white; }
-.hero-art { position: absolute; inset: 0; display: block; pointer-events: none; }
-.art-moon {
-  position: absolute; right: -17px; top: 8px; width: 125px; aspect-ratio: 1; border-radius: 50%;
-  background: radial-gradient(circle at 33% 28%, #fce6d9, #e5aab670 48%, #deaba845 72%);
-  box-shadow: 0 0 27px #f2d3d45c; opacity: .66;
-}
-.art-leaf {
-  position: absolute; right: 4px; top: 50px; width: 120px; height: 39px;
-  border-radius: 90% 4% 85% 8%; border: 1px solid #a85f7373; transform: rotate(-39deg);
-}
-.art-leaf.next { right: 30px; top: 87px; width: 91px; height: 27px; transform: rotate(17deg); opacity: .6; }
+.studio-primary { background: var(--hr-action-fill); border-color: transparent; color: white; }
 .mini-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
 .mini-panel {
   text-align: left; min-height: 68px; padding: 10px 9px;
   border-radius: 15px; background: var(--hr-surface); color: var(--hr-ink); border: 1px solid var(--hr-line);
 }
 .mini-label { color: var(--hr-ink-2); font-size: 11px; }
-.mini-value { font-size: clamp(14px, 3.6vw, 20px); font-weight: 600; margin-top: 4px; }
+.mini-value { font-size: 16px; font-weight: 600; margin-top: 4px; overflow-wrap: anywhere; }
 .studio-panel {
-  background: var(--hr-surface); border: 1px solid var(--hr-line); border-radius: 22px; padding: clamp(13px, 4vw, 20px);
-  display: grid; gap: 8px;
+  background: var(--hr-surface); border: 1px solid var(--hr-line); border-radius: var(--hr-radius); padding: 16px;
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px;
 }
-.featured { position: relative; overflow: hidden; background: var(--hr-sage-soft); border-color: var(--hr-line); display: flex; align-items: center; justify-content: space-between; }
+.featured { position: relative; overflow: hidden; background: var(--hr-taupe-soft); border-color: var(--hr-line); display: flex; align-items: center; justify-content: space-between; }
 .featured-main { flex: 1; min-width: 0; }
-.featured .panel-kicker { color: var(--hr-sage); }
-.featured .studio-text { padding-left: 0; color: var(--hr-sage); }
-.feature-symbol { flex: 0 0 34px; width: 34px; height: 34px; color: var(--hr-sage); }
+.featured .panel-kicker { color: var(--hr-taupe); }
+.featured .studio-text { padding-left: 0; color: var(--hr-taupe); }
+.feature-symbol { flex: 0 0 34px; width: 34px; height: 34px; color: var(--hr-taupe); }
 .panel-title { font-weight: 650; font-size: clamp(17px, 4.2vw, 22px); color: var(--hr-ink); }
 .studio-muted { color: var(--hr-ink-2); font-size: 13px; line-height: 1.54; }
 .latest-record { display: grid; grid-template-columns: minmax(0, 110px) minmax(0, 1fr); gap: 11px; align-items: center; }
@@ -81,7 +70,7 @@
 .record-copy { min-width: 0; font-size: 14px; }
 .studio-control-row { justify-content: flex-start; flex-wrap: wrap; }
 .care-head { background: var(--hr-rose-soft); }
-.sensation-tip { margin-top: 6px; padding: 7px 9px; border-left: 2px solid var(--hr-sage); font-size: 13px; color: var(--hr-sage); background: #ffffff70; }
+.sensation-tip { margin-top: 6px; padding: 7px 9px; border-left: 2px solid var(--hr-taupe); font-size: 13px; color: var(--hr-taupe); background: #ffffff70; }
 .studio-source { font-size: 12px; color: var(--hr-rose-deep); min-height: 30px; display: inline-flex; align-items: center; }
 .studio-month { justify-content: space-between; font: 16px Georgia, "Songti SC", serif; }
 .month-nav { font-size: 24px; width: 44px; }
@@ -95,7 +84,7 @@
 .studio-day.selected { background: var(--hr-rose-soft); border-color: var(--hr-rose); }
 .dots { height: 6px; display: flex; justify-content: center; gap: 3px; }
 .dots i,.legend i { width: 5px; height: 5px; border-radius: 50%; background: var(--hr-rose); display: inline-block; }
-.dots .photo-dot,.legend .photo-dot { background: var(--hr-sage); }
+.dots .photo-dot,.legend .photo-dot { background: var(--hr-taupe); }
 .legend i { margin-left: 6px; }
 .comparison-facts { display: grid; gap: 5px; font-size: 14px; }
 .comparison-facts strong { margin-left: 4px; color: var(--hr-rose-deep); }
@@ -121,8 +110,4 @@
   border: 1px solid var(--hr-line-strong); border-radius: 12px; color: var(--hr-ink); background: #fff; font-size: 14px;
 }
 @media (min-width: 540px) {
-  .art-moon { width: 185px; right: 20px; top: -9px; }
-  .art-leaf { right: 43px; top: 65px; width: 160px; height: 53px; }
-  .art-leaf.next { right: 66px; top: 127px; width: 118px; height: 27px; }
-  .hero-text { max-width: 370px; }
 }

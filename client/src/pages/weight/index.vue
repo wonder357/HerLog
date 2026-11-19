@@ -1,9 +1,13 @@
 <template>
   <view class="hr-page hr-tab-page weight-page">
-    <HerlogHeading title="体重" />
+    <HerlogHeading title="体重">
+      <template #actions>
+        <H5Button v-if="section === 'overview'" class="hr-action" @click="openDetail">记录明细</H5Button>
+      </template>
+    </HerlogHeading>
     <view class="weight-shell">
-      <view class="weight-tabs">
-        <H5Button v-for="item in tabs" :key="item.code" :class="{ chosen: section === item.code }"
+      <view class="weight-tabs" role="group" aria-label="体重模块">
+        <H5Button v-for="item in tabs" :key="item.code" class="weight-tab" :class="{ chosen: section === item.code }"
           :aria-pressed="section === item.code" @click="navigate(item.code)">{{ item.label }}</H5Button>
       </view>
       <template v-if="section === 'overview'">
@@ -11,28 +15,28 @@
           <view class="weight-eyebrow">最近一次测量</view>
           <view v-if="summary?.latest_grams != null" class="weight-value">{{ formatKg(summary.latest_grams) }} <text>kg</text></view>
           <view v-else class="weight-value empty">{{ loading ? '正在读取…' : '开始记录体重' }}</view>
-          <view class="weight-muted">{{ summary?.latest_measured_at ? formatMoment(summary.latest_measured_at) + ' 测量' : '留下你愿意记录的数据。' }}</view>
+          <view v-if="summary?.latest_measured_at" class="weight-muted">{{ formatMoment(summary.latest_measured_at) }} 测量</view>
           <view class="weight-actions">
-            <H5Button class="primary weight-primary" @click="formVisible = true">记体重</H5Button>
-            <H5Button class="weight-secondary" @click="openDetail">记录明细</H5Button>
+            <H5Button class="primary" @click="formVisible = true">记体重</H5Button>
           </view>
         </view>
         <view v-if="error" class="weight-error" role="alert">{{ error }} <H5Button @click="load">重试</H5Button></view>
-        <view class="weight-panel">
-          <view class="weight-header">
-            <view class="weight-heading">体重趋势</view>
-            <view class="weight-options">
-              <H5Button v-for="interval in intervals" :key="interval" :class="{ chosen: days === interval }" @click="setDays(interval)">近 {{ interval }} 天</H5Button>
-            </view>
+        <view class="weight-header">
+          <view class="weight-heading">体重趋势</view>
+          <view class="weight-options" role="group" aria-label="趋势范围">
+            <H5Button v-for="interval in intervals" :key="interval" class="weight-range" :class="{ chosen: days === interval }"
+              :aria-pressed="days === interval" @click="setDays(interval)">近 {{ interval }} 天</H5Button>
           </view>
-          <TrendChart v-if="!loading || summary" :points="chartPoints" :context="summary?.cycle_context" />
+        </view>
+        <view class="weight-panel" :aria-busy="loading">
+          <TrendChart v-if="!loading || summary" :points="chartPoints" :context="showCycle ? summary?.cycle_context : undefined" />
           <view v-else class="weight-muted">正在读取趋势…</view>
+          <view v-if="summary && summary.days !== days" class="weight-muted" role="status">{{ loading ? '正在更新 · ' : '' }}当前显示近 {{ summary.days }} 天</view>
           <view class="weight-stats">
             <view><strong>{{ summary?.count ?? '—' }}</strong><text>记录次数</text></view>
             <view><strong>{{ summary?.record_days ?? summary?.points.length ?? '—' }}</strong><text>记录日</text></view>
             <view v-if="summary?.delta_grams != null"><strong>{{ formatDelta(summary.delta_grams) }}</strong><text>首尾变化</text></view>
           </view>
-          <view v-if="summary?.points.length === 1" class="weight-muted">再记录一个不同日期，就可以查看首尾变化。</view>
           <H5Button class="weight-secondary" @click="showCycle = !showCycle; load()">{{ showCycle ? '关闭周期背景' : '显示周期背景' }}</H5Button>
           <template v-if="showCycle && summary?.cycle_context">
             <view class="weight-muted">阶段按记录估算，仅供回看，不用于诊断或避孕。</view>
@@ -55,8 +59,9 @@
           </view>
           <template v-if="comparing">
             <view v-if="compareError" class="weight-error" role="alert">{{ compareError }} <H5Button @click="loadComparison">重试</H5Button></view>
-            <view v-else-if="!comparison" class="weight-muted">正在读取对比…</view>
-            <template v-else>
+            <view v-if="comparisonLoading" class="weight-muted" role="status">正在读取近 {{ days }} 天对比…</view>
+            <template v-if="comparison">
+              <view v-if="comparisonDays !== days" class="weight-muted">当前显示近 {{ comparisonDays }} 天对比</view>
               <view class="compare-columns">
                 <view v-for="window in [comparison.previous, comparison.current]" :key="window.start_day">
                   <view>{{ formatDayLabel(window.start_day) }}–{{ formatDayLabel(window.end_day) }}</view>
@@ -67,11 +72,6 @@
               <view class="weight-muted">{{ comparison.message }}</view>
             </template>
           </template>
-        </view>
-        <view class="weight-panel">
-          <view class="weight-heading">照顾自己的节奏</view>
-          <view class="weight-muted">按当天感受选择活动或休息。也可以记下日常饮食和作息，回看时多一些背景。</view>
-          <H5Button class="weight-secondary" @click="navigate('movement')">去运动专区</H5Button>
         </view>
       </template>
       <ExerciseSpace v-else-if="section === 'movement'" @share="openShare" />
@@ -108,6 +108,8 @@ const section = ref<Section>('overview')
 const days = ref<7 | 30>(30)
 const summary = ref<WeightSummary | null>(null)
 const comparison = ref<Awaited<ReturnType<typeof getComparison>> | null>(null)
+const comparisonDays = ref<7 | 30>(30)
+const comparisonLoading = ref(false)
 const showCycle = ref(false)
 const activeDay = ref('')
 const comparing = ref(false)
@@ -125,7 +127,9 @@ watch(() => auth.token, () => {
   summaryVersion += 1
   comparisonVersion += 1
   summary.value = null
+  loading.value = false
   comparison.value = null
+  comparisonLoading.value = false
   shareReference.value = null
   formVisible.value = false
   section.value = 'overview'
@@ -152,13 +156,19 @@ async function load() {
 async function loadComparison() {
   const version = ++comparisonVersion
   const epoch = currentEpoch()
-  comparison.value = null
+  const interval = days.value
+  comparisonLoading.value = true
   compareError.value = ''
   try {
-    const data = await getComparison(days.value)
-    if (version === comparisonVersion && epoch === currentEpoch()) comparison.value = data
+    const data = await getComparison(interval)
+    if (version === comparisonVersion && epoch === currentEpoch()) {
+      comparison.value = data
+      comparisonDays.value = interval
+    }
   } catch {
     if (version === comparisonVersion && epoch === currentEpoch()) compareError.value = '对比没有加载成功'
+  } finally {
+    if (version === comparisonVersion) comparisonLoading.value = false
   }
 }
 function toggleCompare() {
@@ -168,7 +178,6 @@ function toggleCompare() {
 function setDays(interval: 7 | 30) {
   if (days.value === interval) return
   days.value = interval
-  summary.value = null
   void load()
   if (comparing.value) void loadComparison()
 }
@@ -191,31 +200,30 @@ onHide(() => { formVisible.value = false })
 </script>
 
 <style scoped>
-.weight-shell { display: grid; gap: 12px; }
+.weight-shell { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .weight-tabs,.weight-actions,.weight-options,.weight-header { display: flex; align-items: center; gap: 8px; }
-.weight-tabs { padding: 4px; border: 1px solid var(--hr-line); background: var(--hr-surface); border-radius: 15px; }
-.weight-tabs button,.weight-options button,.cycle-day,.weight-secondary,.weight-error button {
+.weight-tabs,.weight-options { padding: 3px; gap: 2px; border: 1px solid var(--hr-line); background: var(--hr-surface); border-radius: 999px; }
+.weight-tab,.weight-range,.cycle-day,.weight-secondary,.weight-error button {
   border: 1px solid transparent; border-radius: 999px; padding: 7px 10px; min-height: 44px;
   font-size: 13px; line-height: 1.4; background: var(--hr-paper-deep); color: var(--hr-rose-deep);
 }
-.weight-tabs button { flex: 1; min-width: 0; background: transparent; color: var(--hr-ink-2); }
-.weight-tabs button.chosen,.weight-options button.chosen { background: var(--hr-rose-soft); color: var(--hr-rose-deep); font-weight: 700; }
-.weight-options { flex-shrink: 0; gap: 3px; }
-.weight-options button { padding-inline: 7px; }
+.weight-tab,.weight-range { margin: 0; background: transparent; color: var(--hr-ink-2); white-space: nowrap; }
+.weight-tab { flex: 1; min-width: 0; padding-inline: 3px; }
+.weight-tab.chosen,.weight-range.chosen { background: var(--hr-rose-soft); color: var(--hr-rose-deep); font-weight: 650; }
+.weight-range { padding-inline: 10px; }
 .weight-hero {
-  display: grid; gap: 5px; padding: clamp(15px, 4vw, 24px);
-  border: 1px solid var(--hr-line); border-radius: var(--hr-radius-lg); background: var(--hr-surface); box-shadow: var(--hr-shadow);
+  display: grid; gap: 5px; padding: 16px;
+  border: 1px solid var(--hr-line); border-radius: var(--hr-radius); background: linear-gradient(150deg, #fff7f6, var(--hr-rose-soft)); box-shadow: var(--hr-shadow);
 }
 .weight-eyebrow { color: var(--hr-ink-2); font-size: 14px; }
-.weight-value { font: 48px/1.1 var(--hr-serif); font-variant-numeric: tabular-nums; color: var(--hr-rose-deep); }
+.weight-value { font: 44px/46px var(--hr-serif); font-variant-numeric: tabular-nums; color: var(--hr-ink); }
 .weight-value text { font: 16px var(--hr-font); color: var(--hr-ink-2); }
 .weight-value.empty { font: 650 22px/1.35 var(--hr-font); }
 .weight-muted { color: var(--hr-ink-2); font-size: 13px; line-height: 1.6; }
 .weight-actions { margin-top: 8px; }
-.weight-primary { flex: 1; }
 .weight-secondary { justify-self: start; flex-shrink: 0; }
 .weight-panel {
-  display: grid; gap: 10px; padding: 14px; min-width: 0;
+  display: grid; gap: 10px; padding: 16px; min-width: 0;
   border: 1px solid var(--hr-line); border-radius: var(--hr-radius); background: var(--hr-surface);
 }
 .weight-header { justify-content: space-between; flex-wrap: wrap; }
@@ -229,7 +237,7 @@ onHide(() => { formVisible.value = false })
 .cycle-row { display: flex; gap: 4px; width: max-content; }
 .cycle-day { min-width: 44px; min-height: 44px; padding: 7px 10px; }
 .cycle-day.menstrual { background: var(--hr-rose-soft); }
-.cycle-day.follicular { background: var(--hr-sage-soft); }
+.cycle-day.follicular { background: var(--hr-follicular); }
 .cycle-day.ovulatory { background: var(--hr-peach); }
 .cycle-day.luteal { background: var(--hr-plum-soft); }
 .cycle-day.chosen { outline: 2px solid var(--hr-rose-deep); outline-offset: -2px; }

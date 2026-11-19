@@ -36,13 +36,13 @@
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "她记",
-    "navigationBarBackgroundColor": "#FAF4EE",
-    "backgroundColor": "#FAF4EE"
+    "navigationBarBackgroundColor": "#FCF8F5",
+    "backgroundColor": "#FCF8F5"
   },
   "tabBar": {
-    "color": "#67535B",
-    "selectedColor": "#A0445D",
-    "backgroundColor": "#FFFCFA",
+    "color": "#7A6A70",
+    "selectedColor": "#B14A5F",
+    "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [
       { "pagePath": "pages/home/index", "text": "首页" },

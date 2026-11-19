@@ -1,6 +1,8 @@
 <template>
   <view class="hr-page hr-tab-page home-page">
-    <HerlogHeading title="今天" :eyebrow="dateLabel" :description="auth.username ? '你好，' + auth.username : undefined" />
+    <HerlogHeading :title="auth.username ? `你好，${auth.username}` : '你好'" />
+
+    <RecordCalendar :key="auth.member?.customer_id" :today="today" :periods="overview?.items ?? null" :revision="calendarRevision" />
 
     <view class="shortcuts" aria-label="快捷记录">
       <H5Button class="shortcut" @click="openPeriodForm">
@@ -10,9 +12,16 @@
         <span class="shortcut-symbol"><HerlogIcon name="weight" /></span><span>记体重</span>
       </H5Button>
       <H5Button class="shortcut skin" @click="openSkinFlow">
-        <span class="shortcut-symbol"><HerlogIcon name="skin" /></span><span>拍照分析</span>
+        <span class="shortcut-symbol"><HerlogIcon name="skin" /></span><span>拍皮肤</span>
       </H5Button>
     </view>
+
+    <section class="card snapshot" aria-label="记录摘要">
+      <view><strong>{{ weightSummary?.latest_kg == null ? '—' : `${weightSummary.latest_kg} kg` }}</strong><text>最近体重</text></view>
+      <view><strong>{{ weightSummary?.count ?? '—' }}</strong><text>近 7 天体重</text></view>
+      <view><strong>{{ skinCount ?? '—' }}</strong><text>近 7 天皮肤</text></view>
+    </section>
+    <view v-if="overviewError" class="muted" role="status">部分记录暂未加载</view>
 
     <view class="chat">
       <view class="chat-heading">
@@ -20,8 +29,6 @@
         <text class="chat-scope">已保存的记录</text>
       </view>
       <view v-if="messages.length === 0" class="chat-intro">
-        <view class="intro-copy">想回看最近的体重、经期或皮肤记录？可以从一个问题开始。</view>
-        <view class="muted">对话只读，保存记录请使用上方的快捷入口。</view>
         <view class="examples">
           <H5Button v-for="question in examples" :key="question" class="question" @click="draft = question">
             {{ question }}
@@ -51,14 +58,19 @@
     </H5Form>
 
     <WeightForm :visible="weightFormVisible" @close="weightFormVisible = false" @saved="onWeightSaved" />
-    <PeriodForm :visible="periodFormVisible" :day="periodFormDay" :open-period="null"
-      @close="periodFormVisible = false" @saved="onPeriodSaved" />
+    <PeriodForm :visible="periodFormVisible" :day="periodFormDay" :open-period="openPeriod" selectable-day
+      @close="periodFormVisible = false" @saved="onPeriodSaved">
+      <template #extra-action="{ day, disabled }">
+        <H5Button class="ghost" :disabled="disabled || feelingLoading || !day || day > today" @click="openFeelingForm(day)">记感受</H5Button>
+      </template>
+    </PeriodForm>
+    <FeelingForm :visible="feelingVisible" :day="feelingDay" :existing="existingFeeling" @close="feelingVisible = false" @saved="onFeelingSaved" />
     <TabBar current="/pages/home/index" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import H5Button from '../../components/H5Button'
 import H5Form from '../../components/H5Form'
@@ -68,11 +80,16 @@ import HerlogIcon from '../../components/HerlogIcon.vue'
 import TabBar from '../../components/TabBar.vue'
 import WeightForm from '../../components/WeightForm.vue'
 import PeriodForm from '../../components/PeriodForm.vue'
-import { todayString } from '../../shared/dates'
+import FeelingForm from '../../components/FeelingForm.vue'
+import RecordCalendar from './RecordCalendar.vue'
+import { addDays, todayString } from '../../shared/dates'
 import { useAuthStore } from '../../stores/auth'
 import { ask } from '../../services/assistantService'
-import { ApiRequestError, StaleSessionError } from '../../services/httpClient'
-import type { RecordRef } from '../../services/types'
+import { ApiRequestError, currentEpoch, StaleSessionError } from '../../services/httpClient'
+import { getOverview, listFeelings } from '../../services/periodService'
+import { getSummary } from '../../services/weightService'
+import { listObservations } from '../../services/skinService'
+import type { FeelingItem, PeriodOverview, RecordRef, WeightSummary } from '../../services/types'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -82,23 +99,37 @@ interface ChatMessage {
 }
 
 const auth = useAuthStore()
-const today = todayString()
+const today = ref(todayString())
+const calendarRevision = ref(0)
+const overview = ref<PeriodOverview | null>(null)
+const openPeriod = computed(() => {
+  const item = overview.value?.items.find(item => !item.end_day)
+  return item ? { id: item.id, startDay: item.start_day } : null
+})
+const weightSummary = ref<WeightSummary | null>(null)
+const skinCount = ref<number | null>(null)
+const overviewError = ref(false)
+const feelingVisible = ref(false)
+const feelingDay = ref(today.value)
+const existingFeeling = ref<FeelingItem | null>(null)
+const feelingLoading = ref(false)
 const messages = ref<ChatMessage[]>([])
 const draft = ref('')
 const sending = ref(false)
 const chatEnd = ref<HTMLDivElement | null>(null)
-const dateLabel = new Intl.DateTimeFormat('zh-CN', {
-  timeZone: 'Asia/Shanghai', year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
-}).format(new Date(today + 'T00:00:00+08:00'))
 const examples = ['最近体重有什么变化？', '下次经期大概是什么时候？']
 const weightFormVisible = ref(false)
 const periodFormVisible = ref(false)
-const periodFormDay = ref(today)
+const periodFormDay = ref(today.value)
 
 onShow(() => {
   if (!auth.isLoggedIn) {
     uni.reLaunch({ url: '/pages/login/index' })
+    return
   }
+  today.value = todayString()
+  calendarRevision.value++
+  void loadOverview()
 })
 
 // 切换账号时清掉本次会话内容，A 的问答不能留在 B 的页面上。
@@ -107,8 +138,51 @@ watch(
   () => {
     messages.value = []
     draft.value = ''
+    overview.value = null
+    weightSummary.value = null
+    skinCount.value = null
+    existingFeeling.value = null
+    feelingVisible.value = false
+    overviewError.value = false
   }
 )
+
+async function loadOverview() {
+  const epoch = currentEpoch()
+  const end = today.value
+  const [period, weight, skin] = await Promise.allSettled([
+    getOverview(), getSummary(7), listObservations({ from: addDays(end, -6), to: end })
+  ])
+  if (epoch !== currentEpoch()) return
+  if (period.status === 'fulfilled') overview.value = period.value
+  if (weight.status === 'fulfilled') weightSummary.value = weight.value
+  if (skin.status === 'fulfilled') skinCount.value = skin.value.length
+  overviewError.value = [period, weight, skin].some(result => result.status === 'rejected')
+}
+
+async function openFeelingForm(day: string) {
+  if (feelingLoading.value) return
+  const epoch = currentEpoch()
+  feelingLoading.value = true
+  try {
+    const records = await listFeelings(day, day)
+    if (epoch !== currentEpoch() || !periodFormVisible.value) return
+    feelingDay.value = day
+    existingFeeling.value = records.find(item => item.day === day) ?? null
+    periodFormVisible.value = false
+    feelingVisible.value = true
+  } catch (failure) {
+    if (epoch === currentEpoch()) uni.showToast({ title: failure instanceof ApiRequestError ? failure.message : '感受读取失败', icon: 'none' })
+  } finally {
+    feelingLoading.value = false
+  }
+}
+
+function onFeelingSaved() {
+  feelingVisible.value = false
+  calendarRevision.value++
+  uni.showToast({ title: '已保存', icon: 'none' })
+}
 
 function openPeriodForm() {
   periodFormDay.value = todayString()
@@ -121,11 +195,14 @@ function openSkinFlow() {
 
 function onWeightSaved() {
   weightFormVisible.value = false
+  calendarRevision.value++
+  void loadOverview()
   uni.showToast({ title: '已保存，可在体重页查看', icon: 'none' })
 }
 
 function onPeriodSaved() {
   periodFormVisible.value = false
+  void loadOverview()
   uni.showToast({ title: '已保存，可在经期页查看', icon: 'none' })
 }
 
@@ -187,11 +264,16 @@ async function send() {
 
 <style scoped>
 .home-page { padding-bottom: calc(var(--hr-tab-height) + 92px + env(safe-area-inset-bottom)); }
-.shortcuts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 24px; }
+.snapshot { display: grid; text-align: center; }
+.snapshot { grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 12px 5px; }
+.snapshot > * + * { border-left: 1px solid var(--hr-line); }
+.snapshot strong { display: block; font: 19px var(--hr-serif); }
+.snapshot text, .snapshot uni-text { color: var(--hr-ink-2); font-size: 12px; }
+.shortcuts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0 0 12px; }
 .shortcut {
-  display: grid; justify-items: center; align-items: center; min-height: 82px; gap: 4px; padding: 9px 4px;
-  border: 1px solid var(--hr-line); border-radius: 16px; background: var(--hr-surface);
-  color: var(--hr-ink); box-shadow: var(--hr-shadow); font-size: 14px; font-weight: 600;
+  display: grid; justify-items: center; align-items: center; min-height: 72px; gap: 4px; padding: 7px 2px;
+  border: 1px solid var(--hr-line); border-radius: var(--hr-radius); background: var(--hr-surface);
+  color: var(--hr-ink); box-shadow: var(--hr-shadow); font-size: 13px; font-weight: 600;
 }
 .shortcut-symbol {
   display: grid; place-items: center; width: 42px; height: 37px; border-radius: 12px;
@@ -204,11 +286,12 @@ async function send() {
 .chat-heading h2 { margin: 0; }
 .chat-scope { background: var(--hr-paper-deep); border-radius: 99px; color: var(--hr-ink-2); font-size: 12px; padding: 4px 9px; }
 .chat-intro { padding: 14px; border-radius: var(--hr-radius); border: 1px solid var(--hr-line); background: var(--hr-surface); }
-.intro-copy { font-size: 15px; margin-bottom: 5px; }
 .examples, .refs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.examples { margin-top: 0; }
 .question, .ref {
   text-align: start; min-height: 44px; padding: 5px 10px; border: 1px solid var(--hr-line);
-  border-radius: 11px; background: var(--hr-rose-soft); color: var(--hr-rose-deep); font-size: 13px;
+  box-sizing: border-box; min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere;
+  border-radius: 999px; background: var(--hr-rose-soft); color: var(--hr-rose-deep); font-size: 13px;
 }
 .row { display: flex; flex-direction: column; margin-bottom: 12px; align-items: flex-start; }
 .row.user { align-items: flex-end; }
@@ -217,23 +300,24 @@ async function send() {
   border: 1px solid var(--hr-line); border-radius: 14px 14px 14px 4px; background: var(--hr-surface); font-size: 15px;
 }
 .row.user .bubble { color: var(--hr-rose-deep); background: var(--hr-rose-soft); border-radius: 14px 14px 4px 14px; }
-.meta { margin-top: 5px; font-size: 12px; color: var(--hr-ink-2); }
+.meta { max-width: 100%; margin-top: 5px; font-size: 12px; color: var(--hr-ink-2); overflow-wrap: anywhere; }
 .chat-end { scroll-margin-bottom: calc(var(--hr-tab-height) + 86px + env(safe-area-inset-bottom)); }
 .composer {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px;
   position: fixed; z-index: 9; left: 50%; transform: translateX(-50%);
-  bottom: calc(var(--hr-tab-height) + env(safe-area-inset-bottom)); width: min(100%, calc(var(--hr-shell-width) + 32px));
-  box-sizing: border-box; padding: 10px 12px; border-top: 1px solid var(--hr-line); background: var(--hr-surface);
+  bottom: calc(var(--hr-tab-height) + 8px + env(safe-area-inset-bottom)); width: min(calc(100% - 24px), var(--hr-shell-width));
+  box-sizing: border-box; padding: 5px; border: 1px solid var(--hr-line); border-radius: 999px;
+  background: var(--hr-surface); box-shadow: var(--hr-shadow);
 }
 .composer-input {
   box-sizing: border-box; width: 100%; min-height: 46px; min-width: 0; padding: 10px 13px;
-  border: 1px solid var(--hr-line-strong); border-radius: 999px; background: var(--hr-surface-strong);
+  border: 0; border-radius: 999px; background: var(--hr-surface-strong);
   font: 16px var(--hr-font); color: var(--hr-ink);
 }
 .composer-input::placeholder { color: var(--hr-ink-3); }
 .send {
   display: grid; place-items: center; width: 46px; height: 46px; padding: 0;
-  border: 0; border-radius: 50%; background: var(--hr-rose); color: #fff;
+  border: 0; border-radius: 50%; background: var(--hr-action-fill); color: #fff;
 }
 .send svg { width: 22px; height: 22px; }
 </style>

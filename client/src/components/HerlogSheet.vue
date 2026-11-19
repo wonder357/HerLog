@@ -97,7 +97,7 @@ function handleKeys(event: KeyboardEvent) {
 .dialog-header { padding: 9px 16px 12px; }
 .dialog-grip { width: 36px; height: 4px; margin: 0 auto 8px; border-radius: 9px; background: var(--hr-line-strong); }
 .dialog-heading { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.dialog-title { font: 690 21px/1.25 var(--hr-font); margin: 0; }
+.dialog-title { font: 650 17px/24px var(--hr-font); margin: 0; }
 .dialog-context { margin-top: 4px; color: var(--hr-ink-2); font-size: 13px; }
 .dialog-close {
   flex: 0 0 44px;

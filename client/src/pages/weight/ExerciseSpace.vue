@@ -1,19 +1,14 @@
 <template>
   <view class="exercise-space">
     <view class="exercise-hero">
-      <text class="headline">今天想怎么动？</text>
-      <text v-if="phase" class="phase">{{ phaseNames[phase.phase] }}{{ phase.basis === 'estimated' ? ' · 估算' : '' }}</text>
-      <view>从舒服的节奏开始，休息也可以记下来。</view>
-      <H5Button class="soft" @click="cycle = !cycle; loadCards()">{{ cycle ? '关闭周期推荐' : '按周期推荐' }}</H5Button>
+      <text class="headline">运动打卡</text>
     </view>
     <view v-if="error" class="exercise-error" role="alert">{{ error }} <H5Button class="soft" @click="load">重试</H5Button></view>
-    <view v-if="loading" class="quiet" role="status">正在读取运动卡…</view>
+    <view v-if="loading" class="quiet" role="status">正在读取运动记录…</view>
     <view class="exercise-cards">
-      <view v-for="card in cards" :key="card.activity_code" class="exercise-card">
-        <view class="exercise-symbol"><HerlogIcon :name="card.activity_code" /></view>
-        <view class="card-name">{{ card.title }}</view>
-        <view class="quiet">{{ card.instructions }}</view>
-        <H5Button class="soft" @click="begin(card.activity_code)">记一次{{ card.title }}</H5Button>
+      <view v-for="activity in activityOptions" :key="activity" class="exercise-card">
+        <view class="exercise-symbol"><HerlogIcon :name="activity" /></view>
+        <H5Button class="soft" @click="begin(activity)">记{{ activities[activity] }}</H5Button>
       </view>
     </view>
     <view v-if="selected" class="card checkin-form">
@@ -39,7 +34,7 @@
     </view>
     <view class="exercise-history">
       <view class="headline">我的运动记录</view>
-      <view v-if="!entries.length" class="quiet">你可以从一次散步或休息开始。</view>
+      <view v-if="!loading && !entries.length" class="quiet">暂无运动记录</view>
       <view v-for="entry in entries" :key="entry.id" class="exercise-record">
         <view>
           <view class="card-name">{{ activities[entry.activity_code] }}</view>
@@ -61,15 +56,13 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { currentTime, formatMoment, todayString, toZonedIso } from '../../shared/dates'
 import { currentEpoch } from '../../services/httpClient'
 import { newClientKey } from '../../services/weightService'
-import { activities, deleteCheckin, exerciseCards, exerciseHistory, phaseNames, saveCheckin } from '../../services/wellnessService'
-import type { Activity, Checkin, CheckinInput, CycleDay, ExerciseCard, ShareReference } from '../../services/wellnessService'
+import { activities, deleteCheckin, exerciseHistory, saveCheckin } from '../../services/wellnessService'
+import type { Activity, Checkin, CheckinInput, ShareReference } from '../../services/wellnessService'
 
 const emit = defineEmits<{ share: [ShareReference] }>()
 const selected = ref<Activity | null>(null)
-const cards = ref<ExerciseCard[]>([])
-const phase = ref<CycleDay | null>(null)
+const activityOptions = Object.keys(activities) as Activity[]
 const entries = ref<Checkin[]>([])
-const cycle = ref(true)
 const day = ref(todayString())
 const time = ref(currentTime())
 const minutes = ref('')
@@ -82,30 +75,16 @@ const effortNames = { easy: '轻松', moderate: '适中', hard: '比较吃力' }
 const efforts = Object.entries(effortNames).map(([code, title]) => ({ code: code as keyof typeof effortNames, title }))
 let clientKey = newClientKey()
 let active = true
-let recommendationVersion = 0
 const epoch = currentEpoch()
 const isActive = () => active && epoch === currentEpoch()
 onBeforeUnmount(() => { active = false })
 onMounted(load)
 
-async function loadCards() {
-  const version = ++recommendationVersion
-  try {
-    const data = await exerciseCards(cycle.value)
-    if (isActive() && version === recommendationVersion) {
-      cards.value = data.cards
-      phase.value = data.phase
-    }
-  } catch {
-    if (isActive() && version === recommendationVersion) error.value = '运动卡没有加载成功'
-  }
-}
-
 async function load() {
   loading.value = true
   error.value = ''
   try {
-    const [history] = await Promise.all([exerciseHistory(), loadCards()])
+    const history = await exerciseHistory()
     if (isActive()) entries.value = history
   } catch {
     if (isActive()) error.value = '运动记录没有加载成功'
@@ -179,7 +158,6 @@ function remove(id: number) {
   border: 1px solid var(--hr-line); display: grid; justify-items: start; gap: 8px;
 }
 .headline { font-size: 19px; font-weight: 680; }
-.phase { padding: 4px 9px; border-radius: 999px; background: var(--hr-plum-soft); color: var(--hr-plum); font-size: 12px; }
 .quiet { font-size: 13px; color: var(--hr-ink-2); }
 .exercise-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .exercise-card,.exercise-history { background: var(--hr-surface); border: 1px solid var(--hr-line); border-radius: var(--hr-radius); padding: 12px; }

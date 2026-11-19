@@ -77,7 +77,7 @@
         <text class="skin-subtitle">{{ formatDayLabel(selectedDay) }}的记录</text>
         <SkinButton class="skin-button skin-link" @click="selectedDay = ''">看整月</SkinButton>
       </view>
-      <view v-if="loading" aria-busy="true" aria-label="正在读取历史记录">
+      <view v-if="loading && !visibleRows.length" aria-busy="true" aria-label="正在读取历史记录">
         <view class="skin-skeleton" /><view class="skin-skeleton" />
       </view>
       <view v-else-if="loadError" class="skin-alert skin-alert-error" role="alert">
@@ -147,6 +147,7 @@ const detail = ref<SkinObservation | null>(null)
 const detailError = ref('')
 const detailRetry = ref(false)
 let monthVersion = 0
+let loadedQuery = ''
 let detailVersion = 0
 let compareVersion = 0
 let active = false
@@ -157,14 +158,18 @@ const visibleRows = computed(() => selectedDay.value ? daysWithRecords.value.get
 const orderedPair = computed(() => chronologicalSkinPair(selected.value))
 
 async function loadMonth() {
+  const query = `${month.value}:${site.value}`
   const version = ++monthVersion
   const epoch = currentEpoch()
   loading.value = true
   loadError.value = false
-  rows.value = []
+  if (query !== loadedQuery) rows.value = []
   try {
     const result = await listObservations({ ...skinMonthRange(month.value), site: site.value || undefined })
-    if (version === monthVersion && epoch === currentEpoch()) rows.value = result
+    if (version === monthVersion && epoch === currentEpoch()) {
+      rows.value = result
+      loadedQuery = query
+    }
   } catch {
     if (version === monthVersion && epoch === currentEpoch()) loadError.value = true
   } finally {
@@ -309,6 +314,7 @@ function closeDetail() {
 
 function clearPrivateState() {
   monthVersion += 1
+  loadedQuery = ''
   rows.value = []
   closeDetail()
   stopCompare()

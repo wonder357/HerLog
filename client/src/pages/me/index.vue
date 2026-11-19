@@ -134,6 +134,6 @@ onShow(load)
 .profile-row { padding: 10px 0 8px; border-bottom: 1px solid var(--hr-line); }
 .profile-row .field { margin-bottom: 4px; }
 small { font-size: 12px; color: var(--hr-ink-2); font-weight: 400; }
-.ok { color: var(--hr-sage); font-size: 13px; }
+.ok { color: var(--hr-taupe); font-size: 13px; }
 input[type=date]:not(:valid) { color: var(--hr-ink-2); }
 </style>

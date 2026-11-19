@@ -28,3 +28,4 @@ infra.env
 .env.contest
 .env.production.local
 *.bundle
+/豆包
