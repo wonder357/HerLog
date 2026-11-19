@@ -35,7 +35,7 @@ class ProfileOut(BaseModel):
 
 class ProfileUpdate(BaseModel):
     birthday: date | None = None
-    height_cm: Decimal | None = None
+    height_cm: Decimal | None = Field(default=None, decimal_places=2)
     contact_phone: str | None = Field(default=None, max_length=32)
 
     @field_validator("height_cm")

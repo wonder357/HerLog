@@ -80,10 +80,10 @@ async def log_request(request: Request, call_next):
     elapsed = (time.perf_counter() - started) * 1000
     response.headers["X-Request-Id"] = request_id
     path = request.url.path
-    if path.startswith(("/api/v1/c/herlog/cycle-preference", "/api/v1/c/herlog/fertility-daily")):
+    if path.startswith("/api/v1/c/herlog/"):
         response.headers["Cache-Control"] = "private, no-store"
-        if path.startswith("/api/v1/c/herlog/fertility-daily/"):
-            path = "/api/v1/c/herlog/fertility-daily/{day}"
+    if path.startswith("/api/v1/c/herlog/fertility-daily/"):
+        path = "/api/v1/c/herlog/fertility-daily/{day}"
     logger.info(
         "rid=%s %s %s -> %s %.1fms",
         request_id,
@@ -108,7 +108,9 @@ async def handle_api_error(_: Request, exc: ApiError) -> JSONResponse:
 
 
 @app.exception_handler(RequestValidationError)
-async def handle_validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
+async def handle_validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
+    if request.url.path == "/api/v1/c/herlog/account/password":
+        return _error(422, "请输入当前密码和至少 8 位的新密码")
     first = exc.errors()[0] if exc.errors() else {}
     message = first.get("msg", "请求参数不正确")
     message = message.replace("Value error, ", "")

@@ -28,7 +28,7 @@ def phase_for(day: date, records: list[Period], today: date) -> CycleDayOut:
     if not last.end_day:
         return unknown
 
-    next_start = next((row.start_day for row in records if row.start_day > day), None)
+    next_start = next((row.start_day for row in records if day < row.start_day <= today), None)
     if next_start is None:
         prediction = period_logic.predict_next_start([row.start_day for row in previous], today)
         if prediction.status != period_logic.UPCOMING:

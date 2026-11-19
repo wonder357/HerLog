@@ -22,6 +22,7 @@
         <text class="panel-label">{{ heroLabel }}</text>
         <h2 id="cycle-status">{{ heroTitle }}</h2>
         <view v-if="heroNote" class="panel-note" :role="overviewError ? 'alert' : undefined">{{ heroNote }}</view>
+        <view v-if="phaseLabel" class="panel-note">{{ phaseLabel }}</view>
       </view>
       <view class="panel-icon"><HerlogIcon name="period" /></view>
       <view class="panel-actions">
@@ -187,6 +188,9 @@ import {
 import type { FeelingFilter } from '../../shared/period'
 import { ApiRequestError, currentEpoch, StaleSessionError } from '../../services/httpClient'
 import { deleteFeeling, deletePeriod, getOverview, listFeelings } from '../../services/periodService'
+import { fetchCycleContext } from '../../services/homeService'
+import { phaseNames } from '../../services/wellnessService'
+import type { CycleDay } from '../../services/wellnessService'
 import type { FeelingItem, PeriodItem, PeriodOverview } from '../../services/types'
 import { useAuthStore } from '../../stores/auth'
 import { useCyclePreference } from '../../stores/cyclePreference'
@@ -204,6 +208,12 @@ const month = ref(startOfMonth(today.value))
 const overview = ref<PeriodOverview | null>(null)
 const feelings = ref<FeelingItem[]>([])
 const overviewLoading = ref(true)
+const activePhase = ref<CycleDay | null>(null)
+const phaseLabel = computed(() => {
+  const phase = activePhase.value
+  if (phase?.basis !== 'estimated') return ''
+  return '当前阶段估算 · ' + (phase.phase === 'ovulatory' ? '排卵相关阶段' : phaseNames[phase.phase])
+})
 const feelingsLoading = ref(true)
 const overviewError = ref(false)
 const feelingError = ref(false)
@@ -331,6 +341,11 @@ async function loadOverview() {
   const session = currentEpoch()
   overviewLoading.value = true
   overviewError.value = false
+  void fetchCycleContext(today.value).then(result => {
+    if (request === overviewRequest && session === currentEpoch()) activePhase.value = result
+  }).catch(() => {
+    if (request === overviewRequest && session === currentEpoch()) activePhase.value = null
+  })
   try {
     const result = await getOverview()
     if (request === overviewRequest && session === currentEpoch()) overview.value = result
@@ -369,6 +384,7 @@ function resetAccount() {
   overviewRequest += 1
   feelingRequest += 1
   overview.value = null
+  activePhase.value = null
   feelings.value = []
   filter.value = null
   allHistory.value = false

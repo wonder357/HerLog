@@ -14,7 +14,7 @@ export const useCyclePreference = defineStore('cyclePreference', () => {
   const mode = computed(() => preference.value?.active_mode ?? 'period')
   let generation = 0
 
-  watch(() => auth.member?.customer_id, () => {
+  watch(() => [auth.token, auth.privateCacheRevision], () => {
     generation += 1
     preference.value = null
     loading.value = false

@@ -1,6 +1,6 @@
 """只读问答：先定模块与日期范围，再按当前会员取允许读取的字段。
 
-模型只解释程序算出的数字；记录引用由服务端生成，前端不提交用户 ID 或历史统计。
+回答和记录引用由服务端根据已保存事实生成。
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.core.clock import local_today
 from app.schemas.herlog import AssistantAnswerOut, AssistantRange, RecordRef
-from app.services import period_service, skin_service, weight_service, vision
+from app.services import period_service, skin_service, weight_service
 
 WEIGHT_WORDS = ("体重", "kg", "公斤", "斤", "称重", "瘦", "胖", "重量")
 PERIOD_WORDS = ("经期", "月经", "周期", "姨妈", "经量", "腹痛")
@@ -98,15 +98,6 @@ def _weight_answer(session: Session, customer_id: str, question: str) -> Assista
     start_day = today - timedelta(days=days - 1)
     data = weight_service.summary(session, customer_id, days)
     label = f"最近 {days} 天（{start_day.isoformat()} 至 {today.isoformat()}）"
-    facts: list[str] = [f"统计范围：{label}", f"范围内记录次数：{data.count}"]
-    if data.points:
-        facts.append(
-            "按每天最后一次测量："
-            + "；".join(f"{point.day.isoformat()} {_kg(point.grams)} kg" for point in data.points)
-        )
-    if data.delta_grams is not None:
-        facts.append(f"首尾变化：{data.delta_kg:+.3f} kg")
-
     if data.count == 0:
         text = f"{label}还没有体重记录。点「记体重」记一笔，之后就能回答变化了。"
     elif data.delta_grams is None:
@@ -121,7 +112,6 @@ def _weight_answer(session: Session, customer_id: str, question: str) -> Assista
             f"从 {_kg(data.points[0].grams)} kg 到 {_kg(data.points[-1].grams)} kg，"
             f"变化 {data.delta_kg:+.3f} kg（{direction}）。"
         )
-    model_reply = vision.answer_question("\n".join(facts), question)
     refs = [
         RecordRef(
             type="weight",
@@ -132,11 +122,10 @@ def _weight_answer(session: Session, customer_id: str, question: str) -> Assista
         for point in data.points
     ]
     return AssistantAnswerOut(
-        answer=model_reply or text,
+        answer=text,
         domain="weight",
         range=AssistantRange(label=label, date_from=start_day, date_to=today, days=days),
         record_refs=refs,
-        model_id=None if model_reply is None else "live",
     )
 
 
@@ -144,6 +133,13 @@ def _period_answer(session: Session, customer_id: str, question: str) -> Assista
     today = local_today()
     data = period_service.list_periods(session, customer_id)
     rows = data["items"]
+    if "最近一次" in question and any(word in question for word in ("哪天", "何时", "什么时候")):
+        latest = next((row for row in rows if row.start_day <= today), None)
+        return AssistantAnswerOut(
+            answer=f"最近一次已记录的经期开始日是 {latest.start_day.isoformat()}。" if latest else "还没有实际经期开始记录。",
+            domain="period", range=AssistantRange(label="最近一次实际经期"),
+            record_refs=[RecordRef(type="period", id=str(latest.id), label="查看经期记录", route=PERIOD_ROUTE)] if latest else [],
+        )
     prediction = data["prediction"]
     facts = [
         f"查看日期：{today.isoformat()}",
