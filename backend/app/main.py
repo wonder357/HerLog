@@ -79,11 +79,16 @@ async def log_request(request: Request, call_next):
     response = await call_next(request)
     elapsed = (time.perf_counter() - started) * 1000
     response.headers["X-Request-Id"] = request_id
+    path = request.url.path
+    if path.startswith(("/api/v1/c/herlog/cycle-preference", "/api/v1/c/herlog/fertility-daily")):
+        response.headers["Cache-Control"] = "private, no-store"
+        if path.startswith("/api/v1/c/herlog/fertility-daily/"):
+            path = "/api/v1/c/herlog/fertility-daily/{day}"
     logger.info(
         "rid=%s %s %s -> %s %.1fms",
         request_id,
         request.method,
-        request.url.path,
+        path,
         response.status_code,
         elapsed,
     )

@@ -28,16 +28,24 @@
       <view v-if="saved" class="ok" role="status">资料已更新</view>
     </H5Form>
     <view class="card profile-card">
+      <h2 class="hr-section-title">周期模式</h2>
+      <view v-if="cyclePreference.preference" class="muted">
+        {{ cyclePreference.mode === 'trying_to_conceive' ? '当前为备孕模式。' + fertilityNotice + '。' : '当前为经期模式。' }}
+      </view>
+      <H5Button class="ghost" @click="modeSettings = true">管理周期模式</H5Button>
+    </view>
+    <view class="card profile-card">
       <h2 class="hr-section-title">登录状态</h2>
       <view class="muted">退出登录后，重新登录同一账号即可查看自己的记录。</view>
       <H5Button class="ghost" @click="logout">退出登录</H5Button>
     </view>
+    <CycleModeSheet v-if="modeSettings" @close="modeSettings = false" @changed="openCycle" />
     <TabBar current="/pages/me/index" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import H5Button from '../../components/H5Button'
 import H5Form, { H5Label } from '../../components/H5Form'
@@ -49,8 +57,14 @@ import { todayString } from '../../shared/dates'
 import { useAuthStore } from '../../stores/auth'
 import { ApiRequestError, StaleSessionError } from '../../services/httpClient'
 import { getProfile, updateProfile } from '../../services/profileService'
+import CycleModeSheet from '../period/CycleModeSheet.vue'
+import { useCyclePreference } from '../../stores/cyclePreference'
+import { fertilityNotice } from '../../shared/fertility'
 
 const auth = useAuthStore()
+const cyclePreference = useCyclePreference()
+const modeSettings = ref(false)
+watch(() => auth.member?.customer_id, () => { modeSettings.value = false }, { flush: 'sync' })
 const today = todayString()
 const birthday = ref('')
 const heightCm = ref('')
@@ -117,7 +131,15 @@ async function logout() {
   uni.reLaunch({ url: '/pages/login/index' })
 }
 
-onShow(load)
+function openCycle() {
+  modeSettings.value = false
+  uni.switchTab({ url: '/pages/period/index' })
+}
+
+onShow(() => {
+  void load()
+  void cyclePreference.load()
+})
 </script>
 
 <style scoped>

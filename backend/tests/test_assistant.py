@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from fastapi.testclient import TestClient
+from pytest import MonkeyPatch
 
 from app.core.clock import local_today
 from tests.conftest import auth_headers, register_and_login
@@ -75,7 +76,10 @@ def test_cross_module_attribution_is_refused(client: TestClient) -> None:
     assert "归因" in data["answer"]
 
 
-def test_period_question_reports_estimate(client: TestClient) -> None:
+def test_period_question_reports_estimate(client: TestClient, monkeypatch: MonkeyPatch) -> None:
+    today = lambda: date(2026, 12, 1)
+    monkeypatch.setattr("app.services.period_service.local_today", today)
+    monkeypatch.setattr("app.services.assistant_service.local_today", today)
     headers = auth_headers(register_and_login(client))
     for start in ("2026-10-03", "2026-11-01", "2026-11-30"):
         response = client.post(

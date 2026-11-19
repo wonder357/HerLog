@@ -11,6 +11,7 @@ SKIN_MIME_TYPES = ("image/jpeg", "image/png")
 FLOWS = ("少量", "中等", "较多")
 SYMPTOMS = ("腹痛", "腹胀", "头痛", "疲惫", "情绪变化", "腰酸", "恶心", "乳房胀痛")
 IMPACTS = ("无影响", "轻微影响", "影响日常", "影响睡眠")
+Mood = Literal["轻松", "平静", "烦躁", "低落", "紧张"]
 
 
 def _as_utc_iso(moment: datetime) -> str:
@@ -87,6 +88,7 @@ class PeriodOut(BaseModel):
 
 class FeelingIn(BaseModel):
     flow: str | None = None
+    mood: Mood | None = None
     symptoms: list[str] = Field(default_factory=list, max_length=8)
     impact: str | None = None
     note: str | None = Field(default=None, max_length=500)
@@ -127,14 +129,11 @@ class FeelingIn(BaseModel):
             return None
         return value.strip() or None
 
-    @property
-    def is_empty(self) -> bool:
-        return not self.flow and not self.symptoms and not self.impact and not self.note
-
 
 class FeelingOut(BaseModel):
     day: date
     flow: str | None = None
+    mood: Mood | None = None
     symptoms: list[str] = Field(default_factory=list)
     impact: str | None = None
     note: str | None = None
