@@ -9,7 +9,8 @@ services:
       MYSQL_PASSWORD: ${HERLOG_DB_PASSWORD:?set HERLOG_DB_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${HERLOG_DB_ROOT_PASSWORD:?set HERLOG_DB_ROOT_PASSWORD}
     ports:
-      - "127.0.0.1:13306:3306"
+      # 局域网协作：绑定所有网卡，队友用 http://<本机IP>:13306 连接；仅限可信 LAN，见 docs/协作开发约定-V1.0.md
+      - "0.0.0.0:13306:3306"
     volumes:
       - herlog_db:/var/lib/mysql
     healthcheck:
@@ -21,7 +22,8 @@ services:
     image: redis:7-alpine
     command: ["redis-server", "--save", "", "--appendonly", "no"]
     ports:
-      - "127.0.0.1:16379:6379"
+      # 同上：皮肤暂存所需，队友后端可经局域网访问
+      - "0.0.0.0:16379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

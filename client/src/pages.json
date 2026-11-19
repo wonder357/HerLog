@@ -1,0 +1,55 @@
+{
+  "pages": [
+    {
+      "path": "pages/home/index",
+      "style": { "navigationBarTitleText": "她记" }
+    },
+    {
+      "path": "pages/period/index",
+      "style": { "navigationBarTitleText": "经期" }
+    },
+    {
+      "path": "pages/weight/index",
+      "style": { "navigationBarTitleText": "体重" }
+    },
+    {
+      "path": "pages/skin/index",
+      "style": { "navigationBarTitleText": "皮肤" }
+    },
+    {
+      "path": "pages/me/index",
+      "style": { "navigationBarTitleText": "我的" }
+    },
+    {
+      "path": "pages/login/index",
+      "style": { "navigationBarTitleText": "登录" }
+    },
+    {
+      "path": "pages/weight/detail",
+      "style": { "navigationBarTitleText": "记录明细" }
+    },
+    {
+      "path": "pages/skin/history",
+      "style": { "navigationBarTitleText": "皮肤历史" }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "她记",
+    "navigationBarBackgroundColor": "#FDF8F6",
+    "backgroundColor": "#FDF8F6"
+  },
+  "tabBar": {
+    "color": "#8A7F7A",
+    "selectedColor": "#B4544A",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/home/index", "text": "首页" },
+      { "pagePath": "pages/period/index", "text": "经期" },
+      { "pagePath": "pages/weight/index", "text": "体重" },
+      { "pagePath": "pages/skin/index", "text": "皮肤" },
+      { "pagePath": "pages/me/index", "text": "我的" }
+    ]
+  }
+}
