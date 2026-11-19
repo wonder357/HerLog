@@ -1,76 +1,73 @@
 <template>
-  <view class="tabbar">
-    <view
-      v-for="item in items"
-      :key="item.path"
-      class="tab"
-      :class="{ active: item.path === current }"
-      @tap="go(item)"
-    >
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-        <path :d="item.icon" stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-      <text class="label">{{ item.label }}</text>
-    </view>
-  </view>
+  <nav class="tabbar" aria-label="主导航">
+    <H5Button v-for="item in items" :key="item.path" class="tab"
+      :class="{ active: item.path === current }" :aria-current="item.path === current ? 'page' : undefined"
+      @click="go(item.path)">
+      <span class="tab-symbol"><HerlogIcon :name="item.icon" class="icon" /></span>
+      <span class="label">{{ item.label }}</span>
+    </H5Button>
+  </nav>
 </template>
 
 <script setup lang="ts">
-interface TabItem {
-  path: string
-  label: string
-  icon: string
-}
+import H5Button from './H5Button'
+import HerlogIcon from './HerlogIcon.vue'
 
 const props = defineProps<{ current: string }>()
+const items = [
+  { path: '/pages/home/index', label: '首页', icon: 'home' },
+  { path: '/pages/period/index', label: '经期', icon: 'period' },
+  { path: '/pages/weight/index', label: '体重', icon: 'weight' },
+  { path: '/pages/skin/index', label: '皮肤', icon: 'skin' },
+  { path: '/pages/me/index', label: '我的', icon: 'me' },
+] as const
 
-// 五个一级页共用一份配置，路径变化只改这里。
-const items: TabItem[] = [
-  { path: '/pages/home/index', label: '首页', icon: 'M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z' },
-  { path: '/pages/period/index', label: '经期', icon: 'M5 6h14v14H5zM8 3v4M16 3v4M5 10h14' },
-  { path: '/pages/weight/index', label: '体重', icon: 'M12 4a2 2 0 0 1 1.7 3l5 12H5.3l5-12A2 2 0 0 1 12 4zM9 14h6' },
-  { path: '/pages/skin/index', label: '皮肤', icon: 'M12 3c3 4 6 6.5 6 10a6 6 0 0 1-12 0c0-3.5 3-6 6-10zM9.5 13.5a2.5 2.5 0 0 0 5 0' },
-  { path: '/pages/me/index', label: '我的', icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c0-4 3.6-6 8-6s8 2 8 6' }
-]
-
-function go(item: TabItem) {
-  if (item.path === props.current) {
-    return
-  }
-  uni.switchTab({ url: item.path })
+function go(path: string) {
+  if (path !== props.current) uni.switchTab({ url: path })
 }
 </script>
 
 <style scoped>
 .tabbar {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
   z-index: 10;
-  display: flex;
-  height: 58px;
-  padding-bottom: env(safe-area-inset-bottom);
-  background: #ffffff;
-  border-top: 1px solid #f0e6e2;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 3px;
+  width: min(100%, calc(var(--hr-shell-width) + 32px));
+  min-height: var(--hr-tab-height);
+  padding: 6px max(9px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(9px, env(safe-area-inset-left));
+  background: var(--hr-surface);
+  border-top: 1px solid var(--hr-line);
+  box-shadow: 0 -8px 24px -22px #60404c79;
 }
 .tab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #8a7f7a;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  padding: 3px 0;
+  min-height: 48px;
+  min-width: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--hr-ink-2);
 }
-.tab.active {
-  color: #b4544a;
+.tab-symbol {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 27px;
+  border-radius: 11px;
 }
-.icon {
-  width: 22px;
-  height: 22px;
-  margin-bottom: 2px;
-}
-.label {
-  font-size: 11px;
-}
+.tab.active { color: var(--hr-rose-deep); }
+.tab.active .tab-symbol { background: var(--hr-rose-soft); }
+.icon { width: 21px; height: 21px; }
+.label { font-size: 12px; line-height: 1.25; }
+.tab.active .label { font-weight: 700; }
 </style>

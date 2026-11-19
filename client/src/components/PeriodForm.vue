@@ -1,38 +1,26 @@
 <template>
-  <view v-if="visible">
-    <view class="sheet-mask" @tap="cancel" />
-    <view class="sheet">
-      <view class="sheet-title">记录经期</view>
-      <view class="muted">选中日期：{{ formatDayLabel(day) }}</view>
-      <view class="modes">
-        <view
-          class="mode"
-          :class="{ active: mode === 'start' }"
-          @tap="mode = 'start'"
-        >
-          经期开始
-        </view>
-        <view class="mode" :class="{ active: mode === 'end' }" @tap="mode = 'end'">
-          经期最后一天
-        </view>
-      </view>
-      <view v-if="mode === 'end'" class="muted hint">
-        {{
-          openPeriod
-            ? `将 ${formatDayLabel(day)} 记为 ${formatDayLabel(openPeriod.startDay)} 这段经期的最后一天`
-            : '这一天之前没有未记录结束的经期，请先补记开始日'
-        }}
-      </view>
-      <text v-if="error" class="error">{{ error }}</text>
-      <button class="primary" :disabled="saving" @tap="submit">
-        {{ saving ? '保存中…' : '保存' }}
-      </button>
-      <view class="ghost cancel" @tap="cancel">取消</view>
+  <HerlogSheet v-if="visible" title="记录经期" :context="formatDayLabel(day)" :busy="saving" @close="cancel">
+    <view class="modes" aria-label="记录类型">
+      <H5Button class="mode" :class="{ active: mode === 'start' }" :aria-pressed="mode === 'start'"
+        @click="mode = 'start'">经期开始</H5Button>
+      <H5Button class="mode" :class="{ active: mode === 'end' }" :aria-pressed="mode === 'end'"
+        @click="mode = 'end'">经期最后一天</H5Button>
     </view>
-  </view>
+    <view class="hint">
+      {{ mode === 'start' ? '把选中的日期记为经期第一天。'
+        : openPeriod ? '这段经期从 ' + formatDayLabel(openPeriod.startDay) + ' 开始。'
+        : '请先补记这段经期的开始日。' }}
+    </view>
+    <view v-if="error" class="error" role="alert">{{ error }}</view>
+    <template #actions>
+      <H5Button class="primary" :disabled="saving" @click="submit">{{ saving ? '保存中…' : '保存' }}</H5Button>
+    </template>
+  </HerlogSheet>
 </template>
 
 <script setup lang="ts">
+import H5Button from './H5Button'
+import HerlogSheet from './HerlogSheet.vue'
 import { ref, watch } from 'vue'
 import { formatDayLabel } from '../shared/dates'
 import { ApiRequestError, StaleSessionError } from '../services/httpClient'
@@ -105,35 +93,11 @@ async function submit() {
 </script>
 
 <style scoped>
-.sheet-title {
-  font-size: 17px;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-.modes {
-  display: flex;
-  gap: 10px;
-  margin: 12px 0;
-}
+.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 12px; }
 .mode {
-  flex: 1;
-  height: 42px;
-  line-height: 40px;
-  text-align: center;
-  border-radius: 12px;
-  border: 1px solid #e4d8d3;
-  color: #6f635e;
-  font-size: 14px;
+  min-height: 46px; padding: 6px; border: 1px solid var(--hr-line);
+  border-radius: 12px; background: var(--hr-paper); color: var(--hr-ink-2); font-size: 14px;
 }
-.mode.active {
-  border-color: #b4544a;
-  color: #b4544a;
-  background: #fdf2ef;
-}
-.hint {
-  margin-bottom: 10px;
-}
-.cancel {
-  margin-top: 10px;
-}
+.mode.active { background: var(--hr-rose-soft); color: var(--hr-rose-deep); border-color: var(--hr-rose); font-weight: 650; }
+.hint { padding: 11px; margin-bottom: 8px; background: var(--hr-peach); color: var(--hr-peach-ink); border-radius: 11px; font-size: 14px; }
 </style>

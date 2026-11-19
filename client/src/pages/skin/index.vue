@@ -1,147 +1,241 @@
 <template>
-  <view class="page">
-    <view class="card">
-      <view class="section-title">最近一次已保存观察</view>
-      <view v-if="latest">
-        <view class="latest-site">{{ latest.site }} · {{ formatMoment(latest.captured_at) }}</view>
-        <view class="muted">{{ latest.visible }}</view>
+  <view class="hr-page herlog-skin" :class="{ 'hr-tab-page': step === 'home' }">
+    <SkinResult
+      v-if="step === 'result' && analysis"
+      :analysis="analysis"
+      :preview-url="draft?.image.previewUrl"
+      @saved="saved"
+      @expired="releaseDraft"
+      @discarded="closeFlow"
+      @retake="retake"
+    />
+    <template v-else-if="step === 'home'">
+      <SkinStudio v-if="auth.token" :key="auth.token" :latest="latest" :photo-loading="loading" :photo-error="loadError"
+        @capture="openCapture" @history="openHistory" @refresh-photo="loadLatest" />
+      <TabBar current="/pages/skin/index" />
+    </template>
+    <template v-else>
+      <HerlogHeading :title="step === 'site' ? '选择部位' : '拍照分析'">
+        <template #actions><SkinButton class="hr-action" @click="closeFlow">取消</SkinButton></template>
+      </HerlogHeading>
+      <view v-if="step === 'site'" class="site-grid">
+        <SkinButton v-for="item in SKIN_SITES" :key="item" class="skin-button" @click="selectSite(item)">{{ item }}</SkinButton>
       </view>
-      <view v-else class="muted">还没有保存过观察。选好部位拍一张，确认结果后才会进入历史。</view>
-      <button class="primary analyze-button" :disabled="analyzing" @tap="siteVisible = true">
-        {{ analyzing ? '正在分析…' : '拍照分析' }}
-      </button>
-      <view class="link" @tap="openHistory">历史记录 ›</view>
-    </view>
-
-    <view class="card tips">
-      <view class="section-title">说明</view>
-      <view class="muted">· 照片只用于本次可见外观描述，不给病名、严重程度评分或改善百分比。</view>
-      <view class="muted">· 点「保存」才会写入历史；不保存或重拍不会新增记录。</view>
-      <view class="muted">· 判断不舒服或变化明显时，请线下就医。</view>
-    </view>
-
-    <view v-if="siteVisible">
-      <view class="sheet-mask" @tap="siteVisible = false" />
-      <view class="sheet">
-        <view class="sheet-title">选择部位</view>
-        <view class="sites">
-          <view v-for="item in SKIN_SITES" :key="item" class="site" @tap="startAnalyze(item)">
-            {{ item }}
-          </view>
+      <view v-else class="skin-panel">
+        <view class="skin-block skin-meta">
+          <text>{{ site }}</text>
+          <SkinButton v-if="step !== 'analyzing'" class="skin-button skin-link" :disabled="picking" @click="changeSite">更换部位</SkinButton>
         </view>
-        <view class="ghost cancel" @tap="siteVisible = false">取消</view>
+        <view class="skin-alert">{{ SKIN_FLOWS.notice }}</view>
+        <view v-if="error" class="skin-alert skin-alert-error" role="alert">{{ error }}</view>
+        <image v-if="draft" class="skin-photo skin-block" :src="draft.image.previewUrl" mode="aspectFit" aria-label="所选照片" />
+        <view v-else class="preview-empty skin-block">
+          <HerlogIcon name="camera" />
+          <text class="skin-muted">选取后可先预览照片</text>
+        </view>
+        <view v-if="step === 'analyzing'" class="skin-block skin-panel" role="status" aria-busy="true">
+          <view>正在分析…</view>
+          <view class="skin-skeleton" />
+          <view class="skin-skeleton" />
+          <view class="skin-skeleton" />
+        </view>
+        <view v-else class="skin-actions">
+          <template v-if="draft">
+            <SkinButton class="ghost" :disabled="picking" @click="pickPhoto()">{{ picking ? '正在处理…' : '换一张' }}</SkinButton>
+            <SkinButton class="primary" :disabled="picking" @click="analyzeDraft">{{ analyzeFailed ? '重试' : '开始分析' }}</SkinButton>
+          </template>
+          <template v-else>
+            <SkinButton class="primary" :disabled="picking" @click="pickPhoto('camera')">{{ picking ? '正在处理…' : '拍照' }}</SkinButton>
+            <SkinButton class="ghost" :disabled="picking" @click="pickPhoto('album')">从相册选图</SkinButton>
+          </template>
+        </view>
       </view>
-    </view>
-
-    <TabBar current="/pages/skin/index" />
+    </template>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import SkinButton from '../../components/H5Button'
+import HerlogHeading from '../../components/HerlogHeading.vue'
+import HerlogIcon from '../../components/HerlogIcon.vue'
+import { ref, watch } from 'vue'
+import { onHide, onShow, onUnload } from '@dcloudio/uni-app'
 import TabBar from '../../components/TabBar.vue'
-import { formatMoment } from '../../shared/dates'
+import { ApiRequestError, currentEpoch, StaleSessionError } from '../../services/httpClient'
+import { analyze, discardPending, listObservations, releaseBlobUrl, SKIN_FLOWS, SKIN_SITES } from '../../services/skinService'
+import type { SkinAnalysis, SkinSummaryItem } from '../../services/types'
+import { useAuthStore } from '../../stores/auth'
 import { chooseImage, encodeJpeg } from '../../utils/image'
-import { setSkinDraft } from '../../utils/skinDraft'
-import { ApiRequestError, StaleSessionError } from '../../services/httpClient'
-import { SKIN_SITES, analyze, listObservations } from '../../services/skinService'
-import type { SkinSummaryItem } from '../../services/types'
+import type { SkinDraft } from '../../utils/skinDraft'
+import SkinStudio from './SkinStudio.vue'
+import SkinResult from './result.vue'
+import './skin.css'
 
+const auth = useAuthStore()
+const step = ref<'home' | 'site' | 'photo' | 'analyzing' | 'result'>('home')
 const latest = ref<SkinSummaryItem | null>(null)
-const siteVisible = ref(false)
-const analyzing = ref(false)
+const loading = ref(true)
+const loadError = ref(false)
+const site = ref('')
+const draft = ref<SkinDraft | null>(null)
+const analysis = ref<SkinAnalysis | null>(null)
+const picking = ref(false)
+const error = ref('')
+const analyzeFailed = ref(false)
+let loadVersion = 0
+let flowVersion = 0
+let pageVisible = false
 
-async function load() {
+async function loadLatest() {
+  const version = ++loadVersion
+  const epoch = currentEpoch()
+  loading.value = true
+  loadError.value = false
   try {
-    const rows = await listObservations()
-    latest.value = rows[0] ?? null
-  } catch (failure) {
-    if (failure instanceof StaleSessionError) {
-      return
-    }
-    latest.value = null
-  }
-}
-
-function openHistory() {
-  uni.navigateTo({ url: '/pages/skin/history' })
-}
-
-async function startAnalyze(site: string) {
-  siteVisible.value = false
-  analyzing.value = true
-  try {
-    const path = await chooseImage()
-    const encoded = await encodeJpeg(path)
-    const analysis = await analyze({
-      site,
-      captured_at: new Date().toISOString(),
-      mime: encoded.mime,
-      image_base64: encoded.base64
-    })
-    setSkinDraft(analysis, site, encoded.previewUrl)
-    uni.navigateTo({ url: '/pages/skin/result' })
-  } catch (failure) {
-    if (failure instanceof StaleSessionError) {
-      return
-    }
-    const message =
-      failure instanceof ApiRequestError ? failure.message : (failure as Error).message || '分析失败'
-    uni.showModal({ title: '没有完成分析', content: message, showCancel: false })
+    const rows = await listObservations({ limit: 1 })
+    if (version === loadVersion && epoch === currentEpoch()) latest.value = rows[0] ?? null
+  } catch {
+    if (version === loadVersion && epoch === currentEpoch()) loadError.value = true
   } finally {
-    analyzing.value = false
+    if (version === loadVersion) loading.value = false
   }
 }
 
-onShow(load)
+function openHistory(compare: boolean, day?: string) {
+  const query = compare ? '?compare=1' : day ? '?day=' + encodeURIComponent(day) : ''
+  uni.navigateTo({ url: '/pages/skin/history' + query })
+}
+
+function releaseDraft() {
+  releaseBlobUrl(draft.value?.image.previewUrl ?? null)
+  draft.value = null
+}
+
+function resetFlow(next: 'home' | 'site' | 'photo') {
+  flowVersion += 1
+  releaseDraft()
+  analysis.value = null
+  error.value = ''
+  analyzeFailed.value = false
+  picking.value = false
+  step.value = next
+}
+
+function closeFlow() {
+  resetFlow('home')
+}
+
+function openCapture() {
+  site.value = ''
+  resetFlow('site')
+}
+
+function changeSite() {
+  resetFlow('site')
+}
+
+function selectSite(item: string) {
+  site.value = item
+  step.value = 'photo'
+}
+
+function retake() {
+  resetFlow('photo')
+}
+
+function saved() {
+  closeFlow()
+  uni.showToast({ title: '皮肤观察已保存', icon: 'none' })
+  void loadLatest()
+}
+
+async function pickPhoto(source?: 'camera' | 'album') {
+  if (picking.value) return
+  const version = flowVersion
+  const epoch = currentEpoch()
+  picking.value = true
+  error.value = ''
+  let path: string | null = null
+  try {
+    path = await chooseImage(source)
+    if (!path || version !== flowVersion || epoch !== currentEpoch()) return
+    const capturedAt = new Date().toISOString()
+    const image = await encodeJpeg(path)
+    if (version !== flowVersion || epoch !== currentEpoch()) {
+      releaseBlobUrl(image.previewUrl)
+      return
+    }
+    releaseDraft()
+    draft.value = { site: site.value, capturedAt, image }
+    analyzeFailed.value = false
+  } catch (failure) {
+    if (version === flowVersion && epoch === currentEpoch()) {
+      error.value = failure instanceof Error ? failure.message : '没有处理完这张照片，请重新选择'
+    }
+  } finally {
+    releaseBlobUrl(path)
+    if (version === flowVersion) picking.value = false
+  }
+}
+
+async function analyzeDraft() {
+  const selected = draft.value
+  if (!selected || step.value !== 'photo' || picking.value) return
+  const version = flowVersion
+  const epoch = currentEpoch()
+  error.value = ''
+  step.value = 'analyzing'
+  try {
+    const result = await analyze({
+      site: selected.site,
+      captured_at: selected.capturedAt,
+      mime: selected.image.mime,
+      image_base64: selected.image.base64
+    })
+    if (version !== flowVersion || epoch !== currentEpoch()) {
+      if (epoch === currentEpoch()) void discardPending(result.analysis_id).catch(() => undefined)
+      return
+    }
+    analysis.value = result
+    step.value = 'result'
+  } catch (failure) {
+    if (version !== flowVersion || epoch !== currentEpoch() || failure instanceof StaleSessionError) return
+    step.value = 'photo'
+    analyzeFailed.value = true
+    error.value = failure instanceof ApiRequestError && failure.status === 422
+      ? failure.message
+      : '这次分析没有完成，可以重试'
+  }
+}
+
+watch(() => auth.token, () => {
+  closeFlow()
+  loadVersion += 1
+  latest.value = null
+  if (pageVisible && auth.token) void loadLatest()
+})
+onShow(() => {
+  pageVisible = true
+  if (auth.token) void loadLatest()
+})
+onHide(() => {
+  pageVisible = false
+  loadVersion += 1
+  latest.value = null
+  closeFlow()
+})
+onUnload(() => {
+  pageVisible = false
+  loadVersion += 1
+  closeFlow()
+})
 </script>
 
 <style scoped>
-.page {
-  min-height: 100vh;
-  padding: 12px 16px 76px;
-  box-sizing: border-box;
+.site-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.preview-empty {
+  display: grid; align-content: center; justify-items: center; gap: 8px; min-height: 140px;
+  border: 1px dashed var(--hr-line-strong); border-radius: 15px; color: var(--hr-rose-deep); background: var(--hr-peach);
 }
-.section-title {
-  font-size: 15px;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-.latest-site {
-  font-size: 14px;
-  margin-bottom: 4px;
-}
-.analyze-button {
-  margin-top: 14px;
-}
-.link {
-  margin-top: 12px;
-  text-align: center;
-  color: #b4544a;
-  font-size: 13px;
-}
-.tips {
-  line-height: 1.8;
-}
-.sheet-title {
-  font-size: 17px;
-  font-weight: 600;
-  margin-bottom: 14px;
-}
-.sites {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-.site {
-  padding: 8px 16px;
-  border-radius: 999px;
-  border: 1px solid #e4d8d3;
-  font-size: 14px;
-  color: #4b413d;
-}
-.cancel {
-  margin-top: 16px;
-}
+.preview-empty svg { width: 30px; height: 30px; }
 </style>

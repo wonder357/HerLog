@@ -81,9 +81,14 @@ class Weight(Base):
     measured_at: Mapped[datetime] = mapped_column(_MOMENT, nullable=False)
     tag: Mapped[str | None] = mapped_column(sa.String(32), nullable=True)
     note: Mapped[str | None] = mapped_column(sa.String(500), nullable=True)
+    feeling_tags: Mapped[list[str] | None] = mapped_column(sa.JSON, nullable=True)
+    source: Mapped[str] = mapped_column(sa.String(12), nullable=False, server_default="manual")
+    device_id: Mapped[int | None] = mapped_column(_ROW_ID, nullable=True)
+    source_record_id: Mapped[str | None] = mapped_column(sa.String(128), nullable=True)
 
     __table_args__ = (
         sa.UniqueConstraint("customer_id", "client_key", name="uq_herlog_weight_key"),
+        sa.UniqueConstraint("customer_id", "device_id", "source_record_id", name="uq_herlog_weight_source"),
         sa.CheckConstraint("grams > 0", name="ck_herlog_positive_weight"),
         sa.Index("ix_herlog_weight_time", "customer_id", "measured_at", "id"),
     )

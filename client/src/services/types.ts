@@ -1,3 +1,5 @@
+import type { CycleDay, Feeling } from './wellnessService'
+
 export interface MemberInfo {
   customer_id: string
   username: string
@@ -61,6 +63,9 @@ export interface FeelingItem {
 }
 
 export interface WeightItem {
+  feeling_tags?: Feeling[]
+  source?: 'manual' | 'scale'
+  device_id?: number | null
   id: number
   client_key: string
   grams: number
@@ -79,6 +84,16 @@ export interface WeightPointItem {
 }
 
 export interface WeightSummary {
+  record_days?: number
+  latest_record_id?: number | null
+  cycle_context?: CycleDay[] | null
+  metrics?: Record<string, {
+    value: number | null
+    unit: string
+    status: string
+    source: string | null
+    measured_at: string | null
+  }>
   days: number
   latest_grams: number | null
   latest_kg: number | null
@@ -114,6 +129,7 @@ export interface SkinAnalysis {
   model_id: string
   prompt_version: string
   demo_sample: boolean
+  inference_ms?: number | null
 }
 
 export interface SkinObservation {
@@ -127,6 +143,8 @@ export interface SkinObservation {
   model_id: string
   prompt_version: string
   has_image: boolean
+  quality?: SkinQuality | null
+  demo_sample?: boolean
 }
 
 export interface SkinSummaryItem {
@@ -134,6 +152,7 @@ export interface SkinSummaryItem {
   site: string
   captured_at: string
   visible: string
+  demo_sample?: boolean
 }
 
 export interface RecordRef {

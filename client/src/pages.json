@@ -2,47 +2,47 @@
   "pages": [
     {
       "path": "pages/home/index",
-      "style": { "navigationBarTitleText": "她记" }
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "她记" }
     },
     {
       "path": "pages/period/index",
-      "style": { "navigationBarTitleText": "经期" }
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "经期" }
     },
     {
       "path": "pages/weight/index",
-      "style": { "navigationBarTitleText": "体重" }
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "体重" }
     },
     {
       "path": "pages/skin/index",
-      "style": { "navigationBarTitleText": "皮肤" }
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "皮肤" }
     },
     {
       "path": "pages/me/index",
-      "style": { "navigationBarTitleText": "我的" }
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "我的" }
     },
     {
       "path": "pages/login/index",
-      "style": { "navigationBarTitleText": "登录" }
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "登录" }
     },
     {
       "path": "pages/weight/detail",
-      "style": { "navigationBarTitleText": "记录明细" }
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "记录明细" }
     },
     {
       "path": "pages/skin/history",
-      "style": { "navigationBarTitleText": "皮肤历史" }
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "皮肤历史" }
     }
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "她记",
-    "navigationBarBackgroundColor": "#FDF8F6",
-    "backgroundColor": "#FDF8F6"
+    "navigationBarBackgroundColor": "#FAF4EE",
+    "backgroundColor": "#FAF4EE"
   },
   "tabBar": {
-    "color": "#8A7F7A",
-    "selectedColor": "#B4544A",
-    "backgroundColor": "#FFFFFF",
+    "color": "#67535B",
+    "selectedColor": "#A0445D",
+    "backgroundColor": "#FFFCFA",
     "borderStyle": "white",
     "list": [
       { "pagePath": "pages/home/index", "text": "首页" },

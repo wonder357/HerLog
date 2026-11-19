@@ -160,7 +160,10 @@ export function fetchBlobUrl(path: string): Promise<string> {
           reject(new ApiRequestError(response.statusCode, '图片读取失败'))
           return
         }
-        const blob = new Blob([response.data as ArrayBuffer], { type: 'image/jpeg' })
+        const contentType = Object.entries(response.header ?? {})
+          .find(([key]) => key.toLowerCase() === 'content-type')?.[1]
+        const mime = typeof contentType === 'string' ? contentType : 'image/jpeg'
+        const blob = new Blob([response.data as ArrayBuffer], { type: mime })
         resolve(URL.createObjectURL(blob))
       },
       fail: () => reject(new ApiRequestError(0, '图片读取失败'))

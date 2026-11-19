@@ -1,110 +1,91 @@
 <template>
-  <view class="page">
-    <view class="card status-card">
-      <view class="status-title">{{ overview?.status.message || '加载中…' }}</view>
+  <view class="hr-page hr-tab-page cycle-page">
+    <HerlogHeading title="经期" />
+    <view class="status-card">
+      <view class="status-title">{{ overview?.status.message || '正在读取周期记录…' }}</view>
       <view v-if="predictionHint" class="muted">{{ predictionHint }}</view>
-      <view v-if="overview?.prediction.status === 'overdue'" class="link" @tap="openPeriodForm">
-        补记经期开始 ›
-      </view>
+      <H5Button v-if="overview?.prediction.status === 'overdue'" class="hr-action" @click="openPeriodForm">
+        补记经期开始
+      </H5Button>
     </view>
 
-    <view class="card">
+    <view class="card calendar-card">
       <view class="month-row">
-        <view class="month-nav" @tap="shift(-1)">‹</view>
-        <view class="month-label">{{ formatMonthLabel(month) }}</view>
-        <view class="month-nav" @tap="shift(1)">›</view>
-      </view>
-      <view class="weekdays">
-        <text v-for="name in weekdays" :key="name" class="weekday">{{ name }}</text>
+        <H5Button class="month-nav" aria-label="上个月" @click="shift(-1)">‹</H5Button>
+        <h2 class="month-label">{{ formatMonthLabel(month) }}</h2>
+        <H5Button class="month-nav" aria-label="下个月" @click="shift(1)">›</H5Button>
       </view>
       <view class="grid">
-        <view v-for="blank in grid.leading" :key="`b-${blank}`" class="cell" />
-        <view
-          v-for="day in grid.days"
-          :key="day"
-          class="cell"
-          :class="cellClass(day)"
-          @tap="selected = day"
-        >
-          <text class="day-number">{{ Number(day.slice(-2)) }}</text>
-          <text v-if="feelingDays.has(day)" class="dot" />
-        </view>
+        <text v-for="name in weekdays" :key="name" class="weekday">{{ name }}</text>
+        <view v-for="blank in grid.leading" :key="'blank-' + blank" />
+        <H5Button v-for="day in grid.days" :key="day" class="cell" :class="cellClass(day)"
+          :aria-pressed="day === selected" :aria-current="day === today ? 'date' : undefined"
+          :aria-label="dayLabel(day)" @click="selected = day">
+          <span class="day-number">{{ Number(day.slice(-2)) }}</span>
+          <span v-if="feelingDays.has(day)" class="dot" />
+        </H5Button>
       </view>
       <view class="legend">
-        <view class="legend-item"><text class="swatch actual" />实际经期</view>
-        <view class="legend-item"><text class="swatch feeling" />有感受</view>
-        <view class="legend-item"><text class="swatch predicted" />预计开始</view>
+        <view><span class="swatch actual" />实际经期</view>
+        <view><span class="swatch feeling" />有感受</view>
+        <view><span class="swatch predicted" />预计开始</view>
       </view>
     </view>
 
-    <view class="card">
-      <view class="section-title">{{ formatDayLabel(selected) }}</view>
+    <view class="card day-card">
+      <view class="section-head">
+        <h2 class="hr-section-title">{{ formatDayLabel(selected) }}</h2>
+        <text v-if="selected === today" class="selected-today">今天</text>
+      </view>
       <view v-if="selectedPeriod" class="record">
-        <view class="record-main">
+        <view>
           {{ formatDayLabel(selectedPeriod.start_day) }} 开始
-          <text v-if="selectedPeriod.end_day">
-            · {{ formatDayLabel(selectedPeriod.end_day) }} 结束
-          </text>
-          <text v-else>· 未记录结束</text>
+          <text v-if="selectedPeriod.end_day"> · {{ formatDayLabel(selectedPeriod.end_day) }} 结束</text>
+          <text v-else> · 等待记录结束</text>
         </view>
-        <view class="record-actions">
-          <text class="danger" @tap="removePeriod(selectedPeriod)">删除</text>
-        </view>
+        <H5Button class="hr-action danger" @click="removePeriod(selectedPeriod)">删除经期</H5Button>
       </view>
       <view v-if="selectedFeeling" class="record">
-        <view class="record-main">
-          <text v-if="selectedFeeling.flow">经量：{{ selectedFeeling.flow }}　</text>
-          <text v-if="selectedFeeling.symptoms.length">症状：{{ selectedFeeling.symptoms.join('、') }}　</text>
-          <text v-if="selectedFeeling.impact">影响：{{ selectedFeeling.impact }}</text>
+        <view>
+          <text v-if="selectedFeeling.flow">经量 {{ selectedFeeling.flow }}　</text>
+          <text v-if="selectedFeeling.symptoms.length">{{ selectedFeeling.symptoms.join('、') }}　</text>
+          <text v-if="selectedFeeling.impact">{{ selectedFeeling.impact }}</text>
           <view v-if="selectedFeeling.note" class="muted">{{ selectedFeeling.note }}</view>
         </view>
-        <view class="record-actions">
-          <text class="danger" @tap="removeFeeling(selected)">删除</text>
-        </view>
+        <H5Button class="hr-action danger" @click="removeFeeling(selected)">删除感受</H5Button>
       </view>
       <view v-if="!selectedPeriod && !selectedFeeling" class="muted">这一天还没有记录。</view>
       <view class="day-actions">
-        <view class="ghost action" @tap="openPeriodForm">记录经期</view>
-        <view class="ghost action" @tap="openFeelingForm">记录感受</view>
+        <H5Button class="primary" @click="openPeriodForm">记录经期</H5Button>
+        <H5Button class="ghost" @click="openFeelingForm">记录感受</H5Button>
       </view>
     </view>
 
     <view class="card">
-      <view class="section-title">历史周期</view>
-      <view v-if="items.length === 0" class="muted">还没有经期记录。</view>
-      <view v-for="item in items" :key="item.id" class="history-row" @tap="selected = item.start_day">
-        <view>
-          <view>{{ formatDayLabel(item.start_day) }} 开始</view>
-          <view class="muted">
-            {{ item.duration_days ? `持续 ${item.duration_days} 天` : '未记录结束' }}
+      <view class="section-head"><h2 class="hr-section-title">历史周期</h2></view>
+      <view v-if="!items.length" class="muted">还没有经期记录。</view>
+      <view v-for="item in items" :key="item.id" class="record history-row">
+        <H5Button class="history-date" @click="selectHistory(item.start_day)">
+          <span>{{ formatDayLabel(item.start_day) }} 开始</span>
+          <span class="muted">
+            {{ item.duration_days ? '持续 ' + item.duration_days + ' 天' : '等待记录结束' }}
             <text v-if="item.cycle_days"> · 距上次 {{ item.cycle_days }} 天</text>
-          </view>
-        </view>
-        <text class="danger" @tap.stop="removePeriod(item)">删除</text>
+          </span>
+        </H5Button>
+        <H5Button class="hr-action danger" @click="removePeriod(item)">删除</H5Button>
       </view>
     </view>
 
-    <view v-if="openPeriod" class="card">
-      <view class="section-title">进行中的记录</view>
-      <view class="muted">
-        {{ formatDayLabel(openPeriod.start_day) }} 开始，还没有结束日。选中最后一天后点「记录经期」即可补记。
-      </view>
+    <view v-if="openPeriod" class="card followup">
+      <view class="section-head"><h2 class="hr-section-title">进行中的记录</h2></view>
+      <view class="muted">{{ formatDayLabel(openPeriod.start_day) }} 开始。选中最后一天后点「记录经期」即可补记。</view>
     </view>
 
-    <PeriodForm
-      :visible="periodFormVisible"
-      :day="selected"
+    <PeriodForm :visible="periodFormVisible" :day="selected"
       :open-period="openPeriod ? { id: openPeriod.id, startDay: openPeriod.start_day } : null"
-      @close="periodFormVisible = false"
-      @saved="onSaved"
-    />
-    <FeelingForm
-      :visible="feelingFormVisible"
-      :day="selected"
-      :existing="selectedFeeling"
-      @close="feelingFormVisible = false"
-      @saved="onSaved"
-    />
+      @close="periodFormVisible = false" @saved="onSaved" />
+    <FeelingForm :visible="feelingFormVisible" :day="selected" :existing="selectedFeeling"
+      @close="feelingFormVisible = false" @saved="onSaved" />
     <TabBar current="/pages/period/index" />
   </view>
 </template>
@@ -112,6 +93,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import H5Button from '../../components/H5Button'
+import HerlogHeading from '../../components/HerlogHeading.vue'
 import TabBar from '../../components/TabBar.vue'
 import PeriodForm from '../../components/PeriodForm.vue'
 import FeelingForm from '../../components/FeelingForm.vue'
@@ -215,6 +198,23 @@ function cellClass(day: string): Record<string, boolean> {
   }
 }
 
+function dayLabel(day: string): string {
+  return [
+    formatDayLabel(day),
+    actualDays.value.has(day) ? '实际经期' : '',
+    day === predictedDay.value ? '预计开始' : '',
+    feelingDays.value.has(day) ? '有感受记录' : ''
+  ].filter(Boolean).join('，')
+}
+
+function selectHistory(day: string) {
+  selected.value = day
+  if (month.value !== startOfMonth(day)) {
+    month.value = startOfMonth(day)
+    void loadFeelings()
+  }
+}
+
 function shift(delta: number) {
   month.value = shiftMonth(month.value, delta)
   loadFeelings()
@@ -311,167 +311,51 @@ onShow(load)
 </script>
 
 <style scoped>
-.page {
-  min-height: 100vh;
-  padding: 12px 16px 76px;
-  box-sizing: border-box;
-}
 .status-card {
-  background: #fdf2ef;
+  padding: 10px 13px 13px; margin-bottom: 13px; border-left: 2px solid var(--hr-rose);
+  border-radius: 0 13px 13px 0; background: color-mix(in srgb, var(--hr-surface) 72%, transparent);
 }
-.status-title {
-  font-size: 17px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-.link {
-  margin-top: 8px;
-  color: #b4544a;
-  font-size: 13px;
-}
-.month-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
+.status-title { margin: 0 0 3px; color: var(--hr-rose-deep); font-size: 16px; font-weight: 650; }
+.status-card .hr-action { padding-left: 0; }
+.calendar-card { padding: 10px 10px 14px; }
+.month-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
 .month-nav {
-  width: 32px;
-  text-align: center;
-  font-size: 20px;
-  color: #8a7f7a;
+  display: grid; place-items: center; width: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 10px;
+  color: var(--hr-rose-deep); background: var(--hr-paper-deep); font: 26px var(--hr-font);
 }
 .month-label {
-  font-size: 15px;
-  font-weight: 600;
+  margin: 0; font-family: var(--hr-serif); font-size: 19px; font-weight: 650; font-variant-numeric: tabular-nums;
 }
-.weekdays {
-  display: flex;
-  margin-bottom: 4px;
-}
-.weekday {
-  flex: 1;
-  text-align: center;
-  font-size: 11px;
-  color: #a89d98;
-}
-.grid {
-  display: flex;
-  flex-wrap: wrap;
-}
+.grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.weekday { text-align: center; color: var(--hr-ink-2); font-size: 12px; padding: 4px 0; }
 .cell {
-  width: 14.28%;
-  height: 44px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  font-size: 13px;
+  position: relative; display: grid; place-items: center; min-height: 44px; min-width: 0;
+  padding: 1px; border: 1px solid transparent; border-radius: 9px; color: var(--hr-ink);
+  background: transparent; font: 17px var(--hr-serif);
 }
-.day-number {
-  line-height: 1;
+.cell[aria-current='date'] .day-number { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.cell.actual { background: var(--hr-rose-soft); color: var(--hr-rose-deep); }
+.cell.start { background: var(--hr-rose); color: #fff; }
+.cell.predicted-day .day-number { padding: 4px 6px; border: 1px dashed var(--hr-plum); border-radius: 8px; color: var(--hr-plum); }
+.cell.selected { border-color: var(--hr-rose-deep); box-shadow: inset 0 0 0 1px var(--hr-rose-deep); }
+.dot { position: absolute; bottom: 5px; width: 5px; height: 5px; background: var(--hr-sage); border-radius: 50%; }
+.cell.start .dot { background: #fff; }
+.legend { display: flex; flex-wrap: wrap; gap: 7px 12px; margin: 11px 0 0; color: var(--hr-ink-2); font-size: 12px; }
+.legend view, .legend uni-view { display: flex; align-items: center; gap: 5px; }
+.swatch { display: inline-block; width: 11px; height: 11px; border-radius: 4px; }
+.swatch.actual { background: var(--hr-rose-soft); border: 1px solid var(--hr-rose); }
+.swatch.feeling { width: 6px; height: 6px; border-radius: 50%; background: var(--hr-sage); }
+.swatch.predicted { border: 1px dashed var(--hr-plum); }
+.section-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0 0 8px; }
+.section-head h2 { margin: 0; }
+.selected-today { padding: 2px 8px; background: var(--hr-rose-soft); color: var(--hr-rose-deep); border-radius: 99px; font-size: 12px; }
+.record { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid var(--hr-line); font-size: 14px; }
+.record .hr-action { flex-shrink: 0; padding-inline: 4px; font-size: 13px; }
+.danger { color: var(--hr-danger); }
+.history-date {
+  display: grid; justify-items: start; min-height: 52px; text-align: left; padding: 6px 0; border: 0; color: var(--hr-ink);
+  border-radius: 7px; background: transparent; font-size: 15px;
 }
-.cell.actual {
-  background: #f6ded9;
-  border-radius: 10px;
-  color: #8c3f37;
-}
-.cell.start {
-  background: #b4544a;
-  color: #ffffff;
-}
-.cell.predicted-day .day-number {
-  border: 1px dashed #b4544a;
-  border-radius: 8px;
-  padding: 2px 5px;
-  color: #b4544a;
-}
-.cell.selected {
-  outline: 2px solid #b4544a;
-  outline-offset: -2px;
-  border-radius: 10px;
-}
-.cell.today .day-number {
-  font-weight: 700;
-}
-.dot {
-  position: absolute;
-  bottom: 5px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #8a7f7a;
-}
-.legend {
-  display: flex;
-  gap: 12px;
-  margin-top: 10px;
-  font-size: 11px;
-  color: #8a7f7a;
-}
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.swatch {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-  display: inline-block;
-}
-.swatch.actual {
-  background: #f6ded9;
-}
-.swatch.feeling {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #8a7f7a;
-}
-.swatch.predicted {
-  border: 1px dashed #b4544a;
-}
-.section-title {
-  font-size: 15px;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-.record {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 10px 0;
-  border-bottom: 1px solid #f4ebe7;
-}
-.record-main {
-  font-size: 14px;
-  line-height: 1.6;
-}
-.record-actions {
-  display: flex;
-  gap: 12px;
-}
-.danger {
-  color: #c0392b;
-  font-size: 13px;
-}
-.day-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 12px;
-}
-.action {
-  flex: 1;
-  font-size: 14px;
-}
-.history-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid #f4ebe7;
-  font-size: 14px;
-}
+.day-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 13px; }
+.followup { background: var(--hr-peach); }
 </style>

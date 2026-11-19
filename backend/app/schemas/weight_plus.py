@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
 
@@ -61,6 +61,8 @@ class GoalOut(BaseModel):
 
 
 class CompareWindowOut(BaseModel):
+    start_day: date
+    end_day: date
     days: int
     count: int
     coverage_days: int

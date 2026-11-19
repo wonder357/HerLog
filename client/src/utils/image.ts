@@ -11,6 +11,8 @@ export interface EncodedImage {
 
 const MAX_SIDE = 1024
 const QUALITY = 0.85
+const MAX_BYTES = 3 * 1024 * 1024
+const MAX_PIXELS = 40_000_000
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -21,30 +23,36 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   })
 }
 
-export function chooseImage(): Promise<string> {
+export function chooseImage(source?: 'camera' | 'album'): Promise<string | null> {
   return new Promise((resolve, reject) => {
     uni.chooseImage({
       count: 1,
-      sizeType: ['compressed'],
-      sourceType: ['camera', 'album'],
+      sizeType: ['original'],
+      sourceType: source ? [source] : ['camera', 'album'],
       success: (result) => {
         const paths = result.tempFilePaths as string[]
-        if (!paths.length) {
-          reject(new Error('没有选择图片'))
+        resolve(paths[0] ?? null)
+      },
+      fail: (error) => {
+        if (/cancel/i.test(error.errMsg)) {
+          resolve(null)
           return
         }
-        resolve(paths[0])
-      },
-      fail: () => reject(new Error('已取消选择图片'))
+        reject(new Error('无法打开照片，请重新选择'))
+      }
     })
   })
 }
 
 export async function encodeJpeg(path: string): Promise<EncodedImage> {
   const image = await loadImage(path)
-  const scale = Math.min(1, MAX_SIDE / Math.max(image.width, image.height))
-  const width = Math.max(1, Math.round(image.width * scale))
-  const height = Math.max(1, Math.round(image.height * scale))
+  const { naturalWidth, naturalHeight } = image
+  if (!naturalWidth || !naturalHeight || naturalWidth * naturalHeight > MAX_PIXELS) {
+    throw new Error('图片尺寸过大或无法读取，请换一张')
+  }
+  const scale = Math.min(1, MAX_SIDE / Math.max(naturalWidth, naturalHeight))
+  const width = Math.max(1, Math.round(naturalWidth * scale))
+  const height = Math.max(1, Math.round(naturalHeight * scale))
   const canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height
@@ -53,10 +61,24 @@ export async function encodeJpeg(path: string): Promise<EncodedImage> {
     throw new Error('当前浏览器无法处理图片')
   }
   context.drawImage(image, 0, 0, width, height)
-  const dataUrl = canvas.toDataURL('image/jpeg', QUALITY)
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((encoded) => {
+      if (encoded?.type === 'image/jpeg') resolve(encoded)
+      else reject(new Error('图片编码失败，请重试'))
+    }, 'image/jpeg', QUALITY)
+  })
+  if (blob.size > MAX_BYTES) {
+    throw new Error('图片超过 3 MiB，请换一张')
+  }
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(new Error('图片读取失败，请重新选择'))
+    reader.readAsDataURL(blob)
+  })
   const base64 = dataUrl.split(',')[1] ?? ''
   if (!base64) {
     throw new Error('图片编码失败，请重试')
   }
-  return { base64, mime: 'image/jpeg', previewUrl: dataUrl }
+  return { base64, mime: 'image/jpeg', previewUrl: URL.createObjectURL(blob) }
 }

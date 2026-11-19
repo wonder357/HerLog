@@ -1,4 +1,5 @@
 import { request } from './httpClient'
+import type { Feeling } from './wellnessService'
 import type { WeightItem, WeightList, WeightSummary } from './types'
 
 export interface WeightPayload {
@@ -7,6 +8,7 @@ export interface WeightPayload {
   measured_at: string
   tag?: string | null
   note?: string | null
+  feeling_tags?: Feeling[]
 }
 
 export interface WeightQuery {
@@ -27,8 +29,22 @@ export function listWeights(query: WeightQuery = {}): Promise<WeightList> {
   return request<WeightList>('/herlog/weights', { data })
 }
 
-export function getSummary(days: 7 | 30): Promise<WeightSummary> {
-  return request<WeightSummary>('/herlog/weights/summary', { data: { days } })
+export function getSummary(days: 7 | 30, includeCycle = false): Promise<WeightSummary> {
+  return request<WeightSummary>('/herlog/weights/summary', { data: { days, include_cycle: includeCycle } })
+}
+
+export interface ComparisonWindow {
+  start_day: string
+  end_day: string
+  count: number
+  coverage_days: number
+  avg_kg: number | null
+}
+
+export function getComparison(days: 7 | 30) {
+  return request<{ current: ComparisonWindow; previous: ComparisonWindow; avg_delta_kg: number | null; message: string }>(
+    '/herlog/weights/compare', { data: { days } }
+  )
 }
 
 export function createWeight(payload: WeightPayload): Promise<WeightItem> {

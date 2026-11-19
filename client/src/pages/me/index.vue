@@ -1,40 +1,37 @@
 <template>
-  <view class="page">
-    <view class="card">
-      <view class="row">
-        <view class="label">用户名</view>
-        <view class="readonly">{{ auth.username }}</view>
+  <view class="hr-page hr-tab-page profile-page">
+    <HerlogHeading title="我的" />
+    <view class="identity card">
+      <view class="identity-icon" aria-hidden="true"><HerlogIcon name="me" /></view>
+      <view class="identity-copy">
+        <view class="identity-name">{{ auth.username || '个人账号' }}</view>
+        <view class="muted">账号资料</view>
       </view>
-      <view class="muted">用户名来自注册时的会员身份，第一版不支持修改。</view>
     </view>
-
-    <view class="card">
-      <view class="row">
-        <view class="label">生日</view>
-        <picker mode="date" :value="birthday || today" :end="today" @change="onBirthday">
-          <view class="value">{{ birthday || '选填' }}</view>
-        </picker>
+    <H5Form class="card profile-card" @submit.prevent="save">
+      <h2 class="hr-section-title">个人资料</h2>
+      <view class="profile-row">
+        <H5Label class="hr-field-label" for="profile-birthday">生日</H5Label>
+        <H5Input id="profile-birthday" v-model="birthday" class="field" type="date" :max="today" />
       </view>
-      <view class="row">
-        <view class="label">身高</view>
-        <input v-model="heightCm" class="value input" type="digit" placeholder="选填，单位 cm" />
+      <view class="profile-row">
+        <H5Label class="hr-field-label" for="profile-height">身高 <small>厘米</small></H5Label>
+        <H5Input id="profile-height" v-model="heightCm" class="field" inputmode="decimal" placeholder="选填" />
+        <view class="muted">用于体重明细中的 BMI 计算。</view>
       </view>
-      <view class="row">
-        <view class="label">电话</view>
-        <input v-model="contactPhone" class="value input" maxlength="32" placeholder="选填，仅作资料" />
+      <view class="profile-row">
+        <H5Label class="hr-field-label" for="profile-phone">电话</H5Label>
+        <H5Input id="profile-phone" v-model="contactPhone" class="field" type="tel" maxlength="32" placeholder="选填" />
       </view>
-      <text v-if="error" class="error">{{ error }}</text>
-      <button class="primary" :disabled="saving" @tap="save">
-        {{ saving ? '保存中…' : '保存资料' }}
-      </button>
-      <view v-if="saved" class="ok">资料已更新</view>
+      <text v-if="error" class="error" role="alert">{{ error }}</text>
+      <H5Button type="submit" class="primary" :disabled="saving">{{ saving ? '保存中…' : '保存资料' }}</H5Button>
+      <view v-if="saved" class="ok" role="status">资料已更新</view>
+    </H5Form>
+    <view class="card profile-card">
+      <h2 class="hr-section-title">登录状态</h2>
+      <view class="muted">退出登录后，重新登录同一账号即可查看自己的记录。</view>
+      <H5Button class="ghost" @click="logout">退出登录</H5Button>
     </view>
-
-    <view class="card">
-      <view class="ghost" @tap="logout">退出登录</view>
-      <view class="muted logout-note">退出后本机不再保留登录会话，重新登录仍可回看该账号的记录。</view>
-    </view>
-
     <TabBar current="/pages/me/index" />
   </view>
 </template>
@@ -42,6 +39,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import H5Button from '../../components/H5Button'
+import H5Form, { H5Label } from '../../components/H5Form'
+import H5Input from '../../components/H5Input'
+import HerlogHeading from '../../components/HerlogHeading.vue'
+import HerlogIcon from '../../components/HerlogIcon.vue'
 import TabBar from '../../components/TabBar.vue'
 import { todayString } from '../../shared/dates'
 import { useAuthStore } from '../../stores/auth'
@@ -72,10 +74,6 @@ async function load() {
       icon: 'none'
     })
   }
-}
-
-function onBirthday(event: { detail: { value: string } }) {
-  birthday.value = event.detail.value
 }
 
 async function save() {
@@ -123,45 +121,19 @@ onShow(load)
 </script>
 
 <style scoped>
-.page {
-  min-height: 100vh;
-  padding: 12px 16px 76px;
-  box-sizing: border-box;
+.identity { display: flex; gap: 13px; align-items: center; padding: 15px; }
+.identity-icon {
+  display: grid; place-items: center; flex: 0 0 52px; height: 52px; border-radius: 16px;
+  color: var(--hr-rose-deep); background: var(--hr-rose-soft);
 }
-.row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 44px;
-  border-bottom: 1px solid #f4ebe7;
-}
-.label {
-  font-size: 14px;
-  color: #4b413d;
-}
-.readonly {
-  color: #8a7f7a;
-  font-size: 14px;
-}
-.value {
-  font-size: 14px;
-  color: #4b413d;
-  text-align: right;
-}
-.input {
-  width: 60%;
-  height: 40px;
-}
-.primary {
-  margin-top: 14px;
-}
-.ok {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #3f7d52;
-}
-.logout-note {
-  margin-top: 8px;
-  line-height: 1.6;
-}
+.identity-icon svg { width: 27px; height: 27px; }
+.identity-copy { min-width: 0; }
+.identity-name { font-weight: 700; font-size: 19px; overflow-wrap: anywhere; }
+.profile-card { display: grid; gap: 10px; }
+.profile-card h2 { margin: 0; }
+.profile-row { padding: 10px 0 8px; border-bottom: 1px solid var(--hr-line); }
+.profile-row .field { margin-bottom: 4px; }
+small { font-size: 12px; color: var(--hr-ink-2); font-weight: 400; }
+.ok { color: var(--hr-sage); font-size: 13px; }
+input[type=date]:not(:valid) { color: var(--hr-ink-2); }
 </style>
