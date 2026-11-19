@@ -1,8 +1,8 @@
 <template>
-  <section class="card calendar-card">
+  <section id="cycle-calendar" class="card calendar-card" aria-labelledby="cycle-calendar-month">
     <div class="month-row">
       <H5Button class="month-nav" aria-label="上个月" :disabled="month <= '1900-01-01'" @click="shift(-1)">‹</H5Button>
-      <h2 class="month-label" aria-live="polite">{{ formatMonthLabel(month) }}</h2>
+      <h2 id="cycle-calendar-month" class="month-label" aria-live="polite">{{ formatMonthLabel(month) }}</h2>
       <H5Button class="month-nav" aria-label="下个月" :disabled="month >= latestMonth" @click="shift(1)">›</H5Button>
     </div>
     <div class="calendar-grid" :aria-label="formatMonthLabel(month)">
@@ -62,12 +62,12 @@ function dayLabel(day: string) {
 
 function shift(delta: number) {
   const next = shiftMonth(props.month, delta)
-  if (next <= latestMonth.value) emit('select', selectedDayInMonth(next, props.today))
+  if (next >= '1900-01-01' && (delta < 0 || next <= latestMonth.value)) emit('select', selectedDayInMonth(next, props.today))
 }
 </script>
 
 <style scoped>
-.calendar-card { padding: 10px 9px 12px; }
+.calendar-card { padding: 10px 9px 12px; scroll-margin-top: 12px; }
 .month-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 3px; margin-bottom: 4px; }
 .month-nav {
   display: grid; place-items: center; width: 44px; min-height: 44px; padding: 0; border: 0;

@@ -3,14 +3,12 @@
     <div>
       <p class="notice">{{ fertilityNotice }}</p>
       <h2>备孕日记</h2>
-      <p class="muted">{{ predictionText }}</p>
       <p v-if="tryingStartedOn" class="start-date">备孕开始日期 <strong>{{ tryingStartedOn }}</strong></p>
     </div>
     <HerlogIcon name="period" class="hero-icon" />
-    <div v-if="overviewError" class="hero-actions">
-      <H5Button class="hr-action" @click="emit('retry-overview')">重新读取经期</H5Button>
-    </div>
   </section>
+
+  <slot name="prediction" />
 
   <CycleCalendar :month="month" :selected="selected" :today="today" :predicted-day="predictedDay"
     :periods="items" :marked-days="markedDays" mark-label="有备孕记录" @select="emit('select', $event)" />
@@ -76,19 +74,18 @@ import TemperatureChart from './TemperatureChart.vue'
 import { useFertilityRange } from './useFertilityRange'
 
 const props = defineProps<{
-  selected: string; today: string; overview: PeriodOverview | null; overviewError: boolean
+  selected: string; today: string; overview: PeriodOverview | null; predictedDay: string | null
   selectedFeeling: FeelingItem | null; feelingError: boolean; feelingsLoading: boolean
   tryingStartedOn: string | null; periodAction: string
 }>()
 const emit = defineEmits<{
-  select: [day: string]; 'record-period': []; 'record-feeling': []; 'retry-overview': []; 'retry-feelings': []
+  select: [day: string]; 'record-period': []; 'record-feeling': []; 'retry-feelings': []
 }>()
 const editing = ref(false)
 const refresh = ref(0)
 const dayCard = ref<HTMLElement | null>(null)
 const month = computed(() => startOfMonth(props.selected))
 const items = computed(() => props.overview?.items ?? [])
-const predictedDay = computed(() => props.overview?.prediction.status === 'upcoming' ? props.overview.prediction.expected_start : null)
 const recentRange = computed(() => ({ from: addDays(props.today, -29), to: props.today }))
 
 const { rows: monthRows, loading: monthLoading, error: monthError, retry: retryMonth } = useFertilityRange(
@@ -102,12 +99,6 @@ const entry = computed(() => monthRows.value.find(row => row.day === props.selec
 const feelingSummary = computed(() => {
   const row = props.selectedFeeling
   return row ? [row.flow && '经量 ' + row.flow, row.mood, ...row.symptoms, row.impact, row.note].filter(Boolean).join(' · ') : ''
-})
-const predictionText = computed(() => {
-  if (props.overviewError) return '暂时读不到经期预测。'
-  if (!props.overview) return '正在读取经期记录…'
-  if (!predictedDay.value) return props.overview.prediction.message + '。'
-  return '预计下次经期开始 ' + formatDayLabel(predictedDay.value) + '。实际日期可能不同，仅供记录参考，不用于避孕。'
 })
 
 async function showDay(day: string) {
@@ -130,9 +121,7 @@ function onSaved(row: FertilityDay | null) {
 .fertility-intro { display: grid; grid-template-columns: minmax(0, 1fr) 38px; gap: 8px; background: var(--hr-rose-soft); }
 .fertility-intro h2 { margin: 5px 0; color: var(--hr-rose-deep); font: 680 clamp(23px, 6vw, 30px)/1.15 var(--hr-serif); }
 .notice { margin: 0; font-size: 13px; font-weight: 650; color: var(--hr-rose-deep); }
-.fertility-intro .muted { margin: 6px 0 0; }
 .hero-icon { box-sizing: border-box; width: 38px; height: 38px; padding: 8px; color: var(--hr-rose-deep); background: var(--hr-surface); border-radius: 50%; }
-.hero-actions { grid-column: 1 / -1; }
 .start-date { margin: 7px 0 0; font-size: 13px; color: var(--hr-ink-2); }
 .start-date strong { font-variant-numeric: tabular-nums; }
 .day-head, .retry { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; }

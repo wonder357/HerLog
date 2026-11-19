@@ -11,15 +11,20 @@
 
     <view v-if="!cyclePreference.preference && cyclePreference.loading" class="card muted" role="status">正在读取周期模式…</view>
     <FertilityJournal v-else-if="isFertility && pageVisible" :selected="selected" :today="today"
-      :overview="overview" :overview-error="overviewError" :selected-feeling="selectedFeeling"
+      :overview="overview" :predicted-day="predictedDay" :selected-feeling="selectedFeeling"
       :feelings-loading="feelingsLoading" :feeling-error="feelingError" :period-action="periodAction"
       :trying-started-on="cyclePreference.preference?.trying_started_on ?? null"
       @select="selectDate" @record-period="openPeriodForm(selectedPeriod)" @record-feeling="feelingFormVisible = true"
-      @retry-overview="loadOverview" @retry-feelings="loadFeelings" />
+      @retry-feelings="loadFeelings">
+      <template #prediction>
+        <PeriodPredictionCard v-bind="predictionProps" @show-day="showPredictedDay" @backfill="backfillPeriod"
+          @retry="loadOverview" @remind="reminderVisible = true" />
+      </template>
+    </FertilityJournal>
     <template v-else-if="!isFertility">
     <section class="cycle-panel" aria-labelledby="cycle-status">
       <view class="cycle-panel-content" aria-live="polite">
-        <text class="panel-label">{{ heroLabel }}</text>
+        <text class="panel-label">周期状态</text>
         <h2 id="cycle-status">{{ heroTitle }}</h2>
         <view v-if="heroNote" class="panel-note" :role="overviewError ? 'alert' : undefined">{{ heroNote }}</view>
         <view v-if="phaseLabel" class="panel-note">{{ phaseLabel }}</view>
@@ -27,11 +32,12 @@
       <view class="panel-icon"><HerlogIcon name="period" /></view>
       <view class="panel-actions">
         <H5Button v-if="overview" class="primary" @click="recordToday">{{ todayAction }}</H5Button>
-        <H5Button v-if="canAddReminder"
-          class="ghost" @click="reminderVisible = true">添加日历提醒</H5Button>
         <H5Button v-if="overviewError" class="ghost" @click="loadOverview">重新加载</H5Button>
       </view>
     </section>
+
+    <PeriodPredictionCard v-bind="predictionProps" @show-day="showPredictedDay" @backfill="backfillPeriod"
+      @retry="loadOverview" @remind="reminderVisible = true" />
 
     <CycleCalendar :month="month" :selected="selected" :today="today" :predicted-day="predictedDay"
       :periods="items" :marked-days="markedDays" :mark-label="filter ? filter.label : '有感受'" @select="selectDate">
@@ -43,10 +49,11 @@
         <h2 id="day-title" class="hr-section-title">{{ formatDayLabel(selected) }}</h2>
         <text v-if="selected === today" class="today-tag">今天</text>
       </view>
-      <view v-if="selected > today" class="muted">
-        {{ selected === predictedDay ? '这是预计开始日。实际日期可能不同，请在当天或之后补记。' : '这一天还没到，可以回到今天继续记录。' }}
+      <view v-if="selected === predictedDay && !selectedPeriod" class="muted">
+        {{ selected > today ? '这是预计开始日。实际日期可能不同，请在当天或之后补记。' : '今天是预计开始日，实际日期可能不同。' }}
       </view>
-      <template v-else>
+      <view v-else-if="selected > today" class="muted">这一天还没到，可以回到今天继续记录。</view>
+      <template v-if="selected <= today">
         <view v-if="selectedPeriod" class="day-record">
           <view class="record-copy">
             <text class="record-label">实际经期 · 第 {{ diffDays(selected, selectedPeriod.start_day) + 1 }} 天</text>
@@ -72,7 +79,7 @@
           </view>
           <H5Button class="hr-action" @click="removeFeeling(selected)">删除感受</H5Button>
         </view>
-        <view v-else-if="overview && !selectedPeriod && !openPeriod" class="muted">这一天还没有记录。</view>
+        <view v-else-if="overview && !selectedPeriod && !openPeriod && selected !== predictedDay" class="muted">这一天还没有记录。</view>
         <view class="day-actions">
           <H5Button class="primary" :disabled="!overview" @click="openPeriodForm(selectedPeriod)">
             {{ periodAction }}
@@ -154,8 +161,9 @@
     </section>
     </template>
 
-    <PeriodForm :visible="periodFormVisible" :day="selected" :editing="periodEditing"
-      :open-period="openPeriod ? { id: openPeriod.id, startDay: openPeriod.start_day } : null"
+    <PeriodForm :visible="periodFormVisible" :day="predictionBackfill ? '' : selected" :editing="periodEditing"
+      :selectable-day="predictionBackfill"
+      :open-period="!predictionBackfill && openPeriod ? { id: openPeriod.id, startDay: openPeriod.start_day } : null"
       @close="periodFormVisible = false" @saved="onPeriodSaved" />
     <FeelingForm :visible="feelingFormVisible" :day="selected" :existing="selectedFeeling"
       @close="feelingFormVisible = false" @saved="onFeelingSaved" />
@@ -177,6 +185,7 @@ import PeriodForm from '../../components/PeriodForm.vue'
 import FeelingForm from '../../components/FeelingForm.vue'
 import CycleReminder from './CycleReminder.vue'
 import CycleCalendar from './CycleCalendar.vue'
+import PeriodPredictionCard from './PeriodPredictionCard.vue'
 import CycleModeSheet from './CycleModeSheet.vue'
 import FertilityJournal from './FertilityJournal.vue'
 import {
@@ -221,6 +230,7 @@ const periodFormVisible = ref(false)
 const feelingFormVisible = ref(false)
 const reminderVisible = ref(false)
 const periodEditing = ref<PeriodItem | null>(null)
+const predictionBackfill = ref(false)
 const allHistory = ref(false)
 const filter = ref<FeelingFilter | null>(null)
 const dayCard = ref<HTMLElement | null>(null)
@@ -229,10 +239,18 @@ let feelingRequest = 0
 let epoch = currentEpoch()
 
 const items = computed(() => overview.value?.items ?? [])
+const prediction = computed(() => !overviewError.value && !overviewLoading.value ? overview.value?.prediction ?? null : null)
 const predictedDay = computed(() =>
-  overview.value?.prediction.status === 'upcoming' ? overview.value.prediction.expected_start : null
+  prediction.value?.status === 'upcoming' ? prediction.value.expected_start : null
 )
-const canAddReminder = computed(() => predictedDay.value && reminderDay(predictedDay.value, 0, new Date().toISOString()))
+const predictionProps = computed(() => ({
+  prediction: prediction.value,
+  day: predictedDay.value,
+  today: today.value,
+  loading: overviewLoading.value,
+  failed: overviewError.value,
+  reminderAvailable: Boolean(predictedDay.value && reminderDay(predictedDay.value, 0, new Date().toISOString()))
+}))
 const selectedPeriod = computed(() => periodOnDay(items.value, selected.value))
 const openPeriod = computed(() => openPeriodOnDay(items.value, selected.value))
 const periodAction = computed(() => selectedPeriod.value ? '更正经期' : openPeriod.value ? '补记结束' : '记录经期')
@@ -258,27 +276,18 @@ const feelingTags = computed(() => {
     .filter((tag): tag is string => Boolean(tag))
 })
 
-const heroLabel = computed(() => actualToday.value || openToday.value ? '当前记录'
-  : predictedDay.value ? '下次开始 · 预计' : '周期状态')
 const heroTitle = computed(() => {
   if (!overview.value) return overviewError.value ? '暂时读不到周期记录' : '正在读取周期记录…'
   if (actualToday.value) return '经期第 ' + (diffDays(today.value, actualToday.value.start_day) + 1) + ' 天'
   if (openToday.value) return '待补记结束'
-  if (predictedDay.value) return formatDayLabel(predictedDay.value)
-  if (overview.value.prediction.status === 'overdue') return '已过预计开始日'
   const latest = items.value.find(item => item.start_day <= today.value)
   return latest ? formatDayLabel(latest.start_day) + ' 开始' : '从一次记录开始'
 })
 const heroNote = computed(() => {
-  const prediction = overview.value?.prediction
-  if (!prediction) return overviewError.value ? '请检查网络并重试。' : ''
-  if (predictedDay.value) {
-    const date = actualToday.value || openToday.value ? '预计下次 ' + formatDayLabel(predictedDay.value) + '。' : ''
-    return date + '根据近 ' + prediction.cycle_count + ' 个周期估算，仅供记录参考，不用于避孕。'
-  }
+  if (!overview.value) return overviewError.value ? '请检查网络并重试。' : ''
   if (openToday.value) return formatDayLabel(openToday.value.start_day) + ' 已记开始。确定最后一天后可补记。'
   if (!items.value.length) return '记下实际开始日期，之后可以补记最后一天。'
-  return prediction.message + '。'
+  return ''
 })
 const todayAction = computed(() =>
   actualToday.value?.end_day ? '更正今日经期' : openToday.value ? '补记经期结束' : '记经期'
@@ -315,14 +324,27 @@ async function showDay(day: string) {
   dayCard.value?.scrollIntoView({ block: 'start' })
 }
 
+async function showPredictedDay(day: string) {
+  selectDate(day)
+  await nextTick()
+  const calendar = document.getElementById('cycle-calendar')
+  calendar?.scrollIntoView({ block: 'start' })
+  calendar?.querySelector<HTMLElement>('button.cell[aria-pressed="true"]')?.focus({ preventScroll: true })
+}
+
 function recordToday() {
   selectDate(today.value)
   openPeriodForm(actualToday.value?.end_day ? actualToday.value : null)
 }
 
-function openPeriodForm(editing: PeriodItem | null) {
+function openPeriodForm(editing: PeriodItem | null, backfill = false) {
+  predictionBackfill.value = backfill
   periodEditing.value = editing
   periodFormVisible.value = true
+}
+
+function backfillPeriod() {
+  openPeriodForm(null, true)
 }
 
 function editFromHistory(item: PeriodItem) {
@@ -395,6 +417,7 @@ function resetAccount() {
   feelingFormVisible.value = false
   reminderVisible.value = false
   periodEditing.value = null
+  predictionBackfill.value = false
   overviewLoading.value = feelingsLoading.value = true
   overviewError.value = feelingError.value = false
   setSelection(today.value)
