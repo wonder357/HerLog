@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>她记 HerLog · 图标盘点与选型</title>
+<style>
+  :root{
+    --berry:#A82760; --berry-deep:#7C1B45; --soft:#F7DFEA;
+    --ink:#2D2430; --ink2:#655966; --line:#EADFEB; --bg:#FAF7FA;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:44px 40px 80px;background:var(--bg);color:var(--ink);
+    font-family:"PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1200px;margin:0 auto}
+  .kicker{font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:var(--berry)}
+  h1{font-size:32px;margin:10px 0 8px;letter-spacing:.5px}
+  .lead{font-size:14px;line-height:24px;color:var(--ink2);margin:0 0 28px;max-width:860px}
+  h2{font-size:20px;margin:44px 0 6px;letter-spacing:.3px}
+  h2 .no{color:var(--berry);font-size:13px;letter-spacing:1.6px;margin-right:8px;vertical-align:2px}
+  h3{font-size:15px;margin:0}
+  .sub{font-size:13px;line-height:21px;color:var(--ink2);margin:0 0 16px}
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:22px 0 6px}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 16px 14px;
+    box-shadow:0 8px 24px -18px rgba(45,36,48,.35)}
+  .kpi .n{font-size:30px;font-weight:700;color:var(--berry);line-height:1.1}
+  .kpi .u{font-size:11px;font-weight:500;color:var(--ink2);margin-left:3px}
+  .kpi .t{font-size:11px;line-height:17px;color:var(--ink2);margin-top:6px}
+  .concl{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-top:16px}
+  .concl li{font-size:13.5px;line-height:23px;margin-bottom:8px}
+  .concl li:last-child{margin-bottom:0}
+  table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;
+    border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:12.5px}
+  th{background:#FCF5F8;color:var(--ink2);font-weight:600;text-align:left;padding:11px 12px;
+    border-bottom:1px solid var(--line);white-space:nowrap;font-size:11.5px}
+  td{padding:10px 12px;border-bottom:1px solid #F3EBF4;vertical-align:middle;line-height:18px}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover td{background:#FEFCFE}
+  code{font-family:"Cascadia Mono",Consolas,monospace;font-size:11px;color:#7A5A82;
+    background:#FBF6FB;border-radius:4px;padding:1px 4px;word-break:break-all}
+  .muted{color:#8B7988;font-size:11.5px}
+  .idx{color:#B79DBB;font-size:11px;width:30px}
+  .sw{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:3px;vertical-align:1px;
+    box-shadow:0 0 0 1px rgba(0,0,0,.06)}
+  .ic{width:34px;height:34px;display:grid;place-items:center;border-radius:8px;background:#FBFAFC}
+  .ic svg{width:27px;height:27px;display:block}
+  .pill-ic{border-radius:12px;width:44px;height:34px}
+  .ic.big{width:52px;height:52px;background:#FFF}
+  .ic.big svg{width:40px;height:40px;max-height:44px}
+  .icx{width:42px;height:34px;display:grid;place-items:center;border-radius:8px;background:#FBFAFC;margin:0 auto}
+  .icx svg{display:block}
+  .note{font-size:11.5px;color:var(--ink2);margin-top:8px;padding-left:2px}
+  .page-block{margin-top:20px}
+  .page-head{display:flex;align-items:center;gap:10px;margin:0 0 9px}
+  .page-head code{margin-left:auto}
+  .badge{font-size:11px;color:var(--berry-deep);background:var(--soft);border-radius:999px;padding:2px 9px}
+  .matrix th{text-align:center;vertical-align:middle;padding:12px 8px}
+  .matrix th .th-name{display:block;font-size:12.5px;color:var(--ink);font-weight:600}
+  .matrix th .th-en{display:block;font-size:9px;letter-spacing:1.2px;color:#A98BAF;margin-top:2px;font-weight:400}
+  .matrix td{text-align:center;padding:7px 6px;width:18%}
+  .matrix .lbl{text-align:left;font-size:12px;color:var(--ink2);width:16%;white-space:nowrap}
+  .matrix .grp td{background:#FBF4F8;color:var(--berry-deep);font-size:11px;letter-spacing:.6px;
+    text-align:left;padding:6px 12px;font-weight:600}
+  .matrix .grp:hover td{background:#FBF4F8}
+  .mx{width:44px;height:44px;margin:0 auto;display:grid;place-items:center;border-radius:12px;background:#FBFAFC}
+  .mx svg{width:27px;height:27px;display:block}
+  .mx-label{font-size:9px;color:#A98BAF;margin-top:3px;letter-spacing:.3px}
+  .cols{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:start;margin-top:14px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 18px 16px}
+  .panel h4{margin:0 0 12px;font-size:13px;letter-spacing:.5px}
+  .panel p{font-size:12.5px;line-height:21px;color:var(--ink2);margin:0 0 10px}
+  .panel p:last-child{margin-bottom:0}
+  .panel b{color:var(--ink)}
+  .chip{display:inline-block;color:#fff;font-size:10.5px;letter-spacing:.4px;border-radius:6px;padding:5px 8px;font-family:Consolas,monospace}
+  .chip.light{color:#7A5A82}
+  .cbox{text-align:center;color:#B79DBB;font-size:12px;white-space:nowrap}
+  .pick{display:inline-block;font-size:11px;padding:3px 9px;border-radius:999px;background:var(--soft);color:var(--berry-deep);margin-left:6px}
+  .foot{margin-top:40px;font-size:11px;color:#A98BAF;line-height:19px;border-top:1px solid var(--line);padding-top:14px}
+  @media print{body{background:#fff;padding:16px}.kpi,.panel,table{box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">HerLog · Icon Audit</div>
+  <h1>图标盘点与选型</h1>
+  <p class="lead">按代码实际引用统计，不按文档描述。范围：<code>my-first-project</code> 全部图标文件 + <code>Downloads</code> 里 7 个外来素材。统计时间 2026-11-19。</p>
+
+  <div class="kpis"><div class="kpi"><div class="n">4<span class="u">套</span></div><div class="t">页面里正在使用的图标套（01–04）</div></div><div class="kpi"><div class="n">15<span class="u">个/套</span></div><div class="t">10 个底栏 + 5 个莓色快捷入口</div></div><div class="kpi"><div class="n">13<span class="u">个/套</span></div><div class="t">被页面真正引用；2 个闲置</div></div><div class="kpi"><div class="n">35<span class="u">个</span></div><div class="t">五个页面合计的图标位</div></div><div class="kpi"><div class="n">108<span class="u">个</span></div><div class="t">项目内 SVG 图标文件总数</div></div></div>
+
+  <h2><span class="no">01</span>先给结论</h2>
+  <p class="sub">一句话：页面里在跑的是 <b>4 套配色</b>，但只有 <b>1 套形状</b>。</p>
+  <div class="concl">
+    <ol>
+      <li><b>4 套</b>图标分别属于 <code>风格方案</code> 的 01 蜜桃奶油、02 暮光玫瑰、03 杏桃霞光、04 雾紫珍珠，每套 15 个 SVG（10 个底栏 + 5 个莓色快捷入口）。</li>
+      <li><b>形状完全一样。</b><code>tools/build.py</code> 生成时只做了两处颜色替换：<code>#8B7988 → 各套未选中色</code>、<code>#A82760 → 各套强调色</code>。四套的 <code>d</code> 路径逐条比对，13 个被引用图标全部只有 1 种路径。</li>
+      <li>所以「选两套」实际是在<b>选两组配色</b>，不会带来图标风格差异；如果想要两种风格，需要在形状层面再做一套（现在代码里没有可直接选的第 2 种形状）。</li>
+      <li>另外还有 2 代旧图标（<code>assets\icons\tab</code> 10 个、<code>assets\icons\outline</code> 5 个导航图标）和 7 个外来插画图标，<b>都没有被任何页面引用</b>，属于历史/素材，不参与这次选择。</li>
+      <li>每套 15 个里有 <b>2 个闲置</b>：<code>home-berry.svg</code>、<code>me-berry.svg</code>。首页只用了经期/体重/皮肤 3 个莓色入口，这两个没有落点。</li>
+    </ol>
+  </div>
+
+  <h2><span class="no">02</span>套数明细：界面图标 9 个目录，5 个参与渲染</h2>
+  <p class="sub">按目录清点（末尾另附应用图标）。界面图标共 9 个目录：<b>5 个是现行形状</b>（1 个母版 + 4 套配色）、<b>3 个是历史或副本</b>、<b>1 个是外来素材</b>。「形状代际」是能不能混用的关键：不同代际的笔画、圆角、语义都不一样。</p>
+  <table>
+    <thead><tr><th>目录</th><th>图标数量</th><th>形状代际</th><th>配色（未选中 / 强调）</th><th>被页面引用</th><th>定位</th></tr></thead>
+    <tbody><tr><td><code>豆包\前端样式\assets\icons</code></td><td>15 个 SVG</td><td>现行（第 3 代）</td><td><span class="sw" style="background:#8B7988"></span>#8B7988 / <span class="sw" style="background:#A82760"></span>#A82760</td><td>是（前端样式 5 页）</td><td>母版：其余 4 套由它换色生成</td></tr><tr><td><code>豆包\风格方案\01-蜜桃奶油\icons</code></td><td>15 个 SVG</td><td>现行（同形）</td><td><span class="sw" style="background:#9C8285"></span>#9C8285 / <span class="sw" style="background:#C0566B"></span>#C0566B</td><td>是（本套 5 页）</td><td>候选 A</td></tr><tr><td><code>豆包\风格方案\02-暮光玫瑰\icons</code></td><td>15 个 SVG</td><td>现行（同形）</td><td><span class="sw" style="background:#8D7B86"></span>#8D7B86 / <span class="sw" style="background:#8E2B52"></span>#8E2B52</td><td>是（本套 5 页）</td><td>候选 B</td></tr><tr><td><code>豆包\风格方案\03-杏桃霞光\icons</code></td><td>15 个 SVG</td><td>现行（同形）</td><td><span class="sw" style="background:#9C8376"></span>#9C8376 / <span class="sw" style="background:#A5583A"></span>#A5583A</td><td>是（本套 5 页）</td><td>候选 C</td></tr><tr><td><code>豆包\风格方案\04-雾紫珍珠\icons</code></td><td>15 个 SVG</td><td>现行（同形）</td><td><span class="sw" style="background:#8E8194"></span>#8E8194 / <span class="sw" style="background:#6E4B7E"></span>#6E4B7E</td><td>是（本套 5 页）</td><td>候选 D</td></tr><tr><td><code>豆包\nav</code></td><td>10 个 SVG</td><td>现行（同形）</td><td>与母版 10 个文件逐字节相同</td><td>否</td><td>副本，可直接归档</td></tr><tr><td><code>assets\icons\tab</code></td><td>10 个 SVG + 10 个 PNG</td><td>第 2 代（旧形状）</td><td><span class="sw" style="background:#8B7988"></span>#8B7988 / <span class="sw" style="background:#A82760"></span>#A82760</td><td>否</td><td>历史版本，形状已在第 3 代被替换</td></tr><tr><td><code>assets\icons\outline</code></td><td>5 个导航 SVG（另有 2 个应用图标）</td><td>第 1 代（旧形状）</td><td>currentColor（跟随文字色）</td><td>否</td><td>历史版本，且只有一个状态，无选中态</td></tr><tr><td><code>C:\Users\kunlunmeta\Downloads</code></td><td>7 个 SVG</td><td>外来插画风</td><td>多色填充，1024 × 1024 画布</td><td>否</td><td>外部下载素材，描边/画布与本项目不同族</td></tr><tr><td><code>豆包\app-icon</code> + <code>豆包\png</code></td><td>5 个 SVG + 41 个 PNG</td><td>应用图标</td><td>深莓渐变 + 米白符号</td><td>manifest / 商店</td><td>不属于界面图标套，单独管理</td></tr></tbody>
+  </table>
+
+  <h2><span class="no">03</span>五个页面的全部图标位</h2>
+  <p class="sub">逐个 <code>.html</code> 数出来的一手清单，图示取 01 蜜桃奶油配色（其余三套同形、只换色）。合计 <b>35 个图标位</b>：主题套 28 个、内联 7 个。底栏每页 5 个，是唯一跨页重复的图标。</p>
+  
+        <div class="page-block">
+          <div class="page-head"><h3>首页</h3>
+            <span class="badge">9 个图标位</span>
+            <code>pages/home.html</code>
+          </div>
+          <table class="grid">
+            <thead><tr><th>#</th><th>位置</th><th>用途</th><th>图示</th><th>文件</th><th>尺寸</th><th>状态</th></tr></thead>
+            <tbody><tr><td class="idx">1</td><td><b>页首 · 快捷入口 1</b></td><td>记经期（跳转经期页）</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C0566B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#C0566B" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div></td><td><code>period-berry.svg</code></td><td>27 × 27</td><td class="muted">莓色快捷版</td></tr><tr><td class="idx">2</td><td><b>页首 · 快捷入口 2</b></td><td>记体重（跳转体重页）</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C0566B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/>
+  <circle cx="20.2" cy="7.4" r="1.9" fill="#C0566B" stroke="none"/>
+</svg></div></td><td><code>weight-berry.svg</code></td><td>27 × 27</td><td class="muted">莓色快捷版</td></tr><tr><td class="idx">3</td><td><b>页首 · 快捷入口 3</b></td><td>拍照分析（跳转皮肤页）</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C0566B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M10.6 3.1C11.3 7 14 9.7 17.9 10.4 14 11.1 11.3 13.8 10.6 17.7 9.9 13.8 7.2 11.1 3.3 10.4 7.2 9.7 9.9 7 10.6 3.1Z"/>
+  <path d="M18.4 15.3C18.62 16.58 19.52 17.48 20.8 17.7 19.52 17.92 18.62 18.82 18.4 20.1 18.18 18.82 17.28 17.92 16 17.7 17.28 17.48 18.18 16.58 18.4 15.3Z"/>
+</svg></div></td><td><code>skin-berry.svg</code></td><td>27 × 27</td><td class="muted">莓色快捷版</td></tr><tr><td class="idx">4</td><td><b>底部 · 输入条右侧</b></td><td>发送消息（装饰性上箭头）</td><td><div class="icx" style="border-radius:50%;width:30px;height:30px;background:#A82760;"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14.5V4"/><path d="M4.6 8.2 9 3.8l4.4 4.4"/></svg></div></td><td><code>内联 SVG</code></td><td>18 × 18</td><td class="muted">白色描边，随按钮</td></tr><tr><td class="idx">5</td><td><b>底栏 1</b></td><td>首页（当前页，选中态）</td><td><div class="ic pill-ic" style="background:#FBE2E6"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <path fill="#C0566B" fill-rule="evenodd" d="M12 3.1 21.9 11.4 20.4 13.2 19.4 12.4v6.5a2.5 2.5 0 0 1-2.5 2.5H7.1A2.5 2.5 0 0 1 4.6 18.9v-6.5l-1 .8L2.1 11.4ZM10.1 21.4v-4.5a1.9 1.9 0 0 1 3.8 0v4.5Z"/>
+</svg></div></td><td><code>home-active.svg</code></td><td>27 × 27</td><td class="muted">实心</td></tr><tr><td class="idx">6</td><td><b>底栏 2</b></td><td>经期</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#9C8285" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div></td><td><code>period.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr><tr><td class="idx">7</td><td><b>底栏 3</b></td><td>体重</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/>
+  <circle cx="20.2" cy="7.4" r="1.9" fill="#9C8285" stroke="none"/>
+</svg></div></td><td><code>weight.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr><tr><td class="idx">8</td><td><b>底栏 4</b></td><td>皮肤</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M10.6 3.1C11.3 7 14 9.7 17.9 10.4 14 11.1 11.3 13.8 10.6 17.7 9.9 13.8 7.2 11.1 3.3 10.4 7.2 9.7 9.9 7 10.6 3.1Z"/>
+  <path d="M18.4 15.3C18.62 16.58 19.52 17.48 20.8 17.7 19.52 17.92 18.62 18.82 18.4 20.1 18.18 18.82 17.28 17.92 16 17.7 17.28 17.48 18.18 16.58 18.4 15.3Z"/>
+</svg></div></td><td><code>skin.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr><tr><td class="idx">9</td><td><b>底栏 5</b></td><td>我的</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg></div></td><td><code>me.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr></tbody>
+          </table>
+          
+        </div>
+        <div class="page-block">
+          <div class="page-head"><h3>经期</h3>
+            <span class="badge">7 个图标位</span>
+            <code>pages/period.html</code>
+          </div>
+          <table class="grid">
+            <thead><tr><th>#</th><th>位置</th><th>用途</th><th>图示</th><th>文件</th><th>尺寸</th><th>状态</th></tr></thead>
+            <tbody><tr><td class="idx">1</td><td><b>月历头部左侧</b></td><td>上个月</td><td><div class="icx" style="width:42px;"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4 5.8 9 11 14"/></svg></div></td><td><code>内联 SVG</code></td><td>18 × 18</td><td class="muted">线性 chevron-left</td></tr><tr><td class="idx">2</td><td><b>月历头部右侧</b></td><td>下个月</td><td><div class="icx" style="width:42px;"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4 12.2 9 7 14"/></svg></div></td><td><code>内联 SVG</code></td><td>18 × 18</td><td class="muted">线性 chevron-right</td></tr><tr><td class="idx">3</td><td><b>底栏 1</b></td><td>首页</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div></td><td><code>home.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr><tr><td class="idx">4</td><td><b>底栏 2</b></td><td>经期（当前页，选中态）</td><td><div class="ic pill-ic" style="background:#FBE2E6"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <rect x="7.55" y="2.9" width="1.5" height="4.6" rx="0.75" fill="#C0566B"/>
+  <rect x="14.95" y="2.9" width="1.5" height="4.6" rx="0.75" fill="#C0566B"/>
+  <path fill="#C0566B" fill-rule="evenodd" d="M6.3 5.4h11.4A3.3 3.3 0 0 1 21 8.7v9A3.3 3.3 0 0 1 17.7 21H6.3A3.3 3.3 0 0 1 3 17.7v-9A3.3 3.3 0 0 1 6.3 5.4ZM4.9 9.7h14.2v1.7H4.9ZM12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div></td><td><code>period-active.svg</code></td><td>27 × 27</td><td class="muted">实心</td></tr><tr><td class="idx">5</td><td><b>底栏 3</b></td><td>体重</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/>
+  <circle cx="20.2" cy="7.4" r="1.9" fill="#9C8285" stroke="none"/>
+</svg></div></td><td><code>weight.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr><tr><td class="idx">6</td><td><b>底栏 4</b></td><td>皮肤</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M10.6 3.1C11.3 7 14 9.7 17.9 10.4 14 11.1 11.3 13.8 10.6 17.7 9.9 13.8 7.2 11.1 3.3 10.4 7.2 9.7 9.9 7 10.6 3.1Z"/>
+  <path d="M18.4 15.3C18.62 16.58 19.52 17.48 20.8 17.7 19.52 17.92 18.62 18.82 18.4 20.1 18.18 18.82 17.28 17.92 16 17.7 17.28 17.48 18.18 16.58 18.4 15.3Z"/>
+</svg></div></td><td><code>skin.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr><tr><td class="idx">7</td><td><b>底栏 5</b></td><td>我的</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg></div></td><td><code>me.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr></tbody>
+          </table>
+          
+        </div>
+        <div class="page-block">
+          <div class="page-head"><h3>体重</h3>
+            <span class="badge">7 个图标位</span>
+            <code>pages/weight.html</code>
+          </div>
+          <table class="grid">
+            <thead><tr><th>#</th><th>位置</th><th>用途</th><th>图示</th><th>文件</th><th>尺寸</th><th>状态</th></tr></thead>
+            <tbody><tr><td class="idx">1</td><td><b>记录明细行 · 行尾</b></td><td>进入记录明细</td><td><div class="icx" style="width:42px;"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#8B7988" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5"/></svg></div></td><td><code>内联 SVG</code></td><td>14 × 14</td><td class="muted">灰色 chevron-right</td></tr><tr><td class="idx">2</td><td><b>建议卡 · 左侧</b></td><td>提示 / 说明</td><td><div class="icx" style="width:42px;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#A82760" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.2v4"/><circle cx="8" cy="4.9" r="0.8" fill="#A82760" stroke="none"/></svg></div></td><td><code>内联 SVG</code></td><td>16 × 16</td><td class="muted">圆形 info，主题色</td></tr><tr><td class="idx">3</td><td><b>底栏 1</b></td><td>首页</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div></td><td><code>home.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr><tr><td class="idx">4</td><td><b>底栏 2</b></td><td>经期</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#9C8285" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div></td><td><code>period.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr><tr><td class="idx">5</td><td><b>底栏 3</b></td><td>体重（当前页，选中态）</td><td><div class="ic pill-ic" style="background:#FBE2E6"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C0566B" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/>
+  <circle cx="20.2" cy="7.4" r="2.1" fill="#C0566B" stroke="none"/>
+</svg></div></td><td><code>weight-active.svg</code></td><td>27 × 27</td><td class="muted">实心</td></tr><tr><td class="idx">6</td><td><b>底栏 4</b></td><td>皮肤</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M10.6 3.1C11.3 7 14 9.7 17.9 10.4 14 11.1 11.3 13.8 10.6 17.7 9.9 13.8 7.2 11.1 3.3 10.4 7.2 9.7 9.9 7 10.6 3.1Z"/>
+  <path d="M18.4 15.3C18.62 16.58 19.52 17.48 20.8 17.7 19.52 17.92 18.62 18.82 18.4 20.1 18.18 18.82 17.28 17.92 16 17.7 17.28 17.48 18.18 16.58 18.4 15.3Z"/>
+</svg></div></td><td><code>skin.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr><tr><td class="idx">7</td><td><b>底栏 5</b></td><td>我的</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg></div></td><td><code>me.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr></tbody>
+          </table>
+          <div class="note">页面里的折线趋势图是数据图形（8 个点 + 面积），不属于图标；换图标套装时不用管它。</div>
+        </div>
+        <div class="page-block">
+          <div class="page-head"><h3>皮肤</h3>
+            <span class="badge">7 个图标位</span>
+            <code>pages/skin.html</code>
+          </div>
+          <table class="grid">
+            <thead><tr><th>#</th><th>位置</th><th>用途</th><th>图示</th><th>文件</th><th>尺寸</th><th>状态</th></tr></thead>
+            <tbody><tr><td class="idx">1</td><td><b>「最近一次观察」标题右侧</b></td><td>历史记录（跳转）</td><td><div class="icx" style="width:42px;"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#A82760" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5"/></svg></div></td><td><code>内联 SVG</code></td><td>12 × 12</td><td class="muted">主题色 chevron-right</td></tr><tr><td class="idx">2</td><td><b>观察卡 · 照片占位</b></td><td>相机线稿（无照片时的占位图形）</td><td><div class="icx" style="width:42px;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="rgba(122,78,88,.42)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="6.2" width="17.6" height="13.6" rx="3"/><circle cx="12" cy="13" r="3.9"/><path d="M8.4 6.2 9.6 4.2h4.8l1.2 2"/></svg></div></td><td><code>内联 SVG</code></td><td>30 × 30</td><td class="muted">42% 透明描边</td></tr><tr><td class="idx">3</td><td><b>底栏 1</b></td><td>首页</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div></td><td><code>home.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr><tr><td class="idx">4</td><td><b>底栏 2</b></td><td>经期</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#9C8285" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div></td><td><code>period.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr><tr><td class="idx">5</td><td><b>底栏 3</b></td><td>体重</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/>
+  <circle cx="20.2" cy="7.4" r="1.9" fill="#9C8285" stroke="none"/>
+</svg></div></td><td><code>weight.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr><tr><td class="idx">6</td><td><b>底栏 4</b></td><td>皮肤（当前页，选中态）</td><td><div class="ic pill-ic" style="background:#FBE2E6"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <path fill="#C0566B" d="M10.6 2.9C11.32 7 14.1 9.78 18.2 10.5 14.1 11.22 11.32 14 10.6 18.1 9.88 14 7.1 11.22 3 10.5 7.1 9.78 9.88 7 10.6 2.9Z"/>
+  <path fill="#C0566B" d="M18.4 15.1C18.63 16.44 19.56 17.37 20.9 17.6 19.56 17.83 18.63 18.76 18.4 20.1 18.17 18.76 17.24 17.83 15.9 17.6 17.24 17.37 18.17 16.44 18.4 15.1Z"/>
+</svg></div></td><td><code>skin-active.svg</code></td><td>27 × 27</td><td class="muted">实心</td></tr><tr><td class="idx">7</td><td><b>底栏 5</b></td><td>我的</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg></div></td><td><code>me.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr></tbody>
+          </table>
+          
+        </div>
+        <div class="page-block">
+          <div class="page-head"><h3>我的</h3>
+            <span class="badge">5 个图标位</span>
+            <code>pages/me.html</code>
+          </div>
+          <table class="grid">
+            <thead><tr><th>#</th><th>位置</th><th>用途</th><th>图示</th><th>文件</th><th>尺寸</th><th>状态</th></tr></thead>
+            <tbody><tr><td class="idx">1</td><td><b>底栏 1</b></td><td>首页</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div></td><td><code>home.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr><tr><td class="idx">2</td><td><b>底栏 2</b></td><td>经期</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#9C8285" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div></td><td><code>period.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr><tr><td class="idx">3</td><td><b>底栏 3</b></td><td>体重</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/>
+  <circle cx="20.2" cy="7.4" r="1.9" fill="#9C8285" stroke="none"/>
+</svg></div></td><td><code>weight.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr><tr><td class="idx">4</td><td><b>底栏 4</b></td><td>皮肤</td><td><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M10.6 3.1C11.3 7 14 9.7 17.9 10.4 14 11.1 11.3 13.8 10.6 17.7 9.9 13.8 7.2 11.1 3.3 10.4 7.2 9.7 9.9 7 10.6 3.1Z"/>
+  <path d="M18.4 15.3C18.62 16.58 19.52 17.48 20.8 17.7 19.52 17.92 18.62 18.82 18.4 20.1 18.18 18.82 17.28 17.92 16 17.7 17.28 17.48 18.18 16.58 18.4 15.3Z"/>
+</svg></div></td><td><code>skin.svg</code></td><td>27 × 27</td><td class="muted">线性</td></tr><tr><td class="idx">5</td><td><b>底栏 5</b></td><td>我的（当前页，选中态）</td><td><div class="ic pill-ic" style="background:#FBE2E6"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <circle cx="12" cy="7.9" r="3.9" fill="#C0566B"/>
+  <path fill="#C0566B" d="M4.6 21.4A7.4 7.4 0 0 1 19.4 21.4Z"/>
+</svg></div></td><td><code>me-active.svg</code></td><td>27 × 27</td><td class="muted">实心</td></tr></tbody>
+          </table>
+          <div class="note">本页除底栏外没有其他图标；头像「语」是文字，不是图标。</div>
+        </div>
+
+  <h2><span class="no">04</span>四套并排对照</h2>
+  <p class="sub">同一形状、同一尺寸（27 px）。选中态按各自配色的 44 × 44 胶囊底展示，方便判断对比度；下方 hex 是该套实际使用的颜色值。</p>
+  <table class="matrix"><thead><tr><th class="lbl">图标</th><th><span class="th-name">蜜桃奶油</span><span class="th-en">Peach Cream</span></th><th><span class="th-name">暮光玫瑰</span><span class="th-en">Dusk Rose</span></th><th><span class="th-name">杏桃霞光</span><span class="th-en">Apricot Glow</span></th><th><span class="th-name">雾紫珍珠</span><span class="th-en">Misty Pearl</span></th></tr></thead><tbody><tr class="grp"><td colspan="5">底栏 · 未选中态（27 px）</td></tr><tr><td class="lbl">首页</td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div><div class="mx-label">#9C8285</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8D7B86" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div><div class="mx-label">#8D7B86</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8376" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div><div class="mx-label">#9C8376</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8E8194" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div><div class="mx-label">#8E8194</div></td></tr><tr><td class="lbl">经期</td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#9C8285" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="mx-label">#9C8285</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8D7B86" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#8D7B86" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="mx-label">#8D7B86</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8376" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#9C8376" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="mx-label">#9C8376</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8E8194" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#8E8194" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="mx-label">#8E8194</div></td></tr><tr><td class="lbl">体重</td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/>
+  <circle cx="20.2" cy="7.4" r="1.9" fill="#9C8285" stroke="none"/>
+</svg></div><div class="mx-label">#9C8285</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8D7B86" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/>
+  <circle cx="20.2" cy="7.4" r="1.9" fill="#8D7B86" stroke="none"/>
+</svg></div><div class="mx-label">#8D7B86</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8376" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/>
+  <circle cx="20.2" cy="7.4" r="1.9" fill="#9C8376" stroke="none"/>
+</svg></div><div class="mx-label">#9C8376</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8E8194" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/>
+  <circle cx="20.2" cy="7.4" r="1.9" fill="#8E8194" stroke="none"/>
+</svg></div><div class="mx-label">#8E8194</div></td></tr><tr><td class="lbl">皮肤</td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M10.6 3.1C11.3 7 14 9.7 17.9 10.4 14 11.1 11.3 13.8 10.6 17.7 9.9 13.8 7.2 11.1 3.3 10.4 7.2 9.7 9.9 7 10.6 3.1Z"/>
+  <path d="M18.4 15.3C18.62 16.58 19.52 17.48 20.8 17.7 19.52 17.92 18.62 18.82 18.4 20.1 18.18 18.82 17.28 17.92 16 17.7 17.28 17.48 18.18 16.58 18.4 15.3Z"/>
+</svg></div><div class="mx-label">#9C8285</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8D7B86" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M10.6 3.1C11.3 7 14 9.7 17.9 10.4 14 11.1 11.3 13.8 10.6 17.7 9.9 13.8 7.2 11.1 3.3 10.4 7.2 9.7 9.9 7 10.6 3.1Z"/>
+  <path d="M18.4 15.3C18.62 16.58 19.52 17.48 20.8 17.7 19.52 17.92 18.62 18.82 18.4 20.1 18.18 18.82 17.28 17.92 16 17.7 17.28 17.48 18.18 16.58 18.4 15.3Z"/>
+</svg></div><div class="mx-label">#8D7B86</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8376" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M10.6 3.1C11.3 7 14 9.7 17.9 10.4 14 11.1 11.3 13.8 10.6 17.7 9.9 13.8 7.2 11.1 3.3 10.4 7.2 9.7 9.9 7 10.6 3.1Z"/>
+  <path d="M18.4 15.3C18.62 16.58 19.52 17.48 20.8 17.7 19.52 17.92 18.62 18.82 18.4 20.1 18.18 18.82 17.28 17.92 16 17.7 17.28 17.48 18.18 16.58 18.4 15.3Z"/>
+</svg></div><div class="mx-label">#9C8376</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8E8194" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M10.6 3.1C11.3 7 14 9.7 17.9 10.4 14 11.1 11.3 13.8 10.6 17.7 9.9 13.8 7.2 11.1 3.3 10.4 7.2 9.7 9.9 7 10.6 3.1Z"/>
+  <path d="M18.4 15.3C18.62 16.58 19.52 17.48 20.8 17.7 19.52 17.92 18.62 18.82 18.4 20.1 18.18 18.82 17.28 17.92 16 17.7 17.28 17.48 18.18 16.58 18.4 15.3Z"/>
+</svg></div><div class="mx-label">#8E8194</div></td></tr><tr><td class="lbl">我的</td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8285" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg></div><div class="mx-label">#9C8285</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8D7B86" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg></div><div class="mx-label">#8D7B86</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8376" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg></div><div class="mx-label">#9C8376</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8E8194" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg></div><div class="mx-label">#8E8194</div></td></tr><tr class="grp"><td colspan="5">底栏 · 选中态（27 px，叠 44 px 胶囊底）</td></tr><tr><td class="lbl">首页·选中</td><td><div class="mx" style="background:#FBE2E6"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <path fill="#C0566B" fill-rule="evenodd" d="M12 3.1 21.9 11.4 20.4 13.2 19.4 12.4v6.5a2.5 2.5 0 0 1-2.5 2.5H7.1A2.5 2.5 0 0 1 4.6 18.9v-6.5l-1 .8L2.1 11.4ZM10.1 21.4v-4.5a1.9 1.9 0 0 1 3.8 0v4.5Z"/>
+</svg></div><div class="mx-label">#C0566B</div></td><td><div class="mx" style="background:#F6DDE7"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <path fill="#8E2B52" fill-rule="evenodd" d="M12 3.1 21.9 11.4 20.4 13.2 19.4 12.4v6.5a2.5 2.5 0 0 1-2.5 2.5H7.1A2.5 2.5 0 0 1 4.6 18.9v-6.5l-1 .8L2.1 11.4ZM10.1 21.4v-4.5a1.9 1.9 0 0 1 3.8 0v4.5Z"/>
+</svg></div><div class="mx-label">#8E2B52</div></td><td><div class="mx" style="background:#FBE5D5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <path fill="#A5583A" fill-rule="evenodd" d="M12 3.1 21.9 11.4 20.4 13.2 19.4 12.4v6.5a2.5 2.5 0 0 1-2.5 2.5H7.1A2.5 2.5 0 0 1 4.6 18.9v-6.5l-1 .8L2.1 11.4ZM10.1 21.4v-4.5a1.9 1.9 0 0 1 3.8 0v4.5Z"/>
+</svg></div><div class="mx-label">#A5583A</div></td><td><div class="mx" style="background:#EFE3F3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <path fill="#6E4B7E" fill-rule="evenodd" d="M12 3.1 21.9 11.4 20.4 13.2 19.4 12.4v6.5a2.5 2.5 0 0 1-2.5 2.5H7.1A2.5 2.5 0 0 1 4.6 18.9v-6.5l-1 .8L2.1 11.4ZM10.1 21.4v-4.5a1.9 1.9 0 0 1 3.8 0v4.5Z"/>
+</svg></div><div class="mx-label">#6E4B7E</div></td></tr><tr><td class="lbl">经期·选中</td><td><div class="mx" style="background:#FBE2E6"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <rect x="7.55" y="2.9" width="1.5" height="4.6" rx="0.75" fill="#C0566B"/>
+  <rect x="14.95" y="2.9" width="1.5" height="4.6" rx="0.75" fill="#C0566B"/>
+  <path fill="#C0566B" fill-rule="evenodd" d="M6.3 5.4h11.4A3.3 3.3 0 0 1 21 8.7v9A3.3 3.3 0 0 1 17.7 21H6.3A3.3 3.3 0 0 1 3 17.7v-9A3.3 3.3 0 0 1 6.3 5.4ZM4.9 9.7h14.2v1.7H4.9ZM12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="mx-label">#C0566B</div></td><td><div class="mx" style="background:#F6DDE7"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <rect x="7.55" y="2.9" width="1.5" height="4.6" rx="0.75" fill="#8E2B52"/>
+  <rect x="14.95" y="2.9" width="1.5" height="4.6" rx="0.75" fill="#8E2B52"/>
+  <path fill="#8E2B52" fill-rule="evenodd" d="M6.3 5.4h11.4A3.3 3.3 0 0 1 21 8.7v9A3.3 3.3 0 0 1 17.7 21H6.3A3.3 3.3 0 0 1 3 17.7v-9A3.3 3.3 0 0 1 6.3 5.4ZM4.9 9.7h14.2v1.7H4.9ZM12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="mx-label">#8E2B52</div></td><td><div class="mx" style="background:#FBE5D5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <rect x="7.55" y="2.9" width="1.5" height="4.6" rx="0.75" fill="#A5583A"/>
+  <rect x="14.95" y="2.9" width="1.5" height="4.6" rx="0.75" fill="#A5583A"/>
+  <path fill="#A5583A" fill-rule="evenodd" d="M6.3 5.4h11.4A3.3 3.3 0 0 1 21 8.7v9A3.3 3.3 0 0 1 17.7 21H6.3A3.3 3.3 0 0 1 3 17.7v-9A3.3 3.3 0 0 1 6.3 5.4ZM4.9 9.7h14.2v1.7H4.9ZM12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="mx-label">#A5583A</div></td><td><div class="mx" style="background:#EFE3F3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <rect x="7.55" y="2.9" width="1.5" height="4.6" rx="0.75" fill="#6E4B7E"/>
+  <rect x="14.95" y="2.9" width="1.5" height="4.6" rx="0.75" fill="#6E4B7E"/>
+  <path fill="#6E4B7E" fill-rule="evenodd" d="M6.3 5.4h11.4A3.3 3.3 0 0 1 21 8.7v9A3.3 3.3 0 0 1 17.7 21H6.3A3.3 3.3 0 0 1 3 17.7v-9A3.3 3.3 0 0 1 6.3 5.4ZM4.9 9.7h14.2v1.7H4.9ZM12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="mx-label">#6E4B7E</div></td></tr><tr><td class="lbl">体重·选中</td><td><div class="mx" style="background:#FBE2E6"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C0566B" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/>
+  <circle cx="20.2" cy="7.4" r="2.1" fill="#C0566B" stroke="none"/>
+</svg></div><div class="mx-label">#C0566B</div></td><td><div class="mx" style="background:#F6DDE7"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8E2B52" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/>
+  <circle cx="20.2" cy="7.4" r="2.1" fill="#8E2B52" stroke="none"/>
+</svg></div><div class="mx-label">#8E2B52</div></td><td><div class="mx" style="background:#FBE5D5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A5583A" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/>
+  <circle cx="20.2" cy="7.4" r="2.1" fill="#A5583A" stroke="none"/>
+</svg></div><div class="mx-label">#A5583A</div></td><td><div class="mx" style="background:#EFE3F3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6E4B7E" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/>
+  <circle cx="20.2" cy="7.4" r="2.1" fill="#6E4B7E" stroke="none"/>
+</svg></div><div class="mx-label">#6E4B7E</div></td></tr><tr><td class="lbl">皮肤·选中</td><td><div class="mx" style="background:#FBE2E6"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <path fill="#C0566B" d="M10.6 2.9C11.32 7 14.1 9.78 18.2 10.5 14.1 11.22 11.32 14 10.6 18.1 9.88 14 7.1 11.22 3 10.5 7.1 9.78 9.88 7 10.6 2.9Z"/>
+  <path fill="#C0566B" d="M18.4 15.1C18.63 16.44 19.56 17.37 20.9 17.6 19.56 17.83 18.63 18.76 18.4 20.1 18.17 18.76 17.24 17.83 15.9 17.6 17.24 17.37 18.17 16.44 18.4 15.1Z"/>
+</svg></div><div class="mx-label">#C0566B</div></td><td><div class="mx" style="background:#F6DDE7"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <path fill="#8E2B52" d="M10.6 2.9C11.32 7 14.1 9.78 18.2 10.5 14.1 11.22 11.32 14 10.6 18.1 9.88 14 7.1 11.22 3 10.5 7.1 9.78 9.88 7 10.6 2.9Z"/>
+  <path fill="#8E2B52" d="M18.4 15.1C18.63 16.44 19.56 17.37 20.9 17.6 19.56 17.83 18.63 18.76 18.4 20.1 18.17 18.76 17.24 17.83 15.9 17.6 17.24 17.37 18.17 16.44 18.4 15.1Z"/>
+</svg></div><div class="mx-label">#8E2B52</div></td><td><div class="mx" style="background:#FBE5D5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <path fill="#A5583A" d="M10.6 2.9C11.32 7 14.1 9.78 18.2 10.5 14.1 11.22 11.32 14 10.6 18.1 9.88 14 7.1 11.22 3 10.5 7.1 9.78 9.88 7 10.6 2.9Z"/>
+  <path fill="#A5583A" d="M18.4 15.1C18.63 16.44 19.56 17.37 20.9 17.6 19.56 17.83 18.63 18.76 18.4 20.1 18.17 18.76 17.24 17.83 15.9 17.6 17.24 17.37 18.17 16.44 18.4 15.1Z"/>
+</svg></div><div class="mx-label">#A5583A</div></td><td><div class="mx" style="background:#EFE3F3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <path fill="#6E4B7E" d="M10.6 2.9C11.32 7 14.1 9.78 18.2 10.5 14.1 11.22 11.32 14 10.6 18.1 9.88 14 7.1 11.22 3 10.5 7.1 9.78 9.88 7 10.6 2.9Z"/>
+  <path fill="#6E4B7E" d="M18.4 15.1C18.63 16.44 19.56 17.37 20.9 17.6 19.56 17.83 18.63 18.76 18.4 20.1 18.17 18.76 17.24 17.83 15.9 17.6 17.24 17.37 18.17 16.44 18.4 15.1Z"/>
+</svg></div><div class="mx-label">#6E4B7E</div></td></tr><tr><td class="lbl">我的·选中</td><td><div class="mx" style="background:#FBE2E6"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <circle cx="12" cy="7.9" r="3.9" fill="#C0566B"/>
+  <path fill="#C0566B" d="M4.6 21.4A7.4 7.4 0 0 1 19.4 21.4Z"/>
+</svg></div><div class="mx-label">#C0566B</div></td><td><div class="mx" style="background:#F6DDE7"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <circle cx="12" cy="7.9" r="3.9" fill="#8E2B52"/>
+  <path fill="#8E2B52" d="M4.6 21.4A7.4 7.4 0 0 1 19.4 21.4Z"/>
+</svg></div><div class="mx-label">#8E2B52</div></td><td><div class="mx" style="background:#FBE5D5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <circle cx="12" cy="7.9" r="3.9" fill="#A5583A"/>
+  <path fill="#A5583A" d="M4.6 21.4A7.4 7.4 0 0 1 19.4 21.4Z"/>
+</svg></div><div class="mx-label">#A5583A</div></td><td><div class="mx" style="background:#EFE3F3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" >
+  
+  <circle cx="12" cy="7.9" r="3.9" fill="#6E4B7E"/>
+  <path fill="#6E4B7E" d="M4.6 21.4A7.4 7.4 0 0 1 19.4 21.4Z"/>
+</svg></div><div class="mx-label">#6E4B7E</div></td></tr><tr class="grp"><td colspan="5">首页快捷入口 · 莓色版（3 个在用）</td></tr><tr><td class="lbl">首页·莓色</td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C0566B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div><div class="mx-label">#C0566B</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8E2B52" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div><div class="mx-label">#8E2B52</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A5583A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div><div class="mx-label">#A5583A</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6E4B7E" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div><div class="mx-label">#6E4B7E</div></td></tr><tr><td class="lbl">经期·莓色</td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C0566B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#C0566B" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="mx-label">#C0566B</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8E2B52" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#8E2B52" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="mx-label">#8E2B52</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A5583A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#A5583A" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="mx-label">#A5583A</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6E4B7E" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#6E4B7E" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="mx-label">#6E4B7E</div></td></tr><tr><td class="lbl">体重·莓色</td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C0566B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/>
+  <circle cx="20.2" cy="7.4" r="1.9" fill="#C0566B" stroke="none"/>
+</svg></div><div class="mx-label">#C0566B</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8E2B52" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/>
+  <circle cx="20.2" cy="7.4" r="1.9" fill="#8E2B52" stroke="none"/>
+</svg></div><div class="mx-label">#8E2B52</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A5583A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/>
+  <circle cx="20.2" cy="7.4" r="1.9" fill="#A5583A" stroke="none"/>
+</svg></div><div class="mx-label">#A5583A</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6E4B7E" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/>
+  <circle cx="20.2" cy="7.4" r="1.9" fill="#6E4B7E" stroke="none"/>
+</svg></div><div class="mx-label">#6E4B7E</div></td></tr><tr class="grp"><td colspan="5">同套里没被任何页面引用（2 个闲置）</td></tr><tr><td class="lbl">首页·莓色（闲置）</td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C0566B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div><div class="mx-label">#B79DBB</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8E2B52" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div><div class="mx-label">#B79DBB</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A5583A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div><div class="mx-label">#B79DBB</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6E4B7E" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div><div class="mx-label">#B79DBB</div></td></tr><tr><td class="lbl">我的·莓色（闲置）</td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C0566B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg></div><div class="mx-label">#B79DBB</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8E2B52" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg></div><div class="mx-label">#B79DBB</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A5583A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg></div><div class="mx-label">#B79DBB</div></td><td><div class="mx"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6E4B7E" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" >
+  
+  <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg></div><div class="mx-label">#B79DBB</div></td></tr></tbody></table>
+  <table style="margin-top:16px">
+    <thead><tr><th>方案</th><th>强调色（选中 / 主按钮）</th><th>未选中（线性图标）</th><th>选中底 / 胶囊</th><th>页面底色</th></tr></thead>
+    <tbody><tr><td><b>蜜桃奶油</b><span class="th-en"> Peach Cream</span></td><td><span class="chip" style="background:#C0566B">#C0566B</span></td><td><span class="chip" style="background:#9C8285">#9C8285</span></td><td><span class="chip light" style="background:#FBE2E6">#FBE2E6</span></td><td><span class="chip light" style="background:#FDF6F1">#FDF6F1</span></td></tr><tr><td><b>暮光玫瑰</b><span class="th-en"> Dusk Rose</span></td><td><span class="chip" style="background:#8E2B52">#8E2B52</span></td><td><span class="chip" style="background:#8D7B86">#8D7B86</span></td><td><span class="chip light" style="background:#F6DDE7">#F6DDE7</span></td><td><span class="chip light" style="background:#FBF6F9">#FBF6F9</span></td></tr><tr><td><b>杏桃霞光</b><span class="th-en"> Apricot Glow</span></td><td><span class="chip" style="background:#A5583A">#A5583A</span></td><td><span class="chip" style="background:#9C8376">#9C8376</span></td><td><span class="chip light" style="background:#FBE5D5">#FBE5D5</span></td><td><span class="chip light" style="background:#FDF7F0">#FDF7F0</span></td></tr><tr><td><b>雾紫珍珠</b><span class="th-en"> Misty Pearl</span></td><td><span class="chip" style="background:#6E4B7E">#6E4B7E</span></td><td><span class="chip" style="background:#8E8194">#8E8194</span></td><td><span class="chip light" style="background:#EFE3F3">#EFE3F3</span></td><td><span class="chip light" style="background:#FAF7FB">#FAF7FB</span></td></tr></tbody>
+  </table>
+
+  <h2><span class="no">05</span>两套怎么选</h2>
+  <div class="cols">
+    <div class="panel">
+      <h4>推荐组合 A（稳妥）：01 蜜桃奶油 + 02 暮光玫瑰</h4>
+      <p><b>为什么：</b>这是四套里明度差最大的一对。01 的强调色 <code>#C0566B</code> 最亮、最接近原来的品牌莓 <code>#A82760</code> 但更柔，适合日间主界面；02 的 <code>#8E2B52</code> 最深，且这套自带深色 hero，适合晚间/深色版。</p>
+      <p><b>代价：</b>两套色相都在莓红家族里，放在一起像「同一套的浅色版和深色版」，不是两种气质。</p>
+      <p><b>适合：</b>只想要一套主用、一套深色/夜间切换，不希望品牌色跑偏。</p>
+    </div>
+    <div class="panel">
+      <h4>推荐组合 B（拉开差异）：01 蜜桃奶油 + 04 雾紫珍珠</h4>
+      <p><b>为什么：</b>01 暖、04 冷（<code>#6E4B7E</code> 雾紫），并排时最容易一眼看出区别，适合做 A/B 让用户选。</p>
+      <p><b>代价：</b>04 离「女性健康 / 经期」的莓色语义最远，偏理性、偏香氛感，不一定会被目标用户选。</p>
+      <p><b>适合：</b>你想验证「暖粉 vs 冷紫」的方向差异，而不是做深浅两版。</p>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:14px">
+    <h4>不建议的组合</h4>
+    <p><b>01 + 03：</b>01 <code>#C0566B</code> 与 03 <code>#A5583A</code> 同属暖红/橘，色相差最小，两套并排会被看成「同一个方案的两种误差」，选了两套也没有决策价值。</p>
+    <p><b>02 + 03 / 02 + 04：</b>一深一浅但冷暖打架，选中态和按钮会来回跳，五个页面拼在一起不稳定。</p>
+  </div>
+
+  <h2><span class="no">06</span>每个页面选哪套：建议与勾选</h2>
+  <p class="sub">关键约束：<b>底栏图标必须全站同一套。</b>用户在首页点到经期时，底栏 5 个图标是连续可见的，逐页换套会出现「点一下图标换色/换粗细」的跳变。所以正确做法是「整站主套 + 整站备用套」，不是「一页一套」。</p>
+  <div class="panel">
+    <table style="border:0;box-shadow:none">
+      <thead><tr><th>页面</th><th>图标位</th><th>主套建议</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><b>首页</b></td><td>9</td><td><span class="pick">01 蜜桃奶油</span></td><td>3 个莓色快捷入口 + 5 个底栏 + 1 个发送箭头；入口图标随主套，发送箭头是内联白色，不随套变</td></tr>
+        <tr><td><b>经期</b></td><td>7</td><td><span class="pick">01 蜜桃奶油</span></td><td>5 个底栏 + 2 个内联翻月箭头；箭头颜色需跟该套强调色同步</td></tr>
+        <tr><td><b>体重</b></td><td>7</td><td><span class="pick">01 蜜桃奶油</span></td><td>5 个底栏 + 明细箭头 + 建议 info；趋势折线图不属于图标</td></tr>
+        <tr><td><b>皮肤</b></td><td>7</td><td><span class="pick">01 蜜桃奶油</span></td><td>5 个底栏 + 历史箭头 + 相机占位线稿；相机是中性灰，可跨套复用</td></tr>
+        <tr><td><b>我的</b></td><td>5</td><td><span class="pick">01 蜜桃奶油</span></td><td>只有底栏，没有其他图标</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="panel" style="margin-top:14px">
+    <h4>勾选表（打印出来可直接圈）</h4>
+    <table style="border:0;box-shadow:none;margin-top:10px">
+      <thead><tr><th>页面</th><th>图标位</th><th>01 蜜桃</th><th>02 暮光</th><th>03 杏桃</th><th>04 雾紫</th><th>最终决定</th></tr></thead>
+      <tbody><tr><td><b>首页</b></td><td>9</td><td class="cbox">☐ 01</td><td class="cbox">☐ 02</td><td class="cbox">☐ 03</td><td class="cbox">☐ 04</td><td class="muted">　</td></tr><tr><td><b>经期</b></td><td>7</td><td class="cbox">☐ 01</td><td class="cbox">☐ 02</td><td class="cbox">☐ 03</td><td class="cbox">☐ 04</td><td class="muted">　</td></tr><tr><td><b>体重</b></td><td>7</td><td class="cbox">☐ 01</td><td class="cbox">☐ 02</td><td class="cbox">☐ 03</td><td class="cbox">☐ 04</td><td class="muted">　</td></tr><tr><td><b>皮肤</b></td><td>7</td><td class="cbox">☐ 01</td><td class="cbox">☐ 02</td><td class="cbox">☐ 03</td><td class="cbox">☐ 04</td><td class="muted">　</td></tr><tr><td><b>我的</b></td><td>5</td><td class="cbox">☐ 01</td><td class="cbox">☐ 02</td><td class="cbox">☐ 03</td><td class="cbox">☐ 04</td><td class="muted">　</td></tr></tbody>
+    </table>
+    <p style="margin-top:12px">建议填写方式：先把「整站主套」勾出来（推荐 01），再单独勾一套备用；如果确实要逐页选，只在首页的 3 个快捷入口上做区分，底栏保持同套。</p>
+  </div>
+
+  <h2><span class="no">07</span>附录：没有参与渲染的图标</h2>
+  <p class="sub">这些文件在代码树里但没有被任何页面引用。保留可以，但不要再混进新页面，否则会出现三种笔画粗细同屏。</p>
+  <table>
+    <thead><tr><th>目录</th><th>文件</th><th>说明</th><th>预览</th></tr></thead>
+    <tbody><tr><td><code>assets\icons\tab</code></td><td><code>home.svg</code></td><td>首页（旧 tab）</td><td><div class="ic big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <g fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.6 10.5 12 3.9l8.4 6.6"/>
+    <path d="M5.8 9.3v10.8h12.4V9.3"/>
+    <path d="M10.2 20.1v-5.3h3.6v5.3"/>
+  </g>
+</svg></div></td></tr><tr><td><code>assets\icons\tab</code></td><td><code>period.svg</code></td><td>经期（旧 tab）</td><td><div class="ic big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <g fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.4" y="5" width="17.2" height="15.6" rx="2.9"/>
+    <path d="M3.4 9.8h17.2"/>
+    <path d="M8.3 3.2v3.3M15.7 3.2v3.3"/>
+    <path d="M12 12.2C10.9 13.8 9.6 14.9 9.6 16.2C9.6 17.5 10.7 18.6 12 18.6C13.3 18.6 14.4 17.5 14.4 16.2C14.4 14.9 13.1 13.8 12 12.2Z"/>
+  </g>
+</svg></div></td></tr><tr><td><code>assets\icons\tab</code></td><td><code>weight.svg</code></td><td>体重（旧 tab）</td><td><div class="ic big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <g fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.6 15.8 10 10.2l4.4 4.2 9-9"/>
+  </g>
+</svg></div></td></tr><tr><td><code>assets\icons\tab</code></td><td><code>skin.svg</code></td><td>皮肤（旧 tab）</td><td><div class="ic big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <g fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10.6 3.4Q10.6 10.6 17.8 10.6Q10.6 10.6 10.6 17.8Q10.6 10.6 3.4 10.6Q10.6 10.6 10.6 3.4Z"/>
+    <path d="M18.3 15Q18.3 18.3 21.6 18.3Q18.3 18.3 18.3 21.6Q18.3 18.3 15 18.3Q18.3 18.3 18.3 15Z"/>
+  </g>
+</svg></div></td></tr><tr><td><code>assets\icons\tab</code></td><td><code>me.svg</code></td><td>我的（旧 tab）</td><td><div class="ic big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <g fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8.2" r="3.8"/>
+    <path d="M4.6 20.6a7.4 7.4 0 0 1 14.8 0"/>
+  </g>
+</svg></div></td></tr><tr><td><code>assets\icons\outline</code></td><td><code>nav-home.svg</code></td><td>首页（旧 outline）</td><td><div class="ic big"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  
+  <path d="M3.6 10.5 12 3.9l8.4 6.6"/>
+  <path d="M5.8 9.3v10.8h12.4V9.3"/>
+  <path d="M10.2 20.1v-5.3h3.6v5.3"/>
+</svg></div></td></tr><tr><td><code>assets\icons\outline</code></td><td><code>nav-cycle.svg</code></td><td>经期（旧 outline）</td><td><div class="ic big"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  
+  <rect x="3.4" y="5" width="17.2" height="15.6" rx="2.9"/>
+  <path d="M3.4 9.8h17.2"/>
+  <path d="M8.3 3.2v3.3M15.7 3.2v3.3"/>
+  <path d="M12 12.2C10.9 13.8 9.6 14.9 9.6 16.2C9.6 17.5 10.7 18.6 12 18.6C13.3 18.6 14.4 17.5 14.4 16.2C14.4 14.9 13.1 13.8 12 12.2Z"/>
+</svg></div></td></tr><tr><td><code>assets\icons\outline</code></td><td><code>nav-weight.svg</code></td><td>体重（旧 outline）</td><td><div class="ic big"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  
+  <rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/>
+  <path d="M7.6 15.6a4.4 4.4 0 0 1 8.8 0"/>
+  <path d="M12 15.4l-1.7-3.1"/>
+  <circle cx="12" cy="15.6" r="0.9" fill="currentColor" stroke="none"/>
+</svg></div></td></tr><tr><td><code>assets\icons\outline</code></td><td><code>nav-skin.svg</code></td><td>皮肤（旧 outline）</td><td><div class="ic big"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  
+  <path d="M12 3.2C15.4 3.2 17.9 6.4 17.9 10.2C17.9 13.9 16.6 17 14.6 19.2C13.9 20 13 20.5 12 20.5C11 20.5 10.1 20 9.4 19.2C7.4 17 6.1 13.9 6.1 10.2C6.1 6.4 8.6 3.2 12 3.2Z"/>
+  <circle cx="9.9" cy="9.2" r="0.85" fill="currentColor" stroke="none"/>
+  <circle cx="14.1" cy="9.2" r="0.85" fill="currentColor" stroke="none"/>
+  <path d="M12 12.8c.95 1.35 1.4 2.05 1.4 2.7a1.4 1.4 0 0 1-2.8 0c0-.65.45-1.35 1.4-2.7Z"/>
+</svg></div></td></tr><tr><td><code>assets\icons\outline</code></td><td><code>nav-profile.svg</code></td><td>我的（旧 outline）</td><td><div class="ic big"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  
+  <circle cx="12" cy="8.2" r="3.8"/>
+  <path d="M4.6 20.6a7.4 7.4 0 0 1 14.8 0"/>
+</svg></div></td></tr><tr><td><code>Downloads（外来）</code></td><td><code>测体重.svg</code></td><td>插画风素材</td><td><div class="ic big"><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1795066968065" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1803" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="200"><path d="M753.7152 134.7584H262.5536A165.4784 165.4784 0 0 0 97.28 300.1856v423.7312a165.4784 165.4784 0 0 0 165.2736 165.4272h491.1616a165.4784 165.4784 0 0 0 165.4784-165.4272V300.1856a165.4784 165.4784 0 0 0-165.4784-165.4272z m-238.7456 556.6976a66.2016 66.2016 0 0 1-66.2016-66.2016 68.9664 68.9664 0 0 1 1.5872-14.2848L348.5184 510.1568a35.2256 35.2256 0 1 1 49.5616-50.0736l101.888 100.7616a66.1504 66.1504 0 1 1 15.0016 130.6112z m295.6288-105.728a35.2256 35.2256 0 0 1-35.2256-35.2768 260.4032 260.4032 0 0 0-520.8064 0 35.2768 35.2768 0 1 1-70.5024 0 330.9056 330.9056 0 0 1 661.8112 0 35.2256 35.2256 0 0 1-35.2768 35.2768z" fill="#FF3369" p-id="1804"></path><path d="M753.7152 134.7584H262.5536A165.4784 165.4784 0 0 0 97.28 300.1856v423.7312a165.4784 165.4784 0 0 0 165.2736 165.4272h139.9296a630.1696 630.1696 0 0 0 409.088-303.7184h-0.9728a35.2256 35.2256 0 0 1-35.2256-35.2768 260.4032 260.4032 0 0 0-520.8064 0 35.2768 35.2768 0 1 1-70.5024 0 330.9056 330.9056 0 0 1 660.48-31.3856 627.5072 627.5072 0 0 0 48.9472-243.6608 643.6864 643.6864 0 0 0-3.8912-69.888 165.2736 165.2736 0 0 0-135.8848-70.656zM348.16 460.3392a35.1744 35.1744 0 0 1 49.8176 0l101.888 100.7616a66.1504 66.1504 0 1 1-51.2 64.4096 68.9664 68.9664 0 0 1 1.5872-14.2848L348.5184 510.1568a35.1744 35.1744 0 0 1-0.3584-49.8176z" fill="#FF4D7C" p-id="1805"></path><path d="M424.96 585.8304L348.5184 510.1568a35.2256 35.2256 0 1 1 49.5616-50.0736l85.3504 84.4288a631.6032 631.6032 0 0 0 172.288-212.9408 260.1984 260.1984 0 0 0-401.152 218.88 35.2768 35.2768 0 1 1-70.5024 0A330.6496 330.6496 0 0 1 683.776 266.24a625.7152 625.7152 0 0 0 31.9488-131.2768H262.5536A165.4784 165.4784 0 0 0 97.28 300.1856V680.96a626.0224 626.0224 0 0 0 327.68-95.1296z" fill="#FF5F89" p-id="1806"></path><path d="M228.4544 385.28A332.8 332.8 0 0 1 414.3104 235.52 634.88 634.88 0 0 0 483.84 134.7584H262.5536A165.4784 165.4784 0 0 0 97.28 300.1856v136.8064a624.2304 624.2304 0 0 0 131.1744-51.712z" fill="#FF7196" p-id="1807"></path></svg></div></td></tr><tr><td><code>Downloads（外来）</code></td><td><code>测体重 (1).svg</code></td><td>插画风素材</td><td><div class="ic big"><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1795066980193" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1962" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="200"><path d="M508.16 512.0512m-450.816 0a450.816 450.816 0 1 0 901.632 0 450.816 450.816 0 1 0-901.632 0Z" fill="#FF4D7C" p-id="1963"></path><path d="M684.0832 241.7664H332.1856a118.528 118.528 0 0 0-118.528 118.528v303.5136a118.528 118.528 0 0 0 118.528 118.528h351.8976a118.4768 118.4768 0 0 0 118.528-118.528V360.2944a118.4768 118.4768 0 0 0-118.528-118.528z m-171.0592 398.7968a47.4112 47.4112 0 0 1-47.4112-47.4112 48.2816 48.2816 0 0 1 1.1264-10.24l-72.96-72.192a25.2928 25.2928 0 1 1 35.5328-35.84l73.0112 72.2432a46.08 46.08 0 0 1 10.7008-1.28 47.4112 47.4112 0 0 1 0 94.8224z m211.8144-75.7248a25.2416 25.2416 0 0 1-25.2416-25.2416 186.5728 186.5728 0 1 0-373.1456 0 25.2416 25.2416 0 0 1-50.4832 0 237.1072 237.1072 0 1 1 474.1632 0 25.2928 25.2928 0 0 1-25.2928 25.2416z" fill="#FFFFFF" p-id="1964"></path></svg></div></td></tr><tr><td><code>Downloads（外来）</code></td><td><code>体重器-01.svg</code></td><td>插画风素材</td><td><div class="ic big"><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1795066990127" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2117" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="200"><path d="M820.47 938.19H200.51c-65.18 0-117.93-98.71-117.93-163.89V249.32c0-65.18 52.74-167.43 117.93-167.43H792c65.18 0 146.88 52.74 146.88 117.93v538.33c0.01 64.67-53.23 200.04-118.41 200.04z" fill="#FFCCD2" p-id="2118"></path><path d="M760.76 957.6H260.21c-108.96 0-197.53-88.57-197.53-197.53V259.52c0-108.96 88.57-197.53 197.53-197.53h501.05c108.97 0 197.53 88.57 197.53 197.53v501.05c-0.49 108.46-89.06 197.03-198.03 197.03zM260.21 101.3c-87.07 0-158.22 71.15-158.22 158.22v501.05c0 87.07 71.15 158.23 158.22 158.23h501.05c87.07 0 158.23-71.15 158.23-158.23V259.52c0-87.07-71.15-158.22-158.23-158.22H260.21z" fill="#DD3059" p-id="2119"></path><path d="M856.79 254.55c0-55.23-44.78-100.01-100.01-100.01H263.7c-55.23 0-100.01 44.78-100.01 100.01l115.93 56.72V468c0 13.43 10.95 24.88 24.88 24.88h411.98c13.43 0 24.88-10.95 24.88-24.88V307.79l115.43-53.24z" fill="#FFCCD2" p-id="2120"></path><path d="M716.48 512.78H304.5c-24.38 0-44.29-19.9-44.29-44.28V323.71l-115.93-56.72v-12.44c0-65.68 53.73-119.42 119.41-119.42h493.08c65.68 0 119.41 53.74 119.41 119.42v12.44l-115.43 53.74V468.5c0.01 24.38-19.89 44.28-44.27 44.28zM184.59 243.1l114.94 56.22V468.5c0 2.98 2.49 4.97 4.98 4.97h411.98c2.98 0 4.97-2.49 4.97-4.97V295.34L836.4 242.6c-5.97-38.31-39.31-68.16-79.61-68.16H263.7c-40.3 0-73.64 29.85-79.11 68.66z" fill="#DD3059" p-id="2121"></path><path d="M671.7 440.14H349.28c-8.95 0-16.42-7.46-16.42-16.42V230.66c0-8.96 7.46-16.42 16.42-16.42H671.2c8.95 0 16.42 7.46 16.42 16.42v193.05c0 8.96-6.97 16.43-15.92 16.43z" fill="#FFE6F3" p-id="2122"></path><path d="M663.24 459.54h-305.5c-24.38 0-44.29-19.9-44.29-44.28V238.62c0-24.38 19.9-44.28 44.29-44.28h305.5c24.38 0 44.28 19.9 44.28 44.28v176.64c0 24.38-19.9 44.28-44.28 44.28z m-305.5-225.89c-2.49 0-4.98 1.99-4.98 4.97v176.64c0 2.49 1.99 4.97 4.98 4.97h305.5c2.49 0 4.98-1.99 4.98-4.97V238.62c0-2.49-1.99-4.97-4.98-4.97h-305.5z" fill="#6E78F4" p-id="2123"></path><path d="M542.33 449.09l-90.06-14.93 80.6-124.39c6.47-9.95 19.41-13.43 29.86-8.95 10.95 4.97 16.42 16.92 13.43 28.36l-33.83 119.91z" fill="#DD3059" p-id="2124"></path><path d="M372.17 213.75H407v71.15h-34.83v-71.15z m55.72 0h23.39v56.72h-23.39v-56.72z m47.77 0h34.83v71.15h-34.83v-71.15z m55.73 0h23.38v56.72h-23.38v-56.72z m47.26 0h34.83v71.15h-34.83v-71.15z m55.73 0h23.39v56.72h-23.39v-56.72z" fill="#FFCCD2" p-id="2125"></path><path d="M663.24 459.54h-305.5c-24.38 0-44.29-19.9-44.29-44.28V238.62c0-24.38 19.9-44.28 44.29-44.28h305.5c24.38 0 44.28 19.9 44.28 44.28v176.64c0 24.38-19.9 44.28-44.28 44.28z m-305.5-225.89c-2.49 0-4.98 1.99-4.98 4.97v176.64c0 2.49 1.99 4.97 4.98 4.97h305.5c2.49 0 4.98-1.99 4.98-4.97V238.62c0-2.49-1.99-4.97-4.98-4.97h-305.5z" fill="#DD3059" p-id="2126"></path><path d="M386.1 695.39h-40.8c-10.45 0-18.9-8.46-18.9-18.91v-42.79c0-10.45 8.46-18.91 18.9-18.91h40.8c10.45 0 18.91 8.46 18.91 18.91v42.79c0 10.45-8.46 18.91-18.91 18.91z m3.48 115.43h-47.27c-8.46 0-15.43-6.97-15.43-15.43v-23.88c0-8.46 6.97-15.43 15.43-15.43h47.27c8.46 0 15.43 6.97 15.43 15.43v23.88c0 8.46-6.97 15.43-15.43 15.43zM675.68 695.39h-40.8c-10.45 0-18.9-8.46-18.9-18.91v-42.79c0-10.45 8.46-18.91 18.9-18.91h40.8c10.45 0 18.9 8.46 18.9 18.91v42.79c-0.49 10.45-8.95 18.91-18.9 18.91z m2.99 115.43H631.4c-8.46 0-15.42-6.97-15.42-15.43v-23.88c0-8.46 6.97-15.43 15.42-15.43h47.27c8.46 0 15.42 6.97 15.42 15.43v23.88c0 8.46-6.97 15.43-15.42 15.43zM485.61 426.2c0 10.71 8.69 19.4 19.4 19.4 10.72 0 19.41-8.69 19.41-19.4 0-6.93-3.7-13.34-9.7-16.81-6-3.46-13.4-3.46-19.4 0a19.427 19.427 0 0 0-9.71 16.81z" fill="#FFE6F3" p-id="2127"></path></svg></div></td></tr><tr><td><code>Downloads（外来）</code></td><td><code>月经来了-01.svg</code></td><td>插画风素材</td><td><div class="ic big"><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1795067018189" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3134" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="200"><path d="M512 512m-509.866667 0a509.866667 509.866667 0 1 0 1019.733334 0 509.866667 509.866667 0 1 0-1019.733334 0Z" fill="#FFF3F6" p-id="3135"></path><path d="M512 781.994667a190.378667 190.378667 0 0 1-190.165333-190.165334c0-145.792 167.210667-334.762667 174.336-342.741333a21.930667 21.930667 0 0 1 31.701333 0c7.125333 7.978667 174.336 196.906667 174.336 342.741333A190.464 190.464 0 0 1 512 781.994667z m0-485.845334c-41.045333 50.176-147.712 190.506667-147.712 295.68 0 81.408 66.261333 147.669333 147.712 147.669334s147.712-66.261333 147.712-147.669334c0-105.301333-106.624-245.546667-147.712-295.68z" fill="#FF7994" p-id="3136"></path><path d="M512 718.165333a126.464 126.464 0 0 1-126.336-126.336 21.248 21.248 0 0 1 42.496 0c0 46.208 37.632 83.84 83.84 83.84a21.248 21.248 0 0 1 0 42.496z" fill="#FF7994" p-id="3137"></path></svg></div></td></tr><tr><td><code>Downloads（外来）</code></td><td><code>月经量.svg</code></td><td>插画风素材</td><td><div class="ic big"><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1795067022021" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3286" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="200"><path d="M512 512m-512 0a512 512 0 1 0 1024 0 512 512 0 1 0-1024 0Z" fill="#FFD3D3" p-id="3287"></path><path d="M706.798933 333.141333a23.005867 23.005867 0 0 0-28.398933 0c-34.4064 26.692267-146.500267 121.890133-146.500267 224.8704 0 83.2512 72.123733 151.005867 160.836267 151.005867 45.124267 0 88.439467-17.954133 118.784-49.2544A144.930133 144.930133 0 0 0 853.333333 558.045867c0-102.912-112.162133-198.178133-146.5344-224.904534z m-47.957333 318.122667a13.824 13.824 0 0 1-12.731733 9.693867 22.596267 22.596267 0 0 1-4.232534-0.580267c-36.420267-12.049067-64-43.485867-71.748266-82.1248a13.789867 13.789867 0 0 1 10.308266-16.247467 12.458667 12.458667 0 0 1 9.693867 1.774934 13.755733 13.755733 0 0 1 6.075733 8.8064 80.384 80.384 0 0 0 53.930667 61.2352 13.482667 13.482667 0 0 1 7.850667 6.8608 14.097067 14.097067 0 0 1 0.853333 10.581333z" fill="#FF5959" p-id="3288"></path><path d="M502.135467 558.011733c0-77.073067 62.907733-149.845333 108.9536-192.750933-50.619733-69.3248-114.688-122.88-142.882134-144.7936a33.518933 33.518933 0 0 0-41.3696 0c-50.107733 38.877867-213.504 177.5616-213.504 327.5776 0 121.275733 105.130667 219.9552 234.359467 219.9552 62.805333 0 123.050667-24.098133 166.912-66.013867-65.1264-19.319467-112.469333-76.561067-112.469333-143.9744z m-103.799467 125.883734a20.138667 20.138667 0 0 1-18.568533 14.1312 33.348267 33.348267 0 0 1-6.144-0.887467c-53.077333-17.5104-93.252267-63.317333-104.5504-119.569067a20.138667 20.138667 0 0 1 15.018666-23.688533 18.397867 18.397867 0 0 1 14.165334 2.628267 20.002133 20.002133 0 0 1 8.8064 12.8c8.3968 42.1888 38.5024 76.3904 78.5408 89.1904a19.6608 19.6608 0 0 1 11.502933 10.001066 20.48 20.48 0 0 1 1.2288 15.36z" fill="#FF5959" p-id="3289"></path></svg></div></td></tr><tr><td><code>Downloads（外来）</code></td><td><code>美妆.svg</code></td><td>插画风素材</td><td><div class="ic big"><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1795071014354" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="18727" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="200"><path d="M537.6 512l0 409.6 384 0L921.6 512 537.6 512zM870.4 870.4 588.8 870.4 588.8 563.2l281.6 0L870.4 870.4z" p-id="18728" fill="#d4237a"></path><path d="M435.2 384l-25.6 0L409.6 179.2c0-33.28-12.8-61.44-35.84-84.48C314.88 40.96 207.36 51.2 202.24 51.2L179.2 53.76 179.2 384 153.6 384l0 102.4L102.4 486.4l0 435.2 384 0L486.4 486.4l-51.2 0L435.2 384zM230.4 102.4c33.28 0 81.92 7.68 110.08 30.72C353.28 145.92 358.4 161.28 358.4 179.2l0 204.8L230.4 384 230.4 102.4zM204.8 435.2l179.2 0 0 51.2L204.8 486.4 204.8 435.2zM435.2 870.4 153.6 870.4 153.6 537.6l281.6 0L435.2 870.4z" p-id="18729" fill="#d4237a"></path></svg></div></td></tr><tr><td><code>Downloads（外来）</code></td><td><code>皮肤管理.svg</code></td><td>插画风素材</td><td><div class="ic big"><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1795070964799" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="11582" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="200"><path d="M553.408706 1.663771C500.667158 37.690818 447.132119 93.759908 413.511142 180.749547c-6.194348 15.9978-8.51083 33.147442-8.062891 50.233093 0.307158 11.569609-0.204772 26.082814-3.19956 39.623352-7.691742-5.682419-17.635975-14.244441-32.046794-26.543551a471.320793 471.320793 0 0 1-16.138581-17.968729 78.082064 78.082064 0 0 1-9.726662-23.395183c1.305421 6.706278 3.967454 13.732512 7.448576 20.681956-11.032083-13.271775-20.195623-26.40277-23.343991-36.372599 0 0 5.618427 20.733149 19.837273 43.270851 11.364837 17.968729 28.181725 37.114897 51.986452 47.827023-3.596306 11.697592-9.470698 22.000175-18.851808 28.066541C347.920161 327.839722 236.306708 371.148967 225.146642 403.656497c-4.530577 13.194986 40.352851 42.707728 44.653061 75.803977 2.393271 18.429466-21.501044 35.579108-33.492995 43.322043-33.480196 21.667421 11.172864 43.322043 11.172864 43.322044s-22.332929 10.827311-22.33293 21.66742c0 32.481934 22.332929 21.654622 22.33293 43.322044 0 21.654622 0 32.469135-22.33293 54.136556-17.648773 17.124045-22.320131 129.978928 167.426579 129.978928 104.011298 0 147.653298 94.387022 140.102336 208.227368-6.885453 0.281561-13.796503 0.422342-20.745947 0.422342C229.203684 1023.859219 0 794.655535 0 511.92961S229.203684 0 511.92961 0c13.96288 0 27.797778 0.563123 41.479096 1.663771z m305.366012 133.741611C960.29036 228.960518 1023.859219 363.034883 1023.859219 511.92961c0 165.865194-78.875555 313.300921-201.175538 406.856057-26.082814-43.872368-74.03782-89.664471-151.096024-136.07089 0 0-156.253715-151.620752-44.640262-259.93226 111.600655-108.298709 279.027234-140.780643 234.386972-379.058279 0 0-0.87028-3.007586-2.559649-8.318856z" fill="#d4237a" p-id="11583"></path></svg></div></td></tr></tbody>
+  </table>
+
+  <div class="foot">
+    统计口径：遍历 <code>my-first-project</code> 下全部 <code>.svg</code>（108 个）与图标 <code>.png</code>（54 个），并逐个 <code>.html</code> 提取 <code>&lt;img src&gt;</code> 与内联 <code>&lt;svg&gt;</code>；四套形状一致性通过比对 <code>d</code> 路径验证。<br>
+    本报告只做盘点，没有改动任何源文件。生成时间 2026-11-19。
+  </div>
+</div>
+</body>
+</html>

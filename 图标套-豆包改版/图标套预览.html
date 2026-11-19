@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>图标套 · 豆包改版（体重→体脂秤 / 皮肤→女生侧脸）</title>
+<style>
+  html,body{margin:0;padding:0;background:#FAF7FA;}
+  body{width:1180px;font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;color:#2D2430;
+       -webkit-font-smoothing:antialiased;}
+  .wrap{width:1180px;padding:44px 48px 56px;box-sizing:border-box;}
+  h1{font-size:26px;margin:0 0 8px;letter-spacing:.5px;}
+  .sub{font-size:13px;color:#7A6C79;line-height:1.9;margin-bottom:6px;}
+  .meta{font-size:12px;color:#9A8D99;margin-bottom:28px;}
+  .sec{background:#fff;border:1px solid #F0E4EE;border-radius:18px;padding:26px 28px;margin-bottom:22px;}
+  .sec-h{display:flex;align-items:baseline;gap:12px;margin-bottom:18px;}
+  .sec-h b{font-size:17px;}
+  .sec-h span{font-size:12px;color:#9A8D99;}
+  .state-row{display:flex;align-items:center;gap:18px;padding:12px 0;border-bottom:1px dashed #F2E7F0;}
+  .state-row:last-child{border-bottom:0;}
+  .state-name{width:64px;font-size:13px;color:#5E5260;font-weight:600;}
+  .state-cells{display:flex;gap:14px;}
+  .state-cell{width:210px;display:flex;flex-direction:column;align-items:center;gap:8px;
+              background:#FBFAFC;border-radius:12px;padding:12px 0;}
+  .state-icon{height:76px;display:grid;place-items:center;}
+  .state-tag{font-size:11px;}
+  .pages{display:flex;flex-wrap:wrap;gap:16px;}
+  .page-card{width:344px;border:1px solid #F2E7F0;border-radius:16px;padding:16px 14px 10px;background:#FEFCFD;}
+  .page-head{display:flex;justify-content:space-between;align-items:baseline;padding:0 6px 10px;}
+  .page-head b{font-size:13px;}
+  .page-head span{font-size:11px;color:#A99AA8;}
+  .tabbar{display:flex;justify-content:space-around;align-items:flex-end;padding:8px 0 4px;}
+  .nav-item{display:flex;flex-direction:column;align-items:center;width:60px;}
+  .nav-hit{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;}
+  .nav-label{font-size:11px;margin-top:5px;}
+  .size-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px dashed #F2E7F0;}
+  .size-row:last-child{border-bottom:0;}
+  .size-name{width:44px;font-size:13px;color:#5E5260;}
+  .size-cell{width:112px;height:96px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+             background:#FBFAFC;border-radius:12px;}
+  .size-cell span{font-size:11px;color:#A99AA8;}
+  .cmp{display:flex;gap:18px;}
+  .cmp-box{flex:1;background:#FBFAFC;border-radius:14px;padding:16px;text-align:center;}
+  .cmp-box .lbl{font-size:12px;color:#7A6C79;margin-bottom:8px;}
+  .cmp-box .icons{display:flex;justify-content:center;gap:22px;align-items:center;}
+  .cmp-box .note{font-size:11px;color:#A99AA8;margin-top:10px;line-height:1.7;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid #F4EAF2;}
+  th{color:#8A7C89;font-weight:600;background:#FCFAFB;}
+  code{background:#F7F1F7;border-radius:6px;padding:2px 6px;font-size:12px;color:#7A4C63;}
+  .tip{background:#FDF4F7;border-left:3px solid #E5B7C9;border-radius:8px;padding:12px 16px;font-size:12.5px;
+       color:#6B5A66;line-height:1.9;margin-top:14px;}
+  .swatch{display:flex;gap:10px;margin-top:14px;}
+  .sw{display:flex;align-items:center;gap:8px;background:#FBFAFC;border-radius:10px;padding:8px 12px;font-size:12px;color:#6B5A66;}
+  .alt-row{display:flex;justify-content:center;align-items:flex-end;gap:10px;flex-wrap:wrap;padding:6px 0 2px}.alt-cell{display:flex;flex-direction:column;align-items:center;gap:4px}.alt-cell span{font-size:10.5px;color:#A99AA8}.alt-ic{display:grid;place-items:center;height:76px}.sw i{width:14px;height:14px;border-radius:4px;display:inline-block;}
+  .foot{font-size:11.5px;color:#A99AA8;text-align:center;margin-top:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>图标套 · 豆包改版</h1>
+  <div class="sub">沿用「豆包」原套双形态（未选中线性 · 选中实心 · 莓色快捷入口），只重画两枚：<b>体重 → 体脂秤</b>、<b>皮肤 → 女生侧脸</b>。其余首页、经期、我的保持原样，配色不变。</div>
+  <div class="meta">15 枚 = 5 页 × 3 态｜网格 24×24｜描边 1.7px｜未选中 #8B7988 · 选中/莓色 #A82760｜显示 27×27pt</div>
+
+  <div class="sec">
+    <div class="sec-h"><b>01 · 三态总览</b><span>每页三枚：未选中线性 / 选中实心 / 莓色线性</span></div>
+    <div class="state-row"><div class="state-name">首页</div><div class="state-cells"><div class="state-cell"><div class="state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div><div class="state-tag" style="color:#8B7988">未选中</div></div><div class="state-cell"><div class="state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none">
+    <path fill="#A82760" fill-rule="evenodd" d="M12 3.1 21.9 11.4 20.4 13.2 19.4 12.4v6.5a2.5 2.5 0 0 1-2.5 2.5H7.1A2.5 2.5 0 0 1 4.6 18.9v-6.5l-1 .8L2.1 11.4ZM10.1 21.4v-4.5a1.9 1.9 0 0 1 3.8 0v4.5Z"/>
+</svg></div><div class="state-tag" style="color:#A82760">选中 · 实心</div></div><div class="state-cell"><div class="state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#A82760" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div><div class="state-tag" style="color:#A82760">莓色 · 快捷入口</div></div></div></div><div class="state-row"><div class="state-name">经期</div><div class="state-cells"><div class="state-cell"><div class="state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#8B7988" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="state-tag" style="color:#8B7988">未选中</div></div><div class="state-cell"><div class="state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none">
+    <rect x="7.55" y="2.9" width="1.5" height="4.6" rx="0.75" fill="#A82760"/>
+  <rect x="14.95" y="2.9" width="1.5" height="4.6" rx="0.75" fill="#A82760"/>
+  <path fill="#A82760" fill-rule="evenodd" d="M6.3 5.4h11.4A3.3 3.3 0 0 1 21 8.7v9A3.3 3.3 0 0 1 17.7 21H6.3A3.3 3.3 0 0 1 3 17.7v-9A3.3 3.3 0 0 1 6.3 5.4ZM4.9 9.7h14.2v1.7H4.9ZM12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="state-tag" style="color:#A82760">选中 · 实心</div></div><div class="state-cell"><div class="state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#A82760" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#A82760" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="state-tag" style="color:#A82760">莓色 · 快捷入口</div></div></div></div><div class="state-row"><div class="state-name">体重</div><div class="state-cells"><div class="state-cell"><div class="state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.2" y="3.2" width="17.6" height="17.6" rx="3.6"/>
+  <rect x="6.9" y="5.5" width="10.2" height="3.2" rx="1.1"/>
+  <path d="M6.4 17.8C6.25 15.2 6.1 13.4 6.6 12.3C7.05 11.3 8 11 8.9 11C9.8 11 10.75 11.3 11.2 12.3C11.7 13.4 11.55 15.2 11.4 17.8C11.3 19.9 10.2 20.9 8.9 20.9C7.6 20.9 6.5 19.9 6.4 17.8Z"/>
+  <path d="M12.6 17.8C12.45 15.2 12.3 13.4 12.8 12.3C13.25 11.3 14.2 11 15.1 11C16 11 16.95 11.3 17.4 12.3C17.9 13.4 17.75 15.2 17.6 17.8C17.5 19.9 16.4 20.9 15.1 20.9C13.8 20.9 12.7 19.9 12.6 17.8Z"/>
+  <circle cx="8.05" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="8.05" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+</svg></div><div class="state-tag" style="color:#8B7988">未选中</div></div><div class="state-cell"><div class="state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none">
+    <path fill="#A82760" fill-rule="evenodd" d="M6.8 3.2H17.2A3.6 3.6 0 0 1 20.8 6.8V17.2A3.6 3.6 0 0 1 17.2 20.8H6.8A3.6 3.6 0 0 1 3.2 17.2V6.8A3.6 3.6 0 0 1 6.8 3.2ZM8 5.4H16A1.1 1.1 0 0 1 17.1 6.5V7.7A1.1 1.1 0 0 1 16 8.8H8A1.1 1.1 0 0 1 6.9 7.7V6.5A1.1 1.1 0 0 1 8 5.4ZM6.6 12.3C7.05 11.3 8 11 8.9 11C9.8 11 10.75 11.3 11.2 12.3C11.7 13.4 11.55 15.2 11.4 17.8C11.3 19.9 10.2 20.9 8.9 20.9C7.6 20.9 6.5 19.9 6.4 17.8C6.25 15.2 6.1 13.4 6.6 12.3ZM12.8 12.3C13.25 11.3 14.2 11 15.1 11C16 11 16.95 11.3 17.4 12.3C17.9 13.4 17.75 15.2 17.6 17.8C17.5 19.9 16.4 20.9 15.1 20.9C13.8 20.9 12.7 19.9 12.6 17.8C12.45 15.2 12.3 13.4 12.8 12.3Z"/>
+</svg></div><div class="state-tag" style="color:#A82760">选中 · 实心</div></div><div class="state-cell"><div class="state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#A82760" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.2" y="3.2" width="17.6" height="17.6" rx="3.6"/>
+  <rect x="6.9" y="5.5" width="10.2" height="3.2" rx="1.1"/>
+  <path d="M6.4 17.8C6.25 15.2 6.1 13.4 6.6 12.3C7.05 11.3 8 11 8.9 11C9.8 11 10.75 11.3 11.2 12.3C11.7 13.4 11.55 15.2 11.4 17.8C11.3 19.9 10.2 20.9 8.9 20.9C7.6 20.9 6.5 19.9 6.4 17.8Z"/>
+  <path d="M12.6 17.8C12.45 15.2 12.3 13.4 12.8 12.3C13.25 11.3 14.2 11 15.1 11C16 11 16.95 11.3 17.4 12.3C17.9 13.4 17.75 15.2 17.6 17.8C17.5 19.9 16.4 20.9 15.1 20.9C13.8 20.9 12.7 19.9 12.6 17.8Z"/>
+  <circle cx="8.05" cy="14" r=".5" fill="#A82760" stroke="none"/>
+  <circle cx="8.05" cy="16.5" r=".5" fill="#A82760" stroke="none"/>
+  <circle cx="14.95" cy="14" r=".5" fill="#A82760" stroke="none"/>
+  <circle cx="14.95" cy="16.5" r=".5" fill="#A82760" stroke="none"/>
+</svg></div><div class="state-tag" style="color:#A82760">莓色 · 快捷入口</div></div></div></div><div class="state-row"><div class="state-name">皮肤</div><div class="state-cells"><div class="state-cell"><div class="state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24">
+    <g transform="translate(2.800,2.800) scale(0.017969)" fill="none" stroke="#8B7988" stroke-width="94.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M553.408706 1.663771C500.667158 37.690818 447.132119 93.759908 413.511142 180.749547c-6.194348 15.9978-8.51083 33.147442-8.062891 50.233093 0.307158 11.569609-0.204772 26.082814-3.19956 39.623352-7.691742-5.682419-17.635975-14.244441-32.046794-26.543551a471.320793 471.320793 0 0 1-16.138581-17.968729 78.082064 78.082064 0 0 1-9.726662-23.395183c1.305421 6.706278 3.967454 13.732512 7.448576 20.681956-11.032083-13.271775-20.195623-26.40277-23.343991-36.372599 0 0 5.618427 20.733149 19.837273 43.270851 11.364837 17.968729 28.181725 37.114897 51.986452 47.827023-3.596306 11.697592-9.470698 22.000175-18.851808 28.066541C347.920161 327.839722 236.306708 371.148967 225.146642 403.656497c-4.530577 13.194986 40.352851 42.707728 44.653061 75.803977 2.393271 18.429466-21.501044 35.579108-33.492995 43.322043-33.480196 21.667421 11.172864 43.322043 11.172864 43.322044s-22.332929 10.827311-22.33293 21.66742c0 32.481934 22.332929 21.654622 22.33293 43.322044 0 21.654622 0 32.469135-22.33293 54.136556-17.648773 17.124045-22.320131 129.978928 167.426579 129.978928 104.011298 0 147.653298 94.387022 140.102336 208.227368-6.885453 0.281561-13.796503 0.422342-20.745947 0.422342C229.203684 1023.859219 0 794.655535 0 511.92961S229.203684 0 511.92961 0c13.96288 0 27.797778 0.563123 41.479096 1.663771z m305.366012 133.741611C960.29036 228.960518 1023.859219 363.034883 1023.859219 511.92961c0 165.865194-78.875555 313.300921-201.175538 406.856057-26.082814-43.872368-74.03782-89.664471-151.096024-136.07089 0 0-156.253715-151.620752-44.640262-259.93226 111.600655-108.298709 279.027234-140.780643 234.386972-379.058279 0 0-0.87028-3.007586-2.559649-8.318856z"/>
+  </g>
+</svg></div><div class="state-tag" style="color:#8B7988">未选中</div></div><div class="state-cell"><div class="state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24">
+    <g transform="translate(2.800,2.800) scale(0.017969)" fill="#A82760">
+    <path d="M553.408706 1.663771C500.667158 37.690818 447.132119 93.759908 413.511142 180.749547c-6.194348 15.9978-8.51083 33.147442-8.062891 50.233093 0.307158 11.569609-0.204772 26.082814-3.19956 39.623352-7.691742-5.682419-17.635975-14.244441-32.046794-26.543551a471.320793 471.320793 0 0 1-16.138581-17.968729 78.082064 78.082064 0 0 1-9.726662-23.395183c1.305421 6.706278 3.967454 13.732512 7.448576 20.681956-11.032083-13.271775-20.195623-26.40277-23.343991-36.372599 0 0 5.618427 20.733149 19.837273 43.270851 11.364837 17.968729 28.181725 37.114897 51.986452 47.827023-3.596306 11.697592-9.470698 22.000175-18.851808 28.066541C347.920161 327.839722 236.306708 371.148967 225.146642 403.656497c-4.530577 13.194986 40.352851 42.707728 44.653061 75.803977 2.393271 18.429466-21.501044 35.579108-33.492995 43.322043-33.480196 21.667421 11.172864 43.322043 11.172864 43.322044s-22.332929 10.827311-22.33293 21.66742c0 32.481934 22.332929 21.654622 22.33293 43.322044 0 21.654622 0 32.469135-22.33293 54.136556-17.648773 17.124045-22.320131 129.978928 167.426579 129.978928 104.011298 0 147.653298 94.387022 140.102336 208.227368-6.885453 0.281561-13.796503 0.422342-20.745947 0.422342C229.203684 1023.859219 0 794.655535 0 511.92961S229.203684 0 511.92961 0c13.96288 0 27.797778 0.563123 41.479096 1.663771z m305.366012 133.741611C960.29036 228.960518 1023.859219 363.034883 1023.859219 511.92961c0 165.865194-78.875555 313.300921-201.175538 406.856057-26.082814-43.872368-74.03782-89.664471-151.096024-136.07089 0 0-156.253715-151.620752-44.640262-259.93226 111.600655-108.298709 279.027234-140.780643 234.386972-379.058279 0 0-0.87028-3.007586-2.559649-8.318856z"/>
+  </g>
+</svg></div><div class="state-tag" style="color:#A82760">选中 · 实心</div></div><div class="state-cell"><div class="state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24">
+    <g transform="translate(2.800,2.800) scale(0.017969)" fill="none" stroke="#A82760" stroke-width="94.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M553.408706 1.663771C500.667158 37.690818 447.132119 93.759908 413.511142 180.749547c-6.194348 15.9978-8.51083 33.147442-8.062891 50.233093 0.307158 11.569609-0.204772 26.082814-3.19956 39.623352-7.691742-5.682419-17.635975-14.244441-32.046794-26.543551a471.320793 471.320793 0 0 1-16.138581-17.968729 78.082064 78.082064 0 0 1-9.726662-23.395183c1.305421 6.706278 3.967454 13.732512 7.448576 20.681956-11.032083-13.271775-20.195623-26.40277-23.343991-36.372599 0 0 5.618427 20.733149 19.837273 43.270851 11.364837 17.968729 28.181725 37.114897 51.986452 47.827023-3.596306 11.697592-9.470698 22.000175-18.851808 28.066541C347.920161 327.839722 236.306708 371.148967 225.146642 403.656497c-4.530577 13.194986 40.352851 42.707728 44.653061 75.803977 2.393271 18.429466-21.501044 35.579108-33.492995 43.322043-33.480196 21.667421 11.172864 43.322043 11.172864 43.322044s-22.332929 10.827311-22.33293 21.66742c0 32.481934 22.332929 21.654622 22.33293 43.322044 0 21.654622 0 32.469135-22.33293 54.136556-17.648773 17.124045-22.320131 129.978928 167.426579 129.978928 104.011298 0 147.653298 94.387022 140.102336 208.227368-6.885453 0.281561-13.796503 0.422342-20.745947 0.422342C229.203684 1023.859219 0 794.655535 0 511.92961S229.203684 0 511.92961 0c13.96288 0 27.797778 0.563123 41.479096 1.663771z m305.366012 133.741611C960.29036 228.960518 1023.859219 363.034883 1023.859219 511.92961c0 165.865194-78.875555 313.300921-201.175538 406.856057-26.082814-43.872368-74.03782-89.664471-151.096024-136.07089 0 0-156.253715-151.620752-44.640262-259.93226 111.600655-108.298709 279.027234-140.780643 234.386972-379.058279 0 0-0.87028-3.007586-2.559649-8.318856z"/>
+  </g>
+</svg></div><div class="state-tag" style="color:#A82760">莓色 · 快捷入口</div></div></div></div><div class="state-row"><div class="state-name">我的</div><div class="state-cells"><div class="state-cell"><div class="state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg></div><div class="state-tag" style="color:#8B7988">未选中</div></div><div class="state-cell"><div class="state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="7.9" r="3.9" fill="#A82760"/>
+  <path fill="#A82760" d="M4.6 21.4A7.4 7.4 0 0 1 19.4 21.4Z"/>
+</svg></div><div class="state-tag" style="color:#A82760">选中 · 实心</div></div><div class="state-cell"><div class="state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#A82760" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg></div><div class="state-tag" style="color:#A82760">莓色 · 快捷入口</div></div></div></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h"><b>02 · 五页底栏试排</b><span>按真实 27px 显示，选中项带 #F7DFEA 胶囊底</span></div>
+    <div class="pages">
+      <div class="page-card"><div class="page-head"><b>黑色选中态 · 首页</b><span>第 1 页</span></div><div class="tabbar"><div class="nav-item"><div class="nav-hit" style="background:#F7DFEA;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none">
+    <path fill="#A82760" fill-rule="evenodd" d="M12 3.1 21.9 11.4 20.4 13.2 19.4 12.4v6.5a2.5 2.5 0 0 1-2.5 2.5H7.1A2.5 2.5 0 0 1 4.6 18.9v-6.5l-1 .8L2.1 11.4ZM10.1 21.4v-4.5a1.9 1.9 0 0 1 3.8 0v4.5Z"/>
+</svg></div><div class="nav-label" style="color:#A82760;font-weight:600">首页</div></div><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#8B7988" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">经期</div></div><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.2" y="3.2" width="17.6" height="17.6" rx="3.6"/>
+  <rect x="6.9" y="5.5" width="10.2" height="3.2" rx="1.1"/>
+  <path d="M6.4 17.8C6.25 15.2 6.1 13.4 6.6 12.3C7.05 11.3 8 11 8.9 11C9.8 11 10.75 11.3 11.2 12.3C11.7 13.4 11.55 15.2 11.4 17.8C11.3 19.9 10.2 20.9 8.9 20.9C7.6 20.9 6.5 19.9 6.4 17.8Z"/>
+  <path d="M12.6 17.8C12.45 15.2 12.3 13.4 12.8 12.3C13.25 11.3 14.2 11 15.1 11C16 11 16.95 11.3 17.4 12.3C17.9 13.4 17.75 15.2 17.6 17.8C17.5 19.9 16.4 20.9 15.1 20.9C13.8 20.9 12.7 19.9 12.6 17.8Z"/>
+  <circle cx="8.05" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="8.05" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">体重</div></div><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24">
+    <g transform="translate(2.800,2.800) scale(0.017969)" fill="none" stroke="#8B7988" stroke-width="94.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M553.408706 1.663771C500.667158 37.690818 447.132119 93.759908 413.511142 180.749547c-6.194348 15.9978-8.51083 33.147442-8.062891 50.233093 0.307158 11.569609-0.204772 26.082814-3.19956 39.623352-7.691742-5.682419-17.635975-14.244441-32.046794-26.543551a471.320793 471.320793 0 0 1-16.138581-17.968729 78.082064 78.082064 0 0 1-9.726662-23.395183c1.305421 6.706278 3.967454 13.732512 7.448576 20.681956-11.032083-13.271775-20.195623-26.40277-23.343991-36.372599 0 0 5.618427 20.733149 19.837273 43.270851 11.364837 17.968729 28.181725 37.114897 51.986452 47.827023-3.596306 11.697592-9.470698 22.000175-18.851808 28.066541C347.920161 327.839722 236.306708 371.148967 225.146642 403.656497c-4.530577 13.194986 40.352851 42.707728 44.653061 75.803977 2.393271 18.429466-21.501044 35.579108-33.492995 43.322043-33.480196 21.667421 11.172864 43.322043 11.172864 43.322044s-22.332929 10.827311-22.33293 21.66742c0 32.481934 22.332929 21.654622 22.33293 43.322044 0 21.654622 0 32.469135-22.33293 54.136556-17.648773 17.124045-22.320131 129.978928 167.426579 129.978928 104.011298 0 147.653298 94.387022 140.102336 208.227368-6.885453 0.281561-13.796503 0.422342-20.745947 0.422342C229.203684 1023.859219 0 794.655535 0 511.92961S229.203684 0 511.92961 0c13.96288 0 27.797778 0.563123 41.479096 1.663771z m305.366012 133.741611C960.29036 228.960518 1023.859219 363.034883 1023.859219 511.92961c0 165.865194-78.875555 313.300921-201.175538 406.856057-26.082814-43.872368-74.03782-89.664471-151.096024-136.07089 0 0-156.253715-151.620752-44.640262-259.93226 111.600655-108.298709 279.027234-140.780643 234.386972-379.058279 0 0-0.87028-3.007586-2.559649-8.318856z"/>
+  </g>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">皮肤</div></div><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">我的</div></div></div></div><div class="page-card"><div class="page-head"><b>黑色选中态 · 经期</b><span>第 2 页</span></div><div class="tabbar"><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">首页</div></div><div class="nav-item"><div class="nav-hit" style="background:#F7DFEA;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none">
+    <rect x="7.55" y="2.9" width="1.5" height="4.6" rx="0.75" fill="#A82760"/>
+  <rect x="14.95" y="2.9" width="1.5" height="4.6" rx="0.75" fill="#A82760"/>
+  <path fill="#A82760" fill-rule="evenodd" d="M6.3 5.4h11.4A3.3 3.3 0 0 1 21 8.7v9A3.3 3.3 0 0 1 17.7 21H6.3A3.3 3.3 0 0 1 3 17.7v-9A3.3 3.3 0 0 1 6.3 5.4ZM4.9 9.7h14.2v1.7H4.9ZM12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="nav-label" style="color:#A82760;font-weight:600">经期</div></div><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.2" y="3.2" width="17.6" height="17.6" rx="3.6"/>
+  <rect x="6.9" y="5.5" width="10.2" height="3.2" rx="1.1"/>
+  <path d="M6.4 17.8C6.25 15.2 6.1 13.4 6.6 12.3C7.05 11.3 8 11 8.9 11C9.8 11 10.75 11.3 11.2 12.3C11.7 13.4 11.55 15.2 11.4 17.8C11.3 19.9 10.2 20.9 8.9 20.9C7.6 20.9 6.5 19.9 6.4 17.8Z"/>
+  <path d="M12.6 17.8C12.45 15.2 12.3 13.4 12.8 12.3C13.25 11.3 14.2 11 15.1 11C16 11 16.95 11.3 17.4 12.3C17.9 13.4 17.75 15.2 17.6 17.8C17.5 19.9 16.4 20.9 15.1 20.9C13.8 20.9 12.7 19.9 12.6 17.8Z"/>
+  <circle cx="8.05" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="8.05" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">体重</div></div><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24">
+    <g transform="translate(2.800,2.800) scale(0.017969)" fill="none" stroke="#8B7988" stroke-width="94.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M553.408706 1.663771C500.667158 37.690818 447.132119 93.759908 413.511142 180.749547c-6.194348 15.9978-8.51083 33.147442-8.062891 50.233093 0.307158 11.569609-0.204772 26.082814-3.19956 39.623352-7.691742-5.682419-17.635975-14.244441-32.046794-26.543551a471.320793 471.320793 0 0 1-16.138581-17.968729 78.082064 78.082064 0 0 1-9.726662-23.395183c1.305421 6.706278 3.967454 13.732512 7.448576 20.681956-11.032083-13.271775-20.195623-26.40277-23.343991-36.372599 0 0 5.618427 20.733149 19.837273 43.270851 11.364837 17.968729 28.181725 37.114897 51.986452 47.827023-3.596306 11.697592-9.470698 22.000175-18.851808 28.066541C347.920161 327.839722 236.306708 371.148967 225.146642 403.656497c-4.530577 13.194986 40.352851 42.707728 44.653061 75.803977 2.393271 18.429466-21.501044 35.579108-33.492995 43.322043-33.480196 21.667421 11.172864 43.322043 11.172864 43.322044s-22.332929 10.827311-22.33293 21.66742c0 32.481934 22.332929 21.654622 22.33293 43.322044 0 21.654622 0 32.469135-22.33293 54.136556-17.648773 17.124045-22.320131 129.978928 167.426579 129.978928 104.011298 0 147.653298 94.387022 140.102336 208.227368-6.885453 0.281561-13.796503 0.422342-20.745947 0.422342C229.203684 1023.859219 0 794.655535 0 511.92961S229.203684 0 511.92961 0c13.96288 0 27.797778 0.563123 41.479096 1.663771z m305.366012 133.741611C960.29036 228.960518 1023.859219 363.034883 1023.859219 511.92961c0 165.865194-78.875555 313.300921-201.175538 406.856057-26.082814-43.872368-74.03782-89.664471-151.096024-136.07089 0 0-156.253715-151.620752-44.640262-259.93226 111.600655-108.298709 279.027234-140.780643 234.386972-379.058279 0 0-0.87028-3.007586-2.559649-8.318856z"/>
+  </g>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">皮肤</div></div><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">我的</div></div></div></div><div class="page-card"><div class="page-head"><b>黑色选中态 · 体重</b><span>第 3 页</span></div><div class="tabbar"><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">首页</div></div><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#8B7988" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">经期</div></div><div class="nav-item"><div class="nav-hit" style="background:#F7DFEA;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none">
+    <path fill="#A82760" fill-rule="evenodd" d="M6.8 3.2H17.2A3.6 3.6 0 0 1 20.8 6.8V17.2A3.6 3.6 0 0 1 17.2 20.8H6.8A3.6 3.6 0 0 1 3.2 17.2V6.8A3.6 3.6 0 0 1 6.8 3.2ZM8 5.4H16A1.1 1.1 0 0 1 17.1 6.5V7.7A1.1 1.1 0 0 1 16 8.8H8A1.1 1.1 0 0 1 6.9 7.7V6.5A1.1 1.1 0 0 1 8 5.4ZM6.6 12.3C7.05 11.3 8 11 8.9 11C9.8 11 10.75 11.3 11.2 12.3C11.7 13.4 11.55 15.2 11.4 17.8C11.3 19.9 10.2 20.9 8.9 20.9C7.6 20.9 6.5 19.9 6.4 17.8C6.25 15.2 6.1 13.4 6.6 12.3ZM12.8 12.3C13.25 11.3 14.2 11 15.1 11C16 11 16.95 11.3 17.4 12.3C17.9 13.4 17.75 15.2 17.6 17.8C17.5 19.9 16.4 20.9 15.1 20.9C13.8 20.9 12.7 19.9 12.6 17.8C12.45 15.2 12.3 13.4 12.8 12.3Z"/>
+</svg></div><div class="nav-label" style="color:#A82760;font-weight:600">体重</div></div><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24">
+    <g transform="translate(2.800,2.800) scale(0.017969)" fill="none" stroke="#8B7988" stroke-width="94.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M553.408706 1.663771C500.667158 37.690818 447.132119 93.759908 413.511142 180.749547c-6.194348 15.9978-8.51083 33.147442-8.062891 50.233093 0.307158 11.569609-0.204772 26.082814-3.19956 39.623352-7.691742-5.682419-17.635975-14.244441-32.046794-26.543551a471.320793 471.320793 0 0 1-16.138581-17.968729 78.082064 78.082064 0 0 1-9.726662-23.395183c1.305421 6.706278 3.967454 13.732512 7.448576 20.681956-11.032083-13.271775-20.195623-26.40277-23.343991-36.372599 0 0 5.618427 20.733149 19.837273 43.270851 11.364837 17.968729 28.181725 37.114897 51.986452 47.827023-3.596306 11.697592-9.470698 22.000175-18.851808 28.066541C347.920161 327.839722 236.306708 371.148967 225.146642 403.656497c-4.530577 13.194986 40.352851 42.707728 44.653061 75.803977 2.393271 18.429466-21.501044 35.579108-33.492995 43.322043-33.480196 21.667421 11.172864 43.322043 11.172864 43.322044s-22.332929 10.827311-22.33293 21.66742c0 32.481934 22.332929 21.654622 22.33293 43.322044 0 21.654622 0 32.469135-22.33293 54.136556-17.648773 17.124045-22.320131 129.978928 167.426579 129.978928 104.011298 0 147.653298 94.387022 140.102336 208.227368-6.885453 0.281561-13.796503 0.422342-20.745947 0.422342C229.203684 1023.859219 0 794.655535 0 511.92961S229.203684 0 511.92961 0c13.96288 0 27.797778 0.563123 41.479096 1.663771z m305.366012 133.741611C960.29036 228.960518 1023.859219 363.034883 1023.859219 511.92961c0 165.865194-78.875555 313.300921-201.175538 406.856057-26.082814-43.872368-74.03782-89.664471-151.096024-136.07089 0 0-156.253715-151.620752-44.640262-259.93226 111.600655-108.298709 279.027234-140.780643 234.386972-379.058279 0 0-0.87028-3.007586-2.559649-8.318856z"/>
+  </g>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">皮肤</div></div><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">我的</div></div></div></div><div class="page-card"><div class="page-head"><b>黑色选中态 · 皮肤</b><span>第 4 页</span></div><div class="tabbar"><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">首页</div></div><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#8B7988" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">经期</div></div><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.2" y="3.2" width="17.6" height="17.6" rx="3.6"/>
+  <rect x="6.9" y="5.5" width="10.2" height="3.2" rx="1.1"/>
+  <path d="M6.4 17.8C6.25 15.2 6.1 13.4 6.6 12.3C7.05 11.3 8 11 8.9 11C9.8 11 10.75 11.3 11.2 12.3C11.7 13.4 11.55 15.2 11.4 17.8C11.3 19.9 10.2 20.9 8.9 20.9C7.6 20.9 6.5 19.9 6.4 17.8Z"/>
+  <path d="M12.6 17.8C12.45 15.2 12.3 13.4 12.8 12.3C13.25 11.3 14.2 11 15.1 11C16 11 16.95 11.3 17.4 12.3C17.9 13.4 17.75 15.2 17.6 17.8C17.5 19.9 16.4 20.9 15.1 20.9C13.8 20.9 12.7 19.9 12.6 17.8Z"/>
+  <circle cx="8.05" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="8.05" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">体重</div></div><div class="nav-item"><div class="nav-hit" style="background:#F7DFEA;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24">
+    <g transform="translate(2.800,2.800) scale(0.017969)" fill="#A82760">
+    <path d="M553.408706 1.663771C500.667158 37.690818 447.132119 93.759908 413.511142 180.749547c-6.194348 15.9978-8.51083 33.147442-8.062891 50.233093 0.307158 11.569609-0.204772 26.082814-3.19956 39.623352-7.691742-5.682419-17.635975-14.244441-32.046794-26.543551a471.320793 471.320793 0 0 1-16.138581-17.968729 78.082064 78.082064 0 0 1-9.726662-23.395183c1.305421 6.706278 3.967454 13.732512 7.448576 20.681956-11.032083-13.271775-20.195623-26.40277-23.343991-36.372599 0 0 5.618427 20.733149 19.837273 43.270851 11.364837 17.968729 28.181725 37.114897 51.986452 47.827023-3.596306 11.697592-9.470698 22.000175-18.851808 28.066541C347.920161 327.839722 236.306708 371.148967 225.146642 403.656497c-4.530577 13.194986 40.352851 42.707728 44.653061 75.803977 2.393271 18.429466-21.501044 35.579108-33.492995 43.322043-33.480196 21.667421 11.172864 43.322043 11.172864 43.322044s-22.332929 10.827311-22.33293 21.66742c0 32.481934 22.332929 21.654622 22.33293 43.322044 0 21.654622 0 32.469135-22.33293 54.136556-17.648773 17.124045-22.320131 129.978928 167.426579 129.978928 104.011298 0 147.653298 94.387022 140.102336 208.227368-6.885453 0.281561-13.796503 0.422342-20.745947 0.422342C229.203684 1023.859219 0 794.655535 0 511.92961S229.203684 0 511.92961 0c13.96288 0 27.797778 0.563123 41.479096 1.663771z m305.366012 133.741611C960.29036 228.960518 1023.859219 363.034883 1023.859219 511.92961c0 165.865194-78.875555 313.300921-201.175538 406.856057-26.082814-43.872368-74.03782-89.664471-151.096024-136.07089 0 0-156.253715-151.620752-44.640262-259.93226 111.600655-108.298709 279.027234-140.780643 234.386972-379.058279 0 0-0.87028-3.007586-2.559649-8.318856z"/>
+  </g>
+</svg></div><div class="nav-label" style="color:#A82760;font-weight:600">皮肤</div></div><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">我的</div></div></div></div><div class="page-card"><div class="page-head"><b>黑色选中态 · 我的</b><span>第 5 页</span></div><div class="tabbar"><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">首页</div></div><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#8B7988" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">经期</div></div><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.2" y="3.2" width="17.6" height="17.6" rx="3.6"/>
+  <rect x="6.9" y="5.5" width="10.2" height="3.2" rx="1.1"/>
+  <path d="M6.4 17.8C6.25 15.2 6.1 13.4 6.6 12.3C7.05 11.3 8 11 8.9 11C9.8 11 10.75 11.3 11.2 12.3C11.7 13.4 11.55 15.2 11.4 17.8C11.3 19.9 10.2 20.9 8.9 20.9C7.6 20.9 6.5 19.9 6.4 17.8Z"/>
+  <path d="M12.6 17.8C12.45 15.2 12.3 13.4 12.8 12.3C13.25 11.3 14.2 11 15.1 11C16 11 16.95 11.3 17.4 12.3C17.9 13.4 17.75 15.2 17.6 17.8C17.5 19.9 16.4 20.9 15.1 20.9C13.8 20.9 12.7 19.9 12.6 17.8Z"/>
+  <circle cx="8.05" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="8.05" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">体重</div></div><div class="nav-item"><div class="nav-hit" style="background:transparent;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24">
+    <g transform="translate(2.800,2.800) scale(0.017969)" fill="none" stroke="#8B7988" stroke-width="94.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M553.408706 1.663771C500.667158 37.690818 447.132119 93.759908 413.511142 180.749547c-6.194348 15.9978-8.51083 33.147442-8.062891 50.233093 0.307158 11.569609-0.204772 26.082814-3.19956 39.623352-7.691742-5.682419-17.635975-14.244441-32.046794-26.543551a471.320793 471.320793 0 0 1-16.138581-17.968729 78.082064 78.082064 0 0 1-9.726662-23.395183c1.305421 6.706278 3.967454 13.732512 7.448576 20.681956-11.032083-13.271775-20.195623-26.40277-23.343991-36.372599 0 0 5.618427 20.733149 19.837273 43.270851 11.364837 17.968729 28.181725 37.114897 51.986452 47.827023-3.596306 11.697592-9.470698 22.000175-18.851808 28.066541C347.920161 327.839722 236.306708 371.148967 225.146642 403.656497c-4.530577 13.194986 40.352851 42.707728 44.653061 75.803977 2.393271 18.429466-21.501044 35.579108-33.492995 43.322043-33.480196 21.667421 11.172864 43.322043 11.172864 43.322044s-22.332929 10.827311-22.33293 21.66742c0 32.481934 22.332929 21.654622 22.33293 43.322044 0 21.654622 0 32.469135-22.33293 54.136556-17.648773 17.124045-22.320131 129.978928 167.426579 129.978928 104.011298 0 147.653298 94.387022 140.102336 208.227368-6.885453 0.281561-13.796503 0.422342-20.745947 0.422342C229.203684 1023.859219 0 794.655535 0 511.92961S229.203684 0 511.92961 0c13.96288 0 27.797778 0.563123 41.479096 1.663771z m305.366012 133.741611C960.29036 228.960518 1023.859219 363.034883 1023.859219 511.92961c0 165.865194-78.875555 313.300921-201.175538 406.856057-26.082814-43.872368-74.03782-89.664471-151.096024-136.07089 0 0-156.253715-151.620752-44.640262-259.93226 111.600655-108.298709 279.027234-140.780643 234.386972-379.058279 0 0-0.87028-3.007586-2.559649-8.318856z"/>
+  </g>
+</svg></div><div class="nav-label" style="color:#8B7988;font-weight:400">皮肤</div></div><div class="nav-item"><div class="nav-hit" style="background:#F7DFEA;"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="7.9" r="3.9" fill="#A82760"/>
+  <path fill="#A82760" d="M4.6 21.4A7.4 7.4 0 0 1 19.4 21.4Z"/>
+</svg></div><div class="nav-label" style="color:#A82760;font-weight:600">我的</div></div></div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h"><b>03 · 尺寸检查</b><span>24 / 27 / 44 / 88 —— 27 是底栏实尺，88 用于页内大图标</span></div>
+    <div class="size-row"><div class="size-name">首页</div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg><span>24</span></div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg><span>27</span></div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg><span>44</span></div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.2 11.4 12 4l8.8 7.4"/>
+  <path d="M5.5 10.4v8.6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-8.6"/>
+  <path d="M9.7 21v-4.5a2.3 2.3 0 0 1 4.6 0V21"/>
+</svg><span>88</span></div></div><div class="size-row"><div class="size-name">经期</div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#8B7988" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg><span>24</span></div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#8B7988" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg><span>27</span></div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#8B7988" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg><span>44</span></div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#8B7988" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg><span>88</span></div></div><div class="size-row"><div class="size-name">体重</div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.2" y="3.2" width="17.6" height="17.6" rx="3.6"/>
+  <rect x="6.9" y="5.5" width="10.2" height="3.2" rx="1.1"/>
+  <path d="M6.4 17.8C6.25 15.2 6.1 13.4 6.6 12.3C7.05 11.3 8 11 8.9 11C9.8 11 10.75 11.3 11.2 12.3C11.7 13.4 11.55 15.2 11.4 17.8C11.3 19.9 10.2 20.9 8.9 20.9C7.6 20.9 6.5 19.9 6.4 17.8Z"/>
+  <path d="M12.6 17.8C12.45 15.2 12.3 13.4 12.8 12.3C13.25 11.3 14.2 11 15.1 11C16 11 16.95 11.3 17.4 12.3C17.9 13.4 17.75 15.2 17.6 17.8C17.5 19.9 16.4 20.9 15.1 20.9C13.8 20.9 12.7 19.9 12.6 17.8Z"/>
+  <circle cx="8.05" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="8.05" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+</svg><span>24</span></div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.2" y="3.2" width="17.6" height="17.6" rx="3.6"/>
+  <rect x="6.9" y="5.5" width="10.2" height="3.2" rx="1.1"/>
+  <path d="M6.4 17.8C6.25 15.2 6.1 13.4 6.6 12.3C7.05 11.3 8 11 8.9 11C9.8 11 10.75 11.3 11.2 12.3C11.7 13.4 11.55 15.2 11.4 17.8C11.3 19.9 10.2 20.9 8.9 20.9C7.6 20.9 6.5 19.9 6.4 17.8Z"/>
+  <path d="M12.6 17.8C12.45 15.2 12.3 13.4 12.8 12.3C13.25 11.3 14.2 11 15.1 11C16 11 16.95 11.3 17.4 12.3C17.9 13.4 17.75 15.2 17.6 17.8C17.5 19.9 16.4 20.9 15.1 20.9C13.8 20.9 12.7 19.9 12.6 17.8Z"/>
+  <circle cx="8.05" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="8.05" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+</svg><span>27</span></div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.2" y="3.2" width="17.6" height="17.6" rx="3.6"/>
+  <rect x="6.9" y="5.5" width="10.2" height="3.2" rx="1.1"/>
+  <path d="M6.4 17.8C6.25 15.2 6.1 13.4 6.6 12.3C7.05 11.3 8 11 8.9 11C9.8 11 10.75 11.3 11.2 12.3C11.7 13.4 11.55 15.2 11.4 17.8C11.3 19.9 10.2 20.9 8.9 20.9C7.6 20.9 6.5 19.9 6.4 17.8Z"/>
+  <path d="M12.6 17.8C12.45 15.2 12.3 13.4 12.8 12.3C13.25 11.3 14.2 11 15.1 11C16 11 16.95 11.3 17.4 12.3C17.9 13.4 17.75 15.2 17.6 17.8C17.5 19.9 16.4 20.9 15.1 20.9C13.8 20.9 12.7 19.9 12.6 17.8Z"/>
+  <circle cx="8.05" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="8.05" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+</svg><span>44</span></div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.2" y="3.2" width="17.6" height="17.6" rx="3.6"/>
+  <rect x="6.9" y="5.5" width="10.2" height="3.2" rx="1.1"/>
+  <path d="M6.4 17.8C6.25 15.2 6.1 13.4 6.6 12.3C7.05 11.3 8 11 8.9 11C9.8 11 10.75 11.3 11.2 12.3C11.7 13.4 11.55 15.2 11.4 17.8C11.3 19.9 10.2 20.9 8.9 20.9C7.6 20.9 6.5 19.9 6.4 17.8Z"/>
+  <path d="M12.6 17.8C12.45 15.2 12.3 13.4 12.8 12.3C13.25 11.3 14.2 11 15.1 11C16 11 16.95 11.3 17.4 12.3C17.9 13.4 17.75 15.2 17.6 17.8C17.5 19.9 16.4 20.9 15.1 20.9C13.8 20.9 12.7 19.9 12.6 17.8Z"/>
+  <circle cx="8.05" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="8.05" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+</svg><span>88</span></div></div><div class="size-row"><div class="size-name">皮肤</div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+    <g transform="translate(2.800,2.800) scale(0.017969)" fill="none" stroke="#8B7988" stroke-width="94.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M553.408706 1.663771C500.667158 37.690818 447.132119 93.759908 413.511142 180.749547c-6.194348 15.9978-8.51083 33.147442-8.062891 50.233093 0.307158 11.569609-0.204772 26.082814-3.19956 39.623352-7.691742-5.682419-17.635975-14.244441-32.046794-26.543551a471.320793 471.320793 0 0 1-16.138581-17.968729 78.082064 78.082064 0 0 1-9.726662-23.395183c1.305421 6.706278 3.967454 13.732512 7.448576 20.681956-11.032083-13.271775-20.195623-26.40277-23.343991-36.372599 0 0 5.618427 20.733149 19.837273 43.270851 11.364837 17.968729 28.181725 37.114897 51.986452 47.827023-3.596306 11.697592-9.470698 22.000175-18.851808 28.066541C347.920161 327.839722 236.306708 371.148967 225.146642 403.656497c-4.530577 13.194986 40.352851 42.707728 44.653061 75.803977 2.393271 18.429466-21.501044 35.579108-33.492995 43.322043-33.480196 21.667421 11.172864 43.322043 11.172864 43.322044s-22.332929 10.827311-22.33293 21.66742c0 32.481934 22.332929 21.654622 22.33293 43.322044 0 21.654622 0 32.469135-22.33293 54.136556-17.648773 17.124045-22.320131 129.978928 167.426579 129.978928 104.011298 0 147.653298 94.387022 140.102336 208.227368-6.885453 0.281561-13.796503 0.422342-20.745947 0.422342C229.203684 1023.859219 0 794.655535 0 511.92961S229.203684 0 511.92961 0c13.96288 0 27.797778 0.563123 41.479096 1.663771z m305.366012 133.741611C960.29036 228.960518 1023.859219 363.034883 1023.859219 511.92961c0 165.865194-78.875555 313.300921-201.175538 406.856057-26.082814-43.872368-74.03782-89.664471-151.096024-136.07089 0 0-156.253715-151.620752-44.640262-259.93226 111.600655-108.298709 279.027234-140.780643 234.386972-379.058279 0 0-0.87028-3.007586-2.559649-8.318856z"/>
+  </g>
+</svg><span>24</span></div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24">
+    <g transform="translate(2.800,2.800) scale(0.017969)" fill="none" stroke="#8B7988" stroke-width="94.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M553.408706 1.663771C500.667158 37.690818 447.132119 93.759908 413.511142 180.749547c-6.194348 15.9978-8.51083 33.147442-8.062891 50.233093 0.307158 11.569609-0.204772 26.082814-3.19956 39.623352-7.691742-5.682419-17.635975-14.244441-32.046794-26.543551a471.320793 471.320793 0 0 1-16.138581-17.968729 78.082064 78.082064 0 0 1-9.726662-23.395183c1.305421 6.706278 3.967454 13.732512 7.448576 20.681956-11.032083-13.271775-20.195623-26.40277-23.343991-36.372599 0 0 5.618427 20.733149 19.837273 43.270851 11.364837 17.968729 28.181725 37.114897 51.986452 47.827023-3.596306 11.697592-9.470698 22.000175-18.851808 28.066541C347.920161 327.839722 236.306708 371.148967 225.146642 403.656497c-4.530577 13.194986 40.352851 42.707728 44.653061 75.803977 2.393271 18.429466-21.501044 35.579108-33.492995 43.322043-33.480196 21.667421 11.172864 43.322043 11.172864 43.322044s-22.332929 10.827311-22.33293 21.66742c0 32.481934 22.332929 21.654622 22.33293 43.322044 0 21.654622 0 32.469135-22.33293 54.136556-17.648773 17.124045-22.320131 129.978928 167.426579 129.978928 104.011298 0 147.653298 94.387022 140.102336 208.227368-6.885453 0.281561-13.796503 0.422342-20.745947 0.422342C229.203684 1023.859219 0 794.655535 0 511.92961S229.203684 0 511.92961 0c13.96288 0 27.797778 0.563123 41.479096 1.663771z m305.366012 133.741611C960.29036 228.960518 1023.859219 363.034883 1023.859219 511.92961c0 165.865194-78.875555 313.300921-201.175538 406.856057-26.082814-43.872368-74.03782-89.664471-151.096024-136.07089 0 0-156.253715-151.620752-44.640262-259.93226 111.600655-108.298709 279.027234-140.780643 234.386972-379.058279 0 0-0.87028-3.007586-2.559649-8.318856z"/>
+  </g>
+</svg><span>27</span></div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24">
+    <g transform="translate(2.800,2.800) scale(0.017969)" fill="none" stroke="#8B7988" stroke-width="94.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M553.408706 1.663771C500.667158 37.690818 447.132119 93.759908 413.511142 180.749547c-6.194348 15.9978-8.51083 33.147442-8.062891 50.233093 0.307158 11.569609-0.204772 26.082814-3.19956 39.623352-7.691742-5.682419-17.635975-14.244441-32.046794-26.543551a471.320793 471.320793 0 0 1-16.138581-17.968729 78.082064 78.082064 0 0 1-9.726662-23.395183c1.305421 6.706278 3.967454 13.732512 7.448576 20.681956-11.032083-13.271775-20.195623-26.40277-23.343991-36.372599 0 0 5.618427 20.733149 19.837273 43.270851 11.364837 17.968729 28.181725 37.114897 51.986452 47.827023-3.596306 11.697592-9.470698 22.000175-18.851808 28.066541C347.920161 327.839722 236.306708 371.148967 225.146642 403.656497c-4.530577 13.194986 40.352851 42.707728 44.653061 75.803977 2.393271 18.429466-21.501044 35.579108-33.492995 43.322043-33.480196 21.667421 11.172864 43.322043 11.172864 43.322044s-22.332929 10.827311-22.33293 21.66742c0 32.481934 22.332929 21.654622 22.33293 43.322044 0 21.654622 0 32.469135-22.33293 54.136556-17.648773 17.124045-22.320131 129.978928 167.426579 129.978928 104.011298 0 147.653298 94.387022 140.102336 208.227368-6.885453 0.281561-13.796503 0.422342-20.745947 0.422342C229.203684 1023.859219 0 794.655535 0 511.92961S229.203684 0 511.92961 0c13.96288 0 27.797778 0.563123 41.479096 1.663771z m305.366012 133.741611C960.29036 228.960518 1023.859219 363.034883 1023.859219 511.92961c0 165.865194-78.875555 313.300921-201.175538 406.856057-26.082814-43.872368-74.03782-89.664471-151.096024-136.07089 0 0-156.253715-151.620752-44.640262-259.93226 111.600655-108.298709 279.027234-140.780643 234.386972-379.058279 0 0-0.87028-3.007586-2.559649-8.318856z"/>
+  </g>
+</svg><span>44</span></div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 24 24">
+    <g transform="translate(2.800,2.800) scale(0.017969)" fill="none" stroke="#8B7988" stroke-width="94.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M553.408706 1.663771C500.667158 37.690818 447.132119 93.759908 413.511142 180.749547c-6.194348 15.9978-8.51083 33.147442-8.062891 50.233093 0.307158 11.569609-0.204772 26.082814-3.19956 39.623352-7.691742-5.682419-17.635975-14.244441-32.046794-26.543551a471.320793 471.320793 0 0 1-16.138581-17.968729 78.082064 78.082064 0 0 1-9.726662-23.395183c1.305421 6.706278 3.967454 13.732512 7.448576 20.681956-11.032083-13.271775-20.195623-26.40277-23.343991-36.372599 0 0 5.618427 20.733149 19.837273 43.270851 11.364837 17.968729 28.181725 37.114897 51.986452 47.827023-3.596306 11.697592-9.470698 22.000175-18.851808 28.066541C347.920161 327.839722 236.306708 371.148967 225.146642 403.656497c-4.530577 13.194986 40.352851 42.707728 44.653061 75.803977 2.393271 18.429466-21.501044 35.579108-33.492995 43.322043-33.480196 21.667421 11.172864 43.322043 11.172864 43.322044s-22.332929 10.827311-22.33293 21.66742c0 32.481934 22.332929 21.654622 22.33293 43.322044 0 21.654622 0 32.469135-22.33293 54.136556-17.648773 17.124045-22.320131 129.978928 167.426579 129.978928 104.011298 0 147.653298 94.387022 140.102336 208.227368-6.885453 0.281561-13.796503 0.422342-20.745947 0.422342C229.203684 1023.859219 0 794.655535 0 511.92961S229.203684 0 511.92961 0c13.96288 0 27.797778 0.563123 41.479096 1.663771z m305.366012 133.741611C960.29036 228.960518 1023.859219 363.034883 1023.859219 511.92961c0 165.865194-78.875555 313.300921-201.175538 406.856057-26.082814-43.872368-74.03782-89.664471-151.096024-136.07089 0 0-156.253715-151.620752-44.640262-259.93226 111.600655-108.298709 279.027234-140.780643 234.386972-379.058279 0 0-0.87028-3.007586-2.559649-8.318856z"/>
+  </g>
+</svg><span>88</span></div></div><div class="size-row"><div class="size-name">我的</div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg><span>24</span></div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg><span>27</span></div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg><span>44</span></div><div class="size-cell"><svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8" r="3.8"/>
+  <path d="M4.6 20.9A7.4 7.4 0 0 1 19.4 20.9"/>
+</svg><span>88</span></div></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h"><b>04 · 新旧对照</b><span>左侧原图标，右侧新图标</span></div>
+    <div class="cmp">
+      <div class="cmp-box">
+        <div class="lbl">体重：原「趋势线 + 数据点」 → 新「体脂秤」</div>
+        <div class="icons"><svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/><circle cx="20.2" cy="7.4" r="1.9" fill="#8B7988" stroke="none"/></svg> <svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.2" y="3.2" width="17.6" height="17.6" rx="3.6"/>
+  <rect x="6.9" y="5.5" width="10.2" height="3.2" rx="1.1"/>
+  <path d="M6.4 17.8C6.25 15.2 6.1 13.4 6.6 12.3C7.05 11.3 8 11 8.9 11C9.8 11 10.75 11.3 11.2 12.3C11.7 13.4 11.55 15.2 11.4 17.8C11.3 19.9 10.2 20.9 8.9 20.9C7.6 20.9 6.5 19.9 6.4 17.8Z"/>
+  <path d="M12.6 17.8C12.45 15.2 12.3 13.4 12.8 12.3C13.25 11.3 14.2 11 15.1 11C16 11 16.95 11.3 17.4 12.3C17.9 13.4 17.75 15.2 17.6 17.8C17.5 19.9 16.4 20.9 15.1 20.9C13.8 20.9 12.7 19.9 12.6 17.8Z"/>
+  <circle cx="8.05" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="8.05" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="14" r=".5" fill="#8B7988" stroke="none"/>
+  <circle cx="14.95" cy="16.5" r=".5" fill="#8B7988" stroke="none"/>
+</svg></div>
+        <div class="note">原图标语义是“体重变化趋势”，在 27px 下容易被读成折线/箭头；新图标用顶屏 + 双脚踏位 + 4 个电极点，指向“体脂秤”这一设备实体。</div>
+      </div>
+      <div class="cmp-box">
+        <div class="lbl">皮肤：原「星芒」 → 新「女生侧脸」</div>
+        <div class="icons"><svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 3.1C11.3 7 14 9.7 17.9 10.4 14 11.1 11.3 13.8 10.6 17.7 9.9 13.8 7.2 11.1 3.3 10.4 7.2 9.7 9.9 7 10.6 3.1Z"/><path d="M18.4 15.3C18.62 16.58 19.52 17.48 20.8 17.7 19.52 17.92 18.62 18.82 18.4 20.1 18.18 18.82 17.28 17.92 16 17.7 17.28 17.48 18.18 16.58 18.4 15.3Z"/></svg> <svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 24 24">
+    <g transform="translate(2.800,2.800) scale(0.017969)" fill="none" stroke="#8B7988" stroke-width="94.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M553.408706 1.663771C500.667158 37.690818 447.132119 93.759908 413.511142 180.749547c-6.194348 15.9978-8.51083 33.147442-8.062891 50.233093 0.307158 11.569609-0.204772 26.082814-3.19956 39.623352-7.691742-5.682419-17.635975-14.244441-32.046794-26.543551a471.320793 471.320793 0 0 1-16.138581-17.968729 78.082064 78.082064 0 0 1-9.726662-23.395183c1.305421 6.706278 3.967454 13.732512 7.448576 20.681956-11.032083-13.271775-20.195623-26.40277-23.343991-36.372599 0 0 5.618427 20.733149 19.837273 43.270851 11.364837 17.968729 28.181725 37.114897 51.986452 47.827023-3.596306 11.697592-9.470698 22.000175-18.851808 28.066541C347.920161 327.839722 236.306708 371.148967 225.146642 403.656497c-4.530577 13.194986 40.352851 42.707728 44.653061 75.803977 2.393271 18.429466-21.501044 35.579108-33.492995 43.322043-33.480196 21.667421 11.172864 43.322043 11.172864 43.322044s-22.332929 10.827311-22.33293 21.66742c0 32.481934 22.332929 21.654622 22.33293 43.322044 0 21.654622 0 32.469135-22.33293 54.136556-17.648773 17.124045-22.320131 129.978928 167.426579 129.978928 104.011298 0 147.653298 94.387022 140.102336 208.227368-6.885453 0.281561-13.796503 0.422342-20.745947 0.422342C229.203684 1023.859219 0 794.655535 0 511.92961S229.203684 0 511.92961 0c13.96288 0 27.797778 0.563123 41.479096 1.663771z m305.366012 133.741611C960.29036 228.960518 1023.859219 363.034883 1023.859219 511.92961c0 165.865194-78.875555 313.300921-201.175538 406.856057-26.082814-43.872368-74.03782-89.664471-151.096024-136.07089 0 0-156.253715-151.620752-44.640262-259.93226 111.600655-108.298709 279.027234-140.780643 234.386972-379.058279 0 0-0.87028-3.007586-2.559649-8.318856z"/>
+  </g>
+</svg></div>
+        <div class="note">按你给的《皮肤管理》参考图重画：后脑剪影 + 额-眉-鼻-唇-下巴轮廓 + 头顶发梢 + 独立一缕发丝；实心态与该参考图几乎同形。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h"><b>05 · 皮肤两版对照</b><span>参考版已采用；圆头版留作备选</span></div>
+    <div class="cmp"><div class="cmp-box"><div class="lbl">现用 · 参考版（《皮肤管理》剪影：发梢尖 + 独立发丝）</div><div class="alt-row"><div class="alt-cell"><div class="alt-ic"><svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24">
+    <g transform="translate(2.800,2.800) scale(0.017969)" fill="none" stroke="#8B7988" stroke-width="94.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M553.408706 1.663771C500.667158 37.690818 447.132119 93.759908 413.511142 180.749547c-6.194348 15.9978-8.51083 33.147442-8.062891 50.233093 0.307158 11.569609-0.204772 26.082814-3.19956 39.623352-7.691742-5.682419-17.635975-14.244441-32.046794-26.543551a471.320793 471.320793 0 0 1-16.138581-17.968729 78.082064 78.082064 0 0 1-9.726662-23.395183c1.305421 6.706278 3.967454 13.732512 7.448576 20.681956-11.032083-13.271775-20.195623-26.40277-23.343991-36.372599 0 0 5.618427 20.733149 19.837273 43.270851 11.364837 17.968729 28.181725 37.114897 51.986452 47.827023-3.596306 11.697592-9.470698 22.000175-18.851808 28.066541C347.920161 327.839722 236.306708 371.148967 225.146642 403.656497c-4.530577 13.194986 40.352851 42.707728 44.653061 75.803977 2.393271 18.429466-21.501044 35.579108-33.492995 43.322043-33.480196 21.667421 11.172864 43.322043 11.172864 43.322044s-22.332929 10.827311-22.33293 21.66742c0 32.481934 22.332929 21.654622 22.33293 43.322044 0 21.654622 0 32.469135-22.33293 54.136556-17.648773 17.124045-22.320131 129.978928 167.426579 129.978928 104.011298 0 147.653298 94.387022 140.102336 208.227368-6.885453 0.281561-13.796503 0.422342-20.745947 0.422342C229.203684 1023.859219 0 794.655535 0 511.92961S229.203684 0 511.92961 0c13.96288 0 27.797778 0.563123 41.479096 1.663771z m305.366012 133.741611C960.29036 228.960518 1023.859219 363.034883 1023.859219 511.92961c0 165.865194-78.875555 313.300921-201.175538 406.856057-26.082814-43.872368-74.03782-89.664471-151.096024-136.07089 0 0-156.253715-151.620752-44.640262-259.93226 111.600655-108.298709 279.027234-140.780643 234.386972-379.058279 0 0-0.87028-3.007586-2.559649-8.318856z"/>
+  </g>
+</svg></div><span>72</span></div><div class="alt-cell"><div class="alt-ic"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24">
+    <g transform="translate(2.800,2.800) scale(0.017969)" fill="none" stroke="#8B7988" stroke-width="94.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M553.408706 1.663771C500.667158 37.690818 447.132119 93.759908 413.511142 180.749547c-6.194348 15.9978-8.51083 33.147442-8.062891 50.233093 0.307158 11.569609-0.204772 26.082814-3.19956 39.623352-7.691742-5.682419-17.635975-14.244441-32.046794-26.543551a471.320793 471.320793 0 0 1-16.138581-17.968729 78.082064 78.082064 0 0 1-9.726662-23.395183c1.305421 6.706278 3.967454 13.732512 7.448576 20.681956-11.032083-13.271775-20.195623-26.40277-23.343991-36.372599 0 0 5.618427 20.733149 19.837273 43.270851 11.364837 17.968729 28.181725 37.114897 51.986452 47.827023-3.596306 11.697592-9.470698 22.000175-18.851808 28.066541C347.920161 327.839722 236.306708 371.148967 225.146642 403.656497c-4.530577 13.194986 40.352851 42.707728 44.653061 75.803977 2.393271 18.429466-21.501044 35.579108-33.492995 43.322043-33.480196 21.667421 11.172864 43.322043 11.172864 43.322044s-22.332929 10.827311-22.33293 21.66742c0 32.481934 22.332929 21.654622 22.33293 43.322044 0 21.654622 0 32.469135-22.33293 54.136556-17.648773 17.124045-22.320131 129.978928 167.426579 129.978928 104.011298 0 147.653298 94.387022 140.102336 208.227368-6.885453 0.281561-13.796503 0.422342-20.745947 0.422342C229.203684 1023.859219 0 794.655535 0 511.92961S229.203684 0 511.92961 0c13.96288 0 27.797778 0.563123 41.479096 1.663771z m305.366012 133.741611C960.29036 228.960518 1023.859219 363.034883 1023.859219 511.92961c0 165.865194-78.875555 313.300921-201.175538 406.856057-26.082814-43.872368-74.03782-89.664471-151.096024-136.07089 0 0-156.253715-151.620752-44.640262-259.93226 111.600655-108.298709 279.027234-140.780643 234.386972-379.058279 0 0-0.87028-3.007586-2.559649-8.318856z"/>
+  </g>
+</svg></div><span>40</span></div><div class="alt-cell"><div class="alt-ic"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24">
+    <g transform="translate(2.800,2.800) scale(0.017969)" fill="none" stroke="#8B7988" stroke-width="94.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M553.408706 1.663771C500.667158 37.690818 447.132119 93.759908 413.511142 180.749547c-6.194348 15.9978-8.51083 33.147442-8.062891 50.233093 0.307158 11.569609-0.204772 26.082814-3.19956 39.623352-7.691742-5.682419-17.635975-14.244441-32.046794-26.543551a471.320793 471.320793 0 0 1-16.138581-17.968729 78.082064 78.082064 0 0 1-9.726662-23.395183c1.305421 6.706278 3.967454 13.732512 7.448576 20.681956-11.032083-13.271775-20.195623-26.40277-23.343991-36.372599 0 0 5.618427 20.733149 19.837273 43.270851 11.364837 17.968729 28.181725 37.114897 51.986452 47.827023-3.596306 11.697592-9.470698 22.000175-18.851808 28.066541C347.920161 327.839722 236.306708 371.148967 225.146642 403.656497c-4.530577 13.194986 40.352851 42.707728 44.653061 75.803977 2.393271 18.429466-21.501044 35.579108-33.492995 43.322043-33.480196 21.667421 11.172864 43.322043 11.172864 43.322044s-22.332929 10.827311-22.33293 21.66742c0 32.481934 22.332929 21.654622 22.33293 43.322044 0 21.654622 0 32.469135-22.33293 54.136556-17.648773 17.124045-22.320131 129.978928 167.426579 129.978928 104.011298 0 147.653298 94.387022 140.102336 208.227368-6.885453 0.281561-13.796503 0.422342-20.745947 0.422342C229.203684 1023.859219 0 794.655535 0 511.92961S229.203684 0 511.92961 0c13.96288 0 27.797778 0.563123 41.479096 1.663771z m305.366012 133.741611C960.29036 228.960518 1023.859219 363.034883 1023.859219 511.92961c0 165.865194-78.875555 313.300921-201.175538 406.856057-26.082814-43.872368-74.03782-89.664471-151.096024-136.07089 0 0-156.253715-151.620752-44.640262-259.93226 111.600655-108.298709 279.027234-140.780643 234.386972-379.058279 0 0-0.87028-3.007586-2.559649-8.318856z"/>
+  </g>
+</svg></div><span>27</span></div><div class="alt-cell"><div class="alt-ic"><svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24">
+    <g transform="translate(2.800,2.800) scale(0.017969)" fill="#A82760">
+    <path d="M553.408706 1.663771C500.667158 37.690818 447.132119 93.759908 413.511142 180.749547c-6.194348 15.9978-8.51083 33.147442-8.062891 50.233093 0.307158 11.569609-0.204772 26.082814-3.19956 39.623352-7.691742-5.682419-17.635975-14.244441-32.046794-26.543551a471.320793 471.320793 0 0 1-16.138581-17.968729 78.082064 78.082064 0 0 1-9.726662-23.395183c1.305421 6.706278 3.967454 13.732512 7.448576 20.681956-11.032083-13.271775-20.195623-26.40277-23.343991-36.372599 0 0 5.618427 20.733149 19.837273 43.270851 11.364837 17.968729 28.181725 37.114897 51.986452 47.827023-3.596306 11.697592-9.470698 22.000175-18.851808 28.066541C347.920161 327.839722 236.306708 371.148967 225.146642 403.656497c-4.530577 13.194986 40.352851 42.707728 44.653061 75.803977 2.393271 18.429466-21.501044 35.579108-33.492995 43.322043-33.480196 21.667421 11.172864 43.322043 11.172864 43.322044s-22.332929 10.827311-22.33293 21.66742c0 32.481934 22.332929 21.654622 22.33293 43.322044 0 21.654622 0 32.469135-22.33293 54.136556-17.648773 17.124045-22.320131 129.978928 167.426579 129.978928 104.011298 0 147.653298 94.387022 140.102336 208.227368-6.885453 0.281561-13.796503 0.422342-20.745947 0.422342C229.203684 1023.859219 0 794.655535 0 511.92961S229.203684 0 511.92961 0c13.96288 0 27.797778 0.563123 41.479096 1.663771z m305.366012 133.741611C960.29036 228.960518 1023.859219 363.034883 1023.859219 511.92961c0 165.865194-78.875555 313.300921-201.175538 406.856057-26.082814-43.872368-74.03782-89.664471-151.096024-136.07089 0 0-156.253715-151.620752-44.640262-259.93226 111.600655-108.298709 279.027234-140.780643 234.386972-379.058279 0 0-0.87028-3.007586-2.559649-8.318856z"/>
+  </g>
+</svg></div><span>72</span></div><div class="alt-cell"><div class="alt-ic"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24">
+    <g transform="translate(2.800,2.800) scale(0.017969)" fill="#A82760">
+    <path d="M553.408706 1.663771C500.667158 37.690818 447.132119 93.759908 413.511142 180.749547c-6.194348 15.9978-8.51083 33.147442-8.062891 50.233093 0.307158 11.569609-0.204772 26.082814-3.19956 39.623352-7.691742-5.682419-17.635975-14.244441-32.046794-26.543551a471.320793 471.320793 0 0 1-16.138581-17.968729 78.082064 78.082064 0 0 1-9.726662-23.395183c1.305421 6.706278 3.967454 13.732512 7.448576 20.681956-11.032083-13.271775-20.195623-26.40277-23.343991-36.372599 0 0 5.618427 20.733149 19.837273 43.270851 11.364837 17.968729 28.181725 37.114897 51.986452 47.827023-3.596306 11.697592-9.470698 22.000175-18.851808 28.066541C347.920161 327.839722 236.306708 371.148967 225.146642 403.656497c-4.530577 13.194986 40.352851 42.707728 44.653061 75.803977 2.393271 18.429466-21.501044 35.579108-33.492995 43.322043-33.480196 21.667421 11.172864 43.322043 11.172864 43.322044s-22.332929 10.827311-22.33293 21.66742c0 32.481934 22.332929 21.654622 22.33293 43.322044 0 21.654622 0 32.469135-22.33293 54.136556-17.648773 17.124045-22.320131 129.978928 167.426579 129.978928 104.011298 0 147.653298 94.387022 140.102336 208.227368-6.885453 0.281561-13.796503 0.422342-20.745947 0.422342C229.203684 1023.859219 0 794.655535 0 511.92961S229.203684 0 511.92961 0c13.96288 0 27.797778 0.563123 41.479096 1.663771z m305.366012 133.741611C960.29036 228.960518 1023.859219 363.034883 1023.859219 511.92961c0 165.865194-78.875555 313.300921-201.175538 406.856057-26.082814-43.872368-74.03782-89.664471-151.096024-136.07089 0 0-156.253715-151.620752-44.640262-259.93226 111.600655-108.298709 279.027234-140.780643 234.386972-379.058279 0 0-0.87028-3.007586-2.559649-8.318856z"/>
+  </g>
+</svg></div><span>40</span></div></div><div class="note">实心态与参考图几乎同形；线性态是同一轮廓的描边，27px 下偏「新月 + 叶」。</div></div><div class="cmp-box"><div class="lbl">备选 · 圆头版（丸子头 / 轮廓更简单）</div><div class="alt-row"><div class="alt-cell"><div class="alt-ic"><svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9.44 4.02C8.97 4.45 8.59 5.26 8.16 5.94C7.73 6.62 7.14 7.56 6.88 8.12C6.62 8.67 6.62 8.93 6.62 9.27C6.62 9.61 6.99 9.78 6.88 10.16C6.77 10.55 6.29 11.21 5.98 11.57C5.67 11.93 5.00 12.06 5.02 12.34C5.05 12.62 5.91 13.02 6.11 13.24C6.31 13.45 6.24 13.47 6.24 13.62C6.24 13.77 6.11 13.98 6.11 14.13C6.11 14.28 6.20 14.32 6.24 14.52C6.28 14.71 6.28 15.01 6.37 15.28C6.45 15.56 6.55 15.84 6.75 16.18C6.95 16.52 7.20 16.94 7.58 17.33C7.97 17.73 8.38 18.30 9.06 18.55C9.73 18.79 10.76 18.89 11.62 18.80C12.47 18.72 13.45 18.41 14.18 18.04C14.90 17.66 15.45 17.15 15.97 16.56C16.49 15.98 16.97 15.28 17.31 14.52C17.65 13.75 17.92 12.83 18.02 11.96C18.11 11.08 18.08 10.14 17.89 9.27C17.70 8.39 17.33 7.48 16.86 6.71C16.39 5.94 15.71 5.19 15.07 4.66C14.43 4.13 13.71 3.72 13.02 3.51C12.34 3.29 11.57 3.29 10.98 3.38C10.38 3.47 9.91 3.59 9.44 4.02Z"/>
+  <circle cx="18.27" cy="5.94" r="2.24"/>
+</svg></div><span>72</span></div><div class="alt-cell"><div class="alt-ic"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9.44 4.02C8.97 4.45 8.59 5.26 8.16 5.94C7.73 6.62 7.14 7.56 6.88 8.12C6.62 8.67 6.62 8.93 6.62 9.27C6.62 9.61 6.99 9.78 6.88 10.16C6.77 10.55 6.29 11.21 5.98 11.57C5.67 11.93 5.00 12.06 5.02 12.34C5.05 12.62 5.91 13.02 6.11 13.24C6.31 13.45 6.24 13.47 6.24 13.62C6.24 13.77 6.11 13.98 6.11 14.13C6.11 14.28 6.20 14.32 6.24 14.52C6.28 14.71 6.28 15.01 6.37 15.28C6.45 15.56 6.55 15.84 6.75 16.18C6.95 16.52 7.20 16.94 7.58 17.33C7.97 17.73 8.38 18.30 9.06 18.55C9.73 18.79 10.76 18.89 11.62 18.80C12.47 18.72 13.45 18.41 14.18 18.04C14.90 17.66 15.45 17.15 15.97 16.56C16.49 15.98 16.97 15.28 17.31 14.52C17.65 13.75 17.92 12.83 18.02 11.96C18.11 11.08 18.08 10.14 17.89 9.27C17.70 8.39 17.33 7.48 16.86 6.71C16.39 5.94 15.71 5.19 15.07 4.66C14.43 4.13 13.71 3.72 13.02 3.51C12.34 3.29 11.57 3.29 10.98 3.38C10.38 3.47 9.91 3.59 9.44 4.02Z"/>
+  <circle cx="18.27" cy="5.94" r="2.24"/>
+</svg></div><span>40</span></div><div class="alt-cell"><div class="alt-ic"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#8B7988" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9.44 4.02C8.97 4.45 8.59 5.26 8.16 5.94C7.73 6.62 7.14 7.56 6.88 8.12C6.62 8.67 6.62 8.93 6.62 9.27C6.62 9.61 6.99 9.78 6.88 10.16C6.77 10.55 6.29 11.21 5.98 11.57C5.67 11.93 5.00 12.06 5.02 12.34C5.05 12.62 5.91 13.02 6.11 13.24C6.31 13.45 6.24 13.47 6.24 13.62C6.24 13.77 6.11 13.98 6.11 14.13C6.11 14.28 6.20 14.32 6.24 14.52C6.28 14.71 6.28 15.01 6.37 15.28C6.45 15.56 6.55 15.84 6.75 16.18C6.95 16.52 7.20 16.94 7.58 17.33C7.97 17.73 8.38 18.30 9.06 18.55C9.73 18.79 10.76 18.89 11.62 18.80C12.47 18.72 13.45 18.41 14.18 18.04C14.90 17.66 15.45 17.15 15.97 16.56C16.49 15.98 16.97 15.28 17.31 14.52C17.65 13.75 17.92 12.83 18.02 11.96C18.11 11.08 18.08 10.14 17.89 9.27C17.70 8.39 17.33 7.48 16.86 6.71C16.39 5.94 15.71 5.19 15.07 4.66C14.43 4.13 13.71 3.72 13.02 3.51C12.34 3.29 11.57 3.29 10.98 3.38C10.38 3.47 9.91 3.59 9.44 4.02Z"/>
+  <circle cx="18.27" cy="5.94" r="2.24"/>
+</svg></div><span>27</span></div><div class="alt-cell"><div class="alt-ic"><svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none">
+    <path fill="#A82760" d="M9.44 4.02C8.97 4.45 8.59 5.26 8.16 5.94C7.73 6.62 7.14 7.56 6.88 8.12C6.62 8.67 6.62 8.93 6.62 9.27C6.62 9.61 6.99 9.78 6.88 10.16C6.77 10.55 6.29 11.21 5.98 11.57C5.67 11.93 5.00 12.06 5.02 12.34C5.05 12.62 5.91 13.02 6.11 13.24C6.31 13.45 6.24 13.47 6.24 13.62C6.24 13.77 6.11 13.98 6.11 14.13C6.11 14.28 6.20 14.32 6.24 14.52C6.28 14.71 6.28 15.01 6.37 15.28C6.45 15.56 6.55 15.84 6.75 16.18C6.95 16.52 7.20 16.94 7.58 17.33C7.97 17.73 8.38 18.30 9.06 18.55C9.73 18.79 10.76 18.89 11.62 18.80C12.47 18.72 13.45 18.41 14.18 18.04C14.90 17.66 15.45 17.15 15.97 16.56C16.49 15.98 16.97 15.28 17.31 14.52C17.65 13.75 17.92 12.83 18.02 11.96C18.11 11.08 18.08 10.14 17.89 9.27C17.70 8.39 17.33 7.48 16.86 6.71C16.39 5.94 15.71 5.19 15.07 4.66C14.43 4.13 13.71 3.72 13.02 3.51C12.34 3.29 11.57 3.29 10.98 3.38C10.38 3.47 9.91 3.59 9.44 4.02Z"/>
+  <circle cx="18.27" cy="5.94" r="2.24" fill="#A82760"/>
+</svg></div><span>72</span></div><div class="alt-cell"><div class="alt-ic"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none">
+    <path fill="#A82760" d="M9.44 4.02C8.97 4.45 8.59 5.26 8.16 5.94C7.73 6.62 7.14 7.56 6.88 8.12C6.62 8.67 6.62 8.93 6.62 9.27C6.62 9.61 6.99 9.78 6.88 10.16C6.77 10.55 6.29 11.21 5.98 11.57C5.67 11.93 5.00 12.06 5.02 12.34C5.05 12.62 5.91 13.02 6.11 13.24C6.31 13.45 6.24 13.47 6.24 13.62C6.24 13.77 6.11 13.98 6.11 14.13C6.11 14.28 6.20 14.32 6.24 14.52C6.28 14.71 6.28 15.01 6.37 15.28C6.45 15.56 6.55 15.84 6.75 16.18C6.95 16.52 7.20 16.94 7.58 17.33C7.97 17.73 8.38 18.30 9.06 18.55C9.73 18.79 10.76 18.89 11.62 18.80C12.47 18.72 13.45 18.41 14.18 18.04C14.90 17.66 15.45 17.15 15.97 16.56C16.49 15.98 16.97 15.28 17.31 14.52C17.65 13.75 17.92 12.83 18.02 11.96C18.11 11.08 18.08 10.14 17.89 9.27C17.70 8.39 17.33 7.48 16.86 6.71C16.39 5.94 15.71 5.19 15.07 4.66C14.43 4.13 13.71 3.72 13.02 3.51C12.34 3.29 11.57 3.29 10.98 3.38C10.38 3.47 9.91 3.59 9.44 4.02Z"/>
+  <circle cx="18.27" cy="5.94" r="2.24" fill="#A82760"/>
+</svg></div><span>40</span></div></div><div class="note">27px 下更干净（圆头 + 一个点），但形体不如参考版女性化；文件在 <code>备选-圆头版\</code>。</div></div></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h"><b>06 · 落地清单</b><span>直接替换这 6 个文件即可，其余 9 个沿用原套</span></div>
+    <table>
+      <thead><tr><th>文件</th><th>状态</th><th>几何 / 颜色</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>weight.svg</code></td><td>未选中</td><td>线性 1.7px · #8B7988</td><td>新画：体脂秤（圆角方体 + 顶屏 + 双脚踏位 + 4 电极点）</td></tr>
+        <tr><td><code>weight-active.svg</code></td><td>选中</td><td>实心 · #A82760</td><td>新画：同形实心，屏幕与踏位挖空（evenodd）</td></tr>
+        <tr><td><code>weight-berry.svg</code></td><td>莓色入口</td><td>线性 1.7px · #A82760</td><td>新画：与未选中同形，仅换强调色</td></tr>
+        <tr><td><code>skin.svg</code></td><td>未选中</td><td>线性 1.7px · #8B7988</td><td>新画：女生侧脸（参考《皮肤管理》剪影：额-眉-鼻-唇-下巴 + 头顶发梢 + 独立发丝）</td></tr>
+        <tr><td><code>skin-active.svg</code></td><td>选中</td><td>实心 · #A82760</td><td>新画：与参考图同形的实心剪影（侧脸 + 发丝一体填充）</td></tr>
+        <tr><td><code>skin-berry.svg</code></td><td>莓色入口</td><td>线性 1.7px · #A82760</td><td>新画：与未选中同形，仅换强调色</td></tr>
+        <tr><td colspan="4">home / period / me 的 9 枚（未选中 · 选中 · 莓色）逐字节沿用 <code>豆包\nav</code> 与 <code>豆包\前端样式\assets\icons</code>，未做任何改动</td></tr>
+      </tbody>
+    </table>
+    <div class="swatch">
+      <div class="sw"><i style="background:#8B7988"></i>未选中 #8B7988</div>
+      <div class="sw"><i style="background:#A82760"></i>选中 / 莓色 #A82760</div>
+      <div class="sw"><i style="background:#F7DFEA"></i>选中胶囊 #F7DFEA</div>
+      <div class="sw"><i style="background:#EFB0CB"></i>感受点 #EFB0CB</div>
+    </div>
+    <div class="tip">
+      替换路径：<code>C:\Users\kunlunmeta\my-first-project\豆包\前端样式\assets\icons\</code> 与 <code>…\豆包\nav\</code>（两处文件互为同源，建议同时覆盖，保持字节一致）。<br>
+      注意：① 底栏 5 枚必须同属一套，不要逐页换套；② 点击热区保持 ≥44×44pt，图标本体仍按 27×27pt 居中；③ 若要套到 01–04 四个主题，只需把 <code>#8B7988</code> / <code>#A82760</code> 两处色值替换成该套的 <code>--outline</code> / <code>--berry</code>，几何不用改。
+    </div>
+  </div>
+
+  <div class="foot">生成于 2026-11-19｜图标源文件见同目录 icons/（15 个 SVG）</div>
+</div>
+</body>
+</html>
