@@ -140,12 +140,16 @@ class FeelingOut(BaseModel):
     note: str | None = None
 
 
+WeightFeeling = Literal["bloating", "puffy", "tired", "comfortable"]
+
+
 class WeightIn(BaseModel):
     client_key: str = Field(min_length=8, max_length=36)
     kg: Decimal
     measured_at: datetime
     tag: str | None = Field(default=None, max_length=32)
     note: str | None = Field(default=None, max_length=500)
+    feeling_tags: list[WeightFeeling] | None = Field(default=None, max_length=3)
 
     @field_validator("measured_at")
     @classmethod
@@ -181,6 +185,9 @@ class WeightOut(BaseModel):
     measured_at: str
     tag: str | None = None
     note: str | None = None
+    feeling_tags: list[WeightFeeling] = Field(default_factory=list)
+    source: Literal["manual", "scale"] = "manual"
+    device_id: int | None = None
 
 
 class WeightPointOut(BaseModel):
@@ -189,6 +196,21 @@ class WeightPointOut(BaseModel):
     kg: float
     weight_id: int
     measured_at: str
+
+
+class MetricSlot(BaseModel):
+    value: float | None = None
+    unit: str
+    status: Literal["available", "missing_height", "not_connected", "no_data", "unsupported"]
+    source: str | None = None
+    measured_at: str | None = None
+
+
+class CycleDayOut(BaseModel):
+    day: date
+    phase: Literal["menstrual", "follicular", "ovulatory", "luteal", "unknown"]
+    basis: Literal["recorded", "estimated", "unknown"]
+    note: str | None = None
 
 
 class WeightSummaryOut(BaseModel):
@@ -201,6 +223,10 @@ class WeightSummaryOut(BaseModel):
     delta_grams: int | None = None
     delta_kg: float | None = None
     suggestion: str | None = None
+    latest_record_id: int | None = None
+    record_days: int = 0
+    metrics: dict[str, MetricSlot] = Field(default_factory=dict)
+    cycle_context: list[CycleDayOut] | None = None
 
 
 class WeightListOut(BaseModel):
@@ -246,6 +272,7 @@ class SkinAnalysisOut(BaseModel):
     model_id: str
     prompt_version: str
     demo_sample: bool = False
+    inference_ms: int | None = None
 
 
 class SkinSaveIn(BaseModel):
@@ -263,6 +290,8 @@ class SkinObservationOut(BaseModel):
     model_id: str
     prompt_version: str
     has_image: bool = True
+    quality: SkinQualityOut | None = None
+    demo_sample: bool = False
 
 
 class SkinSummaryOut(BaseModel):
@@ -270,6 +299,7 @@ class SkinSummaryOut(BaseModel):
     site: str
     captured_at: str
     visible: str
+    demo_sample: bool = False
 
 
 class AssistantQueryIn(BaseModel):
@@ -315,4 +345,7 @@ def weight_out(row: Any) -> WeightOut:
         measured_at=_as_utc_iso(row.measured_at),
         tag=row.tag,
         note=row.note,
+        feeling_tags=row.feeling_tags or [],
+        source=row.source,
+        device_id=row.device_id,
     )

@@ -1,66 +1,98 @@
 <template>
-  <view class="page">
-    <view class="card filters">
-      <picker mode="date" :value="from" :end="to" @change="onFromChange">
-        <view class="filter-field">起始：{{ from || '不限' }}</view>
-      </picker>
-      <picker mode="date" :value="to" :end="today" @change="onToChange">
-        <view class="filter-field">结束：{{ to || '不限' }}</view>
-      </picker>
-      <input v-model="tag" class="filter-field" placeholder="标签筛选（选填）" @confirm="load" />
+  <view class="hr-page detail-page">
+    <HerlogHeading title="记录明细" back-to="/pages/weight/index" back-label="体重" />
+    <details class="card filters">
+      <summary>按日期或标签筛选</summary>
+      <view class="filter-grid">
+        <view>
+          <H5Label class="hr-field-label" for="filter-start">起始日期</H5Label>
+          <H5Input id="filter-start" v-model="from" class="field" type="date" :max="to || today" />
+        </view>
+        <view>
+          <H5Label class="hr-field-label" for="filter-end">结束日期</H5Label>
+          <H5Input id="filter-end" v-model="to" class="field" type="date" :min="from || undefined" :max="today" />
+        </view>
+      </view>
+      <H5Label class="hr-field-label" for="filter-tag">标签</H5Label>
+      <H5Input id="filter-tag" v-model="tag" class="field" placeholder="例如晨起" />
       <view class="filter-actions">
-        <view class="ghost small" @tap="resetFilters">重置</view>
-        <view class="primary small" @tap="load">筛选</view>
+        <H5Button class="ghost" @click="resetFilters">重置</H5Button>
+        <H5Button class="primary" @click="applyFilters">筛选</H5Button>
       </view>
+    </details>
+    <view class="card ledger">
+      <view class="ledger-header">
+        <h2 class="hr-section-title">测量记录</h2>
+        <text class="muted">{{ total }} 笔</text>
+      </view>
+      <view v-if="!items.length" class="empty muted">还没有符合条件的记录。</view>
+      <view v-for="item in items" :key="item.id" class="record">
+        <view class="record-main">
+          <view class="record-value hr-number">{{ item.kg }} <text class="unit">kg</text></view>
+          <view class="muted">{{ formatMoment(item.measured_at) }}<text v-if="item.tag"> · {{ item.tag }}</text></view>
+          <view class="muted">{{ item.source === 'scale' ? '设备测量' : '手动记录' }}<text v-if="item.feeling_tags?.length"> · {{ item.feeling_tags.map(code => feelingLabels[code]).join('、') }}</text></view>
+          <view v-if="item.note" class="muted">{{ item.note }}</view>
+        </view>
+        <view class="record-actions">
+          <H5Button class="hr-action" @click="startEdit(item)" :aria-label="'修改 ' + formatMoment(item.measured_at) + ' 的记录'">编辑</H5Button>
+          <H5Button class="hr-action danger" @click="remove(item)" :aria-label="'删除 ' + formatMoment(item.measured_at) + ' 的记录'">删除</H5Button>
+        </view>
+      </view>
+      <H5Button v-if="total > items.length" class="hr-action more" @click="loadMore">加载更多（{{ items.length }}/{{ total }}）</H5Button>
     </view>
 
-    <view v-if="items.length === 0" class="card empty">还没有符合条件的记录。</view>
-
-    <view v-for="item in items" :key="item.id" class="card record" @tap="startEdit(item)">
-      <view class="record-main">
-        <view class="record-value">{{ item.kg }} <text class="unit">kg</text></view>
-        <view class="muted">{{ formatMoment(item.measured_at) }}<text v-if="item.tag"> · {{ item.tag }}</text></view>
-        <view v-if="item.note" class="muted">{{ item.note }}</view>
-      </view>
-      <text class="danger" @tap.stop="remove(item)">删除</text>
+    <view class="card metric">
+      <h2 class="hr-section-title">体成分</h2>
+      <view v-if="bmi?.value != null">最近一次 BMI {{ bmi.value.toFixed(1) }}</view>
+      <H5Button v-else-if="bmi?.status === 'missing_height'" class="hr-action" @click="openProfile">补充身高后可查看 BMI</H5Button>
+      <view v-else class="muted">有了体重和身高记录后，可以在这里查看 BMI。</view>
+      <view class="muted">体成分设备尚未接入</view>
     </view>
 
-    <view v-if="total > items.length" class="more" @tap="loadMore">加载更多（{{ items.length }}/{{ total }}）</view>
-
-    <view v-if="editVisible">
-      <view class="sheet-mask" @tap="editVisible = false" />
-      <view class="sheet">
-        <view class="sheet-title">修改这笔体重</view>
-        <input v-model="editKg" class="field" type="digit" placeholder="体重 kg" />
-        <picker mode="date" :value="editDay" :end="today" @change="onEditDay">
-          <view class="field">日期：{{ editDay }}</view>
-        </picker>
-        <picker mode="time" :value="editTime" @change="onEditTime">
-          <view class="field">时间：{{ editTime }}</view>
-        </picker>
-        <input v-model="editTag" class="field" placeholder="标签（选填）" />
-        <input v-model="editNote" class="field" placeholder="备注（选填）" />
-        <text v-if="editError" class="error">{{ editError }}</text>
-        <button class="primary" :disabled="saving" @tap="saveEdit">
-          {{ saving ? '保存中…' : '保存修改' }}
-        </button>
-        <view class="ghost cancel" @tap="editVisible = false">取消</view>
+    <HerlogSheet v-if="editVisible" title="修改体重" :context="formatMoment(editing?.measured_at || '')"
+      :busy="saving" @close="editVisible = false">
+      <H5Label class="hr-field-label" for="edit-weight">体重（kg）</H5Label>
+      <H5Input id="edit-weight" v-model="editKg" class="field" inputmode="decimal" />
+      <view class="filter-grid">
+        <view><H5Label class="hr-field-label" for="edit-day">日期</H5Label><H5Input id="edit-day" v-model="editDay" class="field" type="date" :max="today" /></view>
+        <view><H5Label class="hr-field-label" for="edit-time">时间</H5Label><H5Input id="edit-time" v-model="editTime" class="field" type="time" /></view>
       </view>
-    </view>
+      <H5Label class="hr-field-label" for="edit-tag">标签（选填）</H5Label>
+      <H5Input id="edit-tag" v-model="editTag" class="field" maxlength="32" />
+      <H5Label class="hr-field-label" for="edit-note">备注（选填）</H5Label>
+      <H5Input id="edit-note" v-model="editNote" class="field" maxlength="500" />
+      <view class="hr-field-label">身体感受（选填）</view>
+      <view class="edit-feelings">
+        <H5Button v-for="(label, code) in feelingLabels" :key="code" :class="{ chosen: editFeelings.includes(code) }"
+          :aria-pressed="editFeelings.includes(code)" @click="toggleFeeling(code)">{{ label }}</H5Button>
+      </view>
+      <view v-if="editError" class="error" role="alert">{{ editError }}</view>
+      <template #actions>
+        <H5Button class="primary" :disabled="saving" @click="saveEdit">{{ saving ? '保存中…' : '保存修改' }}</H5Button>
+      </template>
+    </HerlogSheet>
   </view>
 </template>
 
 <script setup lang="ts">
+import { H5Label } from '../../components/H5Form'
+import HerlogHeading from '../../components/HerlogHeading.vue'
+import HerlogSheet from '../../components/HerlogSheet.vue'
+import H5Input from '../../components/H5Input'
+import H5Button from '../../components/H5Button'
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { formatMoment, shanghaiDayKey, toZonedIso, todayString } from '../../shared/dates'
 import { parseKgToGrams } from '../../shared/weight'
-import { ApiRequestError, StaleSessionError } from '../../services/httpClient'
-import { deleteWeight, listWeights, updateWeight } from '../../services/weightService'
-import type { WeightItem } from '../../services/types'
+import { ApiRequestError, currentEpoch, StaleSessionError } from '../../services/httpClient'
+import { deleteWeight, getSummary, listWeights, updateWeight } from '../../services/weightService'
+import type { WeightItem, WeightSummary } from '../../services/types'
+import type { Feeling } from '../../services/wellnessService'
 
 const today = todayString()
 const items = ref<WeightItem[]>([])
+const bmi = ref<NonNullable<WeightSummary['metrics']>[string] | null>(null)
+const feelingLabels = { comfortable: '舒适', tired: '疲惫', bloating: '腹胀', puffy: '感觉浮肿' }
 const total = ref(0)
 const page = ref(1)
 const from = ref('')
@@ -68,6 +100,7 @@ const to = ref('')
 const tag = ref('')
 
 const editVisible = ref(false)
+const editFeelings = ref<Feeling[]>([])
 const editing = ref<WeightItem | null>(null)
 const editKg = ref('')
 const editDay = ref(today)
@@ -104,20 +137,21 @@ function loadMore() {
   load(true)
 }
 
+function applyFilters() {
+  if (from.value && to.value && from.value > to.value) {
+    uni.showToast({ title: '起始日期不能晚于结束日期', icon: 'none' })
+    return
+  }
+  page.value = 1
+  void load()
+}
+
 function resetFilters() {
   from.value = ''
   to.value = ''
   tag.value = ''
   page.value = 1
   load()
-}
-
-function onFromChange(event: { detail: { value: string } }) {
-  from.value = event.detail.value
-}
-
-function onToChange(event: { detail: { value: string } }) {
-  to.value = event.detail.value
 }
 
 function startEdit(item: WeightItem) {
@@ -128,16 +162,15 @@ function startEdit(item: WeightItem) {
   editTime.value = moment.slice(-5)
   editTag.value = item.tag ?? ''
   editNote.value = item.note ?? ''
+  editFeelings.value = [...(item.feeling_tags ?? [])]
   editError.value = ''
   editVisible.value = true
 }
 
-function onEditDay(event: { detail: { value: string } }) {
-  editDay.value = event.detail.value
-}
-
-function onEditTime(event: { detail: { value: string } }) {
-  editTime.value = event.detail.value
+function toggleFeeling(code: Feeling) {
+  if (editFeelings.value.includes(code)) editFeelings.value = editFeelings.value.filter(item => item !== code)
+  else if (editFeelings.value.length < 3) editFeelings.value.push(code)
+  else uni.showToast({ title: '最多选择三项', icon: 'none' })
 }
 
 async function saveEdit() {
@@ -146,6 +179,10 @@ async function saveEdit() {
     return
   }
   editError.value = ''
+  if (!editDay.value || !editTime.value) {
+    editError.value = '请选择测量日期和时间'
+    return
+  }
   try {
     parseKgToGrams(editKg.value)
   } catch (validation) {
@@ -159,11 +196,13 @@ async function saveEdit() {
       kg: editKg.value.trim(),
       measured_at: toZonedIso(editDay.value, editTime.value),
       tag: editTag.value.trim() || null,
-      note: editNote.value.trim() || null
+      note: editNote.value.trim() || null,
+      feeling_tags: editFeelings.value
     })
     editVisible.value = false
     page.value = 1
     await load()
+    void loadMetrics()
   } catch (failure) {
     editError.value =
       failure instanceof ApiRequestError ? failure.message : '保存失败，请稍后重试'
@@ -185,6 +224,7 @@ function remove(item: WeightItem) {
         await deleteWeight(item.id)
         page.value = 1
         await load()
+        void loadMetrics()
       } catch (failure) {
         uni.showToast({
           title: failure instanceof ApiRequestError ? failure.message : '删除失败',
@@ -195,76 +235,51 @@ function remove(item: WeightItem) {
   })
 }
 
+async function loadMetrics() {
+  const epoch = currentEpoch()
+  bmi.value = null
+  try {
+    const data = await getSummary(30)
+    if (epoch === currentEpoch()) bmi.value = data.metrics?.bmi ?? null
+  } catch {
+    // 明细仍可以独立读取。
+  }
+}
+
+function openProfile() {
+  uni.switchTab({ url: '/pages/me/index' })
+}
+
 onShow(() => {
   page.value = 1
   load()
+  void loadMetrics()
 })
 </script>
 
 <style scoped>
-.page {
-  min-height: 100vh;
-  padding: 12px 16px 24px;
-  box-sizing: border-box;
+.filters summary { cursor: pointer; min-height: 44px; color: var(--hr-ink); padding: 8px 0; box-sizing: border-box; font-size: 14px; }
+.filters:not([open]) { padding-block: 4px; }
+.filters[open] summary { margin-bottom: 8px; }
+.filter-grid,.filter-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.filter-grid > view,.filter-grid > uni-view { min-width: 0; }
+.ledger-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+h2 { margin: 0; }
+.record { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--hr-line); }
+.record-main { min-width: 0; }
+.record-actions { display: flex; flex-wrap: wrap; justify-content: end; gap: 0; flex: 0 0 auto; }
+.record-actions .hr-action { padding-inline: 6px; min-width: 44px; }
+.record-value { color: var(--hr-rose-deep); font-size: 25px; line-height: 1.1; }
+.unit { font: 13px var(--hr-font); color: var(--hr-ink-2); }
+.danger { color: var(--hr-danger); }
+.empty { padding: 20px 4px; }
+.more { margin: 0 auto; display: flex; }
+.metric { display: grid; gap: 5px; background: var(--hr-peach); }
+.metric .hr-action { justify-self: start; padding-left: 0; }
+.edit-feelings { display: flex; gap: 8px; flex-wrap: wrap; margin: 7px 0 10px; }
+.edit-feelings button {
+  min-height: 44px; padding: 7px 11px; font-size: 13px; background: var(--hr-paper);
+  color: var(--hr-ink-2); border: 1px solid var(--hr-line); border-radius: 999px;
 }
-.filters {
-  padding: 12px;
-}
-.filter-field {
-  border: 1px solid #e4d8d3;
-  border-radius: 10px;
-  height: 38px;
-  line-height: 38px;
-  padding: 0 10px;
-  margin-bottom: 8px;
-  font-size: 13px;
-  color: #4b413d;
-}
-.filter-actions {
-  display: flex;
-  gap: 10px;
-}
-.small {
-  flex: 1;
-  height: 36px;
-  line-height: 36px;
-  font-size: 13px;
-}
-.record {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.record-value {
-  font-size: 20px;
-  font-weight: 600;
-}
-.unit {
-  font-size: 13px;
-  font-weight: 400;
-}
-.danger {
-  color: #c0392b;
-  font-size: 13px;
-}
-.empty {
-  text-align: center;
-  color: #a89d98;
-  font-size: 13px;
-  padding: 28px 0;
-}
-.more {
-  text-align: center;
-  color: #b4544a;
-  font-size: 13px;
-  padding: 10px 0;
-}
-.sheet-title {
-  font-size: 17px;
-  font-weight: 600;
-  margin-bottom: 14px;
-}
-.cancel {
-  margin-top: 10px;
-}
+.edit-feelings button.chosen { background: var(--hr-rose-soft); border-color: var(--hr-rose); color: var(--hr-rose-deep); }
 </style>

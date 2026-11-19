@@ -31,11 +31,13 @@ export function listObservations(query: {
   site?: string
   from?: string
   to?: string
+  limit?: number
 } = {}): Promise<SkinSummaryItem[]> {
   const data: Record<string, unknown> = {}
   if (query.site) data.site = query.site
   if (query.from) data.from = query.from
   if (query.to) data.to = query.to
+  if (query.limit !== undefined) data.limit = query.limit
   return request<SkinSummaryItem[]>('/herlog/skin/observations', { data })
 }
 
@@ -53,7 +55,5 @@ export { releaseBlobUrl }
 export const SKIN_SITES = ['面部', '额头', '下巴', '脸颊', '颈部', '背部', '胸口', '手臂', '其他']
 
 export const SKIN_FLOWS = {
-  notice: '照片会发送给模型服务，仅用于本次观察，确认保存后才会写入历史。',
-  saving: '保存中…',
-  analyzing: '正在分析…'
+  notice: '照片会发送给模型服务进行本次观察。点「保存」后，照片和观察会进入你的历史记录。'
 }

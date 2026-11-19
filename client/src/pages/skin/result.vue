@@ -1,179 +1,103 @@
 <template>
-  <view class="page">
-    <view v-if="!analysis" class="card empty">
-      <view>没有可显示的分析结果。</view>
-      <view class="muted">请回到皮肤页重新选择部位拍照。</view>
-      <view class="ghost back" @tap="backToSkin">返回皮肤页</view>
-    </view>
+  <view>
+    <HerlogHeading title="观察结果" :description="analysis.site + ' · ' + formatMoment(analysis.captured_at)" />
 
-    <block v-else>
-      <view class="card">
-        <image v-if="skinDraft.previewUrl" :src="skinDraft.previewUrl" class="preview" mode="aspectFill" />
-        <view class="meta">
-          <text>{{ analysis.site }}</text>
-          <text class="muted">{{ formatMoment(analysis.captured_at) }}</text>
-        </view>
-        <view v-if="analysis.demo_sample" class="demo">演示样例（未接入真实推理服务）</view>
-        <view class="quality" :class="analysis.quality.level">
-          {{ analysis.quality.message }}
-        </view>
+    <view v-if="error" class="skin-alert skin-alert-error" role="alert">{{ error }}</view>
+    <template v-if="expired">
+      <view class="skin-actions">
+        <SkinButton class="skin-button" @click="emit('discarded')">返回皮肤</SkinButton>
+        <SkinButton class="skin-button skin-primary" @click="emit('retake')">重拍</SkinButton>
       </view>
-
-      <view class="card section">
-        <view class="section-title">可见外观</view>
-        <view class="section-text">{{ analysis.visible }}</view>
+    </template>
+    <template v-else>
+      <view v-if="analysis.quality.level === 'limited'" class="skin-alert" role="status">
+        {{ analysis.quality.message }}
       </view>
-      <view class="card section">
-        <view class="section-title">看不清之处</view>
-        <view class="section-text">{{ analysis.unclear }}</view>
+      <image v-if="previewUrl" class="skin-photo skin-block" :src="previewUrl" mode="aspectFit" aria-label="待保存的照片" />
+      <view class="skin-panel skin-block">
+        <ObservationCopy :observation="analysis" />
       </view>
-      <view class="card section">
-        <view class="section-title">值得留意</view>
-        <view class="section-text">{{ analysis.attention }}</view>
+      <view v-if="!analysis.demo_sample" class="skin-muted skin-block">
+        模型 {{ analysis.model_id }}
+        <text v-if="analysis.inference_ms != null"> · 推理 {{ (analysis.inference_ms / 1000).toFixed(1) }} 秒</text>
       </view>
-
-      <view class="card footnote">
-        <view class="muted">AI 观察 · 模型 {{ analysis.model_id }} · 提示版本 {{ analysis.prompt_version }}</view>
-        <view class="muted">结果不构成诊断，也不提供改善百分比。</view>
+      <view class="skin-actions result-actions">
+        <SkinButton v-if="uncertain" class="skin-button skin-link" :disabled="busy" @click="emit('discarded')">返回皮肤</SkinButton>
+        <template v-else>
+          <SkinButton class="skin-button skin-link" :disabled="busy" @click="discard(false)">不保存</SkinButton>
+          <SkinButton class="skin-button" :disabled="busy" @click="discard(true)">重拍</SkinButton>
+        </template>
+        <SkinButton class="skin-button skin-primary" :disabled="busy" @click="save">
+          {{ busy ? busyLabel : uncertain ? '重试保存' : '保存' }}
+        </SkinButton>
       </view>
-
-      <text v-if="error" class="error">{{ error }}</text>
-      <button class="primary" :disabled="saving" @tap="save">
-        {{ saving ? '保存中…' : '保存到历史' }}
-      </button>
-      <view class="actions">
-        <view class="ghost action" @tap="discard">不保存</view>
-        <view class="ghost action" @tap="retake">重拍</view>
-      </view>
-    </block>
+    </template>
   </view>
 </template>
 
 <script setup lang="ts">
+import SkinButton from '../../components/H5Button'
+import HerlogHeading from '../../components/HerlogHeading.vue'
 import { ref } from 'vue'
 import { formatMoment } from '../../shared/dates'
-import { clearSkinDraft, skinDraft } from '../../utils/skinDraft'
-import { ApiRequestError } from '../../services/httpClient'
+import { ApiRequestError, currentEpoch, StaleSessionError } from '../../services/httpClient'
 import { discardPending, saveObservation } from '../../services/skinService'
+import type { SkinAnalysis } from '../../services/types'
+import ObservationCopy from './ObservationCopy.vue'
 
-const analysis = skinDraft.analysis
+const props = defineProps<{ analysis: SkinAnalysis; previewUrl?: string }>()
+const emit = defineEmits<{ saved: []; expired: []; discarded: []; retake: [] }>()
 const error = ref('')
-const saving = ref(false)
-
-function backToSkin() {
-  uni.switchTab({ url: '/pages/skin/index' })
-}
+const busy = ref(false)
+const busyLabel = ref('')
+const uncertain = ref(false)
+const expired = ref(false)
 
 async function save() {
-  if (!skinDraft.analysis || saving.value) {
-    return
-  }
+  if (busy.value || expired.value) return
+  const epoch = currentEpoch()
+  busy.value = true
+  busyLabel.value = '保存中…'
   error.value = ''
-  saving.value = true
   try {
-    await saveObservation(skinDraft.analysis.analysis_id)
-    clearSkinDraft()
-    uni.showToast({ title: '已保存', icon: 'none' })
-    backToSkin()
+    await saveObservation(props.analysis.analysis_id)
+    if (epoch === currentEpoch()) emit('saved')
   } catch (failure) {
-    // 失败保留当前页面与所选图片，允许重试。
-    error.value =
-      failure instanceof ApiRequestError ? failure.message : '保存失败，请重试'
+    if (epoch !== currentEpoch() || failure instanceof StaleSessionError) return
+    if (failure instanceof ApiRequestError && failure.status === 410) {
+      expired.value = true
+      error.value = '这张结果已过期，请重新拍一次'
+      emit('expired')
+    } else {
+      uncertain.value = failure instanceof ApiRequestError && (failure.status === 0 || failure.status >= 500)
+      error.value = uncertain.value
+        ? '保存状态暂未确认，可以重试或回历史查看'
+        : '这次保存没有完成，可以重试'
+    }
   } finally {
-    saving.value = false
+    busy.value = false
   }
 }
 
-async function release() {
-  if (!skinDraft.analysis) {
-    return
-  }
-  const analysisId = skinDraft.analysis.analysis_id
+async function discard(retake: boolean) {
+  if (busy.value) return
+  const epoch = currentEpoch()
+  busy.value = true
+  busyLabel.value = retake ? '准备重拍…' : '正在返回…'
   try {
-    await discardPending(analysisId)
+    await discardPending(props.analysis.analysis_id)
   } catch {
-    // 暂存释放失败不阻塞返回，过期后服务端也会自动释放。
+    // 服务端 TTL 会释放未提交的草稿。
+  } finally {
+    if (epoch === currentEpoch()) {
+      if (retake) emit('retake')
+      else emit('discarded')
+    }
+    busy.value = false
   }
-  clearSkinDraft()
-}
-
-function discard() {
-  void release().then(() => uni.navigateBack())
-}
-
-function retake() {
-  void release().then(() => {
-    uni.navigateBack()
-    setTimeout(() => uni.switchTab({ url: '/pages/skin/index' }), 120)
-  })
 }
 </script>
 
 <style scoped>
-.page {
-  min-height: 100vh;
-  padding: 12px 16px 32px;
-  box-sizing: border-box;
-}
-.preview {
-  width: 100%;
-  height: 220px;
-  border-radius: 14px;
-  background: #f2ece9;
-}
-.meta {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-  font-size: 14px;
-}
-.demo {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #b4544a;
-  background: #fdf2ef;
-  border-radius: 8px;
-  padding: 6px 10px;
-}
-.quality {
-  margin-top: 8px;
-  font-size: 13px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: #f5f1ef;
-  color: #6f635e;
-}
-.quality.limited {
-  background: #fdf2ef;
-  color: #a3543f;
-}
-.section-title {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-.section-text {
-  font-size: 14px;
-  line-height: 1.7;
-}
-.footnote {
-  line-height: 1.7;
-}
-.actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-.action {
-  flex: 1;
-  font-size: 14px;
-}
-.back {
-  margin-top: 14px;
-}
-.empty {
-  text-align: center;
-  padding: 40px 16px;
-  line-height: 1.8;
-}
+.result-actions { position: sticky; bottom: 0; padding: 8px 0; background: var(--skin-paper); }
 </style>

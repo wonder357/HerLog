@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import logging
 import uuid
 from datetime import date, datetime, timedelta, timezone
 
@@ -13,6 +14,7 @@ from app.core.config import settings
 from app.core.errors import ApiError, invalid, not_found
 from app.models.herlog import SkinObservation
 from app.schemas.herlog import (
+    SITES,
     SkinAnalysisOut,
     SkinAnalyzeIn,
     SkinObservationOut,
@@ -20,8 +22,10 @@ from app.schemas.herlog import (
     SkinSummaryOut,
 )
 from app.services import vision
-from app.services.image_validation import decode_image
+from app.services.image_validation import decode_image, inspect_image
 from app.services.pending_store import PendingStore
+
+logger = logging.getLogger(__name__)
 
 
 def _expires_iso(seconds: int) -> str:
@@ -50,6 +54,8 @@ def analyze(
             "attention": observation.attention,
             "model_id": observation.model_id,
             "prompt_version": observation.prompt_version,
+            "quality_level": observation.quality,
+            "quality_message": observation.quality_message,
         },
         settings.PENDING_TTL_SECONDS,
     )
@@ -65,20 +71,35 @@ def analyze(
         model_id=observation.model_id,
         prompt_version=observation.prompt_version,
         demo_sample=observation.demo_sample,
+        inference_ms=observation.inference_ms,
     )
 
 
-def _to_out(row: SkinObservation) -> SkinObservationOut:
+def _stored_quality(row: SkinObservation) -> SkinQualityOut | None:
+    # 质量取自照片本身，沿用同一算法，现有数据库无需加列。
+    try:
+        level, message = inspect_image(row.image_bytes, row.mime).quality
+    except ApiError:
+        return None
+    return SkinQualityOut(level=level, message=message)
+
+
+def _to_out(row: SkinObservation, quality: SkinQualityOut | None = None) -> SkinObservationOut:
+    visible, unclear, attention = vision.display_sections(
+        row.visible, row.unclear, row.attention, row.prompt_version
+    )
     return SkinObservationOut(
         id=row.id,
         site=row.site,
         captured_at=row.captured_at.isoformat() + "Z",
         mime=row.mime,
-        visible=row.visible,
-        unclear=row.unclear,
-        attention=row.attention,
+        visible=visible,
+        unclear=unclear,
+        attention=attention,
         model_id=row.model_id,
         prompt_version=row.prompt_version,
+        quality=quality if quality is not None else _stored_quality(row),
+        demo_sample=row.model_id.startswith("fixture:"),
     )
 
 
@@ -101,6 +122,11 @@ def save_observation(
         return _to_out(saved), False
     pending = store.get(customer_id, analysis_id)
     if pending is None:
+        # 暂存可能在首次查询后被并发保存释放。结束快照后再读一次。
+        session.rollback()
+        saved = _find_saved(session, customer_id, analysis_id)
+        if saved is not None:
+            return _to_out(saved), False
         raise ApiError(410, "分析结果已过期，请重新拍摄")
     row = SkinObservation(
         customer_id=customer_id,
@@ -125,8 +151,14 @@ def save_observation(
         if existing is None:
             raise
         return _to_out(existing), False
-    store.delete(customer_id, analysis_id)
-    return _to_out(row), True
+    try:
+        store.delete(customer_id, analysis_id)
+    except Exception as exc:
+        logger.warning("Could not release committed skin draft: %s", type(exc).__name__)
+    quality = None
+    if "quality_level" in pending and "quality_message" in pending:
+        quality = SkinQualityOut(level=pending["quality_level"], message=pending["quality_message"])
+    return _to_out(row, quality), True
 
 
 def list_observations(
@@ -135,7 +167,14 @@ def list_observations(
     site: str | None = None,
     day_from: date | None = None,
     day_to: date | None = None,
+    limit: int | None = None,
 ) -> list[SkinSummaryOut]:
+    if site and site not in SITES:
+        raise invalid("请选择有效的皮肤部位")
+    if day_from == date.min or day_to == date.max or (
+        day_from is not None and day_to is not None and day_from > day_to
+    ):
+        raise invalid("请选择有效的日期范围")
     conditions = [SkinObservation.customer_id == customer_id]
     if site:
         conditions.append(SkinObservation.site == site)
@@ -143,13 +182,29 @@ def list_observations(
         conditions.append(SkinObservation.captured_at >= local_day_start_utc(day_from))
     if day_to is not None:
         conditions.append(SkinObservation.captured_at < local_day_end_utc(day_to))
-    rows = session.scalars(
-        select(SkinObservation)
+    statement = (
+        select(
+            SkinObservation.id,
+            SkinObservation.site,
+            SkinObservation.captured_at,
+            SkinObservation.visible,
+            SkinObservation.model_id,
+            SkinObservation.prompt_version,
+        )
         .where(*conditions)
         .order_by(SkinObservation.captured_at.desc(), SkinObservation.id.desc())
-    ).all()
+    )
+    if limit is not None:
+        statement = statement.limit(limit)
+    rows = session.execute(statement).all()
     return [
-        SkinSummaryOut(id=row.id, site=row.site, captured_at=row.captured_at.isoformat() + "Z", visible=row.visible)
+        SkinSummaryOut(
+            id=row.id,
+            site=row.site,
+            captured_at=row.captured_at.isoformat() + "Z",
+            visible=vision.display_visible(row.visible, row.prompt_version),
+            demo_sample=row.model_id.startswith("fixture:"),
+        )
         for row in rows
     ]
 

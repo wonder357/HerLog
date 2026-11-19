@@ -1,59 +1,36 @@
 <template>
-  <view v-if="visible">
-    <view class="sheet-mask" @tap="cancel" />
-    <view class="sheet">
-      <view class="sheet-title">记录感受 · {{ formatDayLabel(day) }}</view>
-
-      <view class="label">经量</view>
-      <view class="chips">
-        <view
-          v-for="item in flows"
-          :key="item"
-          class="chip"
-          :class="{ active: flow === item }"
-          @tap="toggleSingle(item)"
-        >
-          {{ item }}
-        </view>
-      </view>
-
-      <view class="label">症状（可多选）</view>
-      <view class="chips">
-        <view
-          v-for="item in symptoms"
-          :key="item"
-          class="chip"
-          :class="{ active: selectedSymptoms.includes(item) }"
-          @tap="toggleSymptom(item)"
-        >
-          {{ item }}
-        </view>
-      </view>
-
-      <view class="label">生活影响</view>
-      <view class="chips">
-        <view
-          v-for="item in impacts"
-          :key="item"
-          class="chip"
-          :class="{ active: impact === item }"
-          @tap="toggleImpact(item)"
-        >
-          {{ item }}
-        </view>
-      </view>
-
-      <input v-model="note" class="field" placeholder="备注（选填）" />
-      <text v-if="error" class="error">{{ error }}</text>
-      <button class="primary" :disabled="saving" @tap="submit">
-        {{ saving ? '保存中…' : '保存' }}
-      </button>
-      <view class="ghost cancel" @tap="cancel">取消</view>
+  <HerlogSheet v-if="visible" title="记录感受" :context="formatDayLabel(day)" :busy="saving" @close="cancel">
+    <view class="hr-field-label">经量</view>
+    <view class="chips">
+      <H5Button v-for="item in flows" :key="item" class="chip" :class="{ active: flow === item }"
+        :aria-pressed="flow === item" @click="toggleSingle(item)">{{ item }}</H5Button>
     </view>
-  </view>
+
+    <view class="hr-field-label">症状 <small>可多选</small></view>
+    <view class="chips">
+      <H5Button v-for="item in symptoms" :key="item" class="chip" :class="{ active: selectedSymptoms.includes(item) }"
+        :aria-pressed="selectedSymptoms.includes(item)" @click="toggleSymptom(item)">{{ item }}</H5Button>
+    </view>
+
+    <view class="hr-field-label">生活影响</view>
+    <view class="chips">
+      <H5Button v-for="item in impacts" :key="item" class="chip" :class="{ active: impact === item }"
+        :aria-pressed="impact === item" @click="toggleImpact(item)">{{ item }}</H5Button>
+    </view>
+    <H5Label class="hr-field-label" for="cycle-note">备注 <small>选填</small></H5Label>
+    <H5Input id="cycle-note" v-model="note" class="field" maxlength="500" />
+    <view v-if="error" class="error" role="alert">{{ error }}</view>
+    <template #actions>
+      <H5Button class="primary" :disabled="saving" @click="submit">{{ saving ? '保存中…' : '保存感受' }}</H5Button>
+    </template>
+  </HerlogSheet>
 </template>
 
 <script setup lang="ts">
+import { H5Label } from './H5Form'
+import H5Button from './H5Button'
+import HerlogSheet from './HerlogSheet.vue'
+import H5Input from './H5Input'
 import { ref, watch } from 'vue'
 import { formatDayLabel } from '../shared/dates'
 import { ApiRequestError, StaleSessionError } from '../services/httpClient'
@@ -137,35 +114,11 @@ async function submit() {
 </script>
 
 <style scoped>
-.sheet-title {
-  font-size: 17px;
-  font-weight: 600;
-  margin-bottom: 12px;
-}
-.label {
-  font-size: 13px;
-  color: #8a7f7a;
-  margin: 8px 0 6px;
-}
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 6px;
-}
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 14px; }
 .chip {
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid #e4d8d3;
-  font-size: 13px;
-  color: #6f635e;
+  min-height: 44px; padding: 7px 11px; border: 1px solid var(--hr-line);
+  border-radius: 12px; background: var(--hr-paper); color: var(--hr-ink-2); font-size: 13px;
 }
-.chip.active {
-  border-color: #b4544a;
-  color: #b4544a;
-  background: #fdf2ef;
-}
-.cancel {
-  margin-top: 10px;
-}
+.chip.active { background: var(--hr-rose-soft); color: var(--hr-rose-deep); border-color: var(--hr-rose); }
+small { font-size: 12px; color: var(--hr-ink-3); font-weight: 400; }
 </style>

@@ -1,23 +1,39 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.clock import local_day_end_utc, local_day_start_utc, local_today, to_utc_naive
+from app.core.clock import local_day_end_utc, local_day_start_utc, local_today, to_local, to_utc_naive
 from app.core.errors import conflict, invalid, not_found
 from app.logic import weight as weight_logic
-from app.models.herlog import Weight
+from app.models.herlog import Feeling, Profile, Weight
 from app.schemas.herlog import (
     WeightIn,
     WeightListOut,
     WeightOut,
     WeightPointOut,
     WeightSummaryOut,
+    MetricSlot,
     weight_out,
 )
 from app.schemas.weight_plus import CompareOut, CompareWindowOut
+from app.logic.metabolism import bmi_value
+from app.services.cycle_context import cycle_records, phase_for
+
+DEVICE_METRIC_UNITS = {
+    "body_fat_pct": "percent",
+    "skeletal_muscle_kg": "kg",
+    "muscle_mass_kg": "kg",
+    "body_water_pct": "percent",
+    "bone_mass_kg": "kg",
+    "bmr_kcal_per_day": "kcal/day",
+    "visceral_fat_level": "vendor_level",
+    "protein_pct": "percent",
+    "metabolic_age_years": "years",
+}
 
 
 def _rows(rows: list[Weight]) -> list[weight_logic.WeightRow]:
@@ -71,6 +87,7 @@ def _same_content(row: Weight, payload: WeightIn, measured_at_utc: datetime, gra
         and row.measured_at == measured_at_utc
         and (row.tag or None) == (payload.tag or None)
         and (row.note or None) == (payload.note or None)
+        and (row.feeling_tags or []) == list(dict.fromkeys(payload.feeling_tags or []))
     )
 
 
@@ -78,6 +95,7 @@ def create_weight(session: Session, customer_id: str, payload: WeightIn) -> tupl
     """同账号同 client_key 幂等：内容一致返回原记录，内容不同 409。"""
 
     measured_at_utc = to_utc_naive(payload.measured_at)
+    measured_at_utc = measured_at_utc.replace(microsecond=measured_at_utc.microsecond // 1000 * 1000)
     try:
         grams = weight_logic.parse_kg(payload.kg)
     except ValueError as exc:
@@ -96,18 +114,35 @@ def create_weight(session: Session, customer_id: str, payload: WeightIn) -> tupl
         measured_at=measured_at_utc,
         tag=payload.tag,
         note=payload.note,
+        feeling_tags=list(dict.fromkeys(payload.feeling_tags or [])),
     )
     session.add(row)
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        existing = session.scalar(
+            select(Weight).where(Weight.customer_id == customer_id, Weight.client_key == payload.client_key)
+        )
+        if existing is None:
+            raise
+        if not _same_content(existing, payload, measured_at_utc, grams):
+            raise conflict("该请求已用于另一笔体重记录，请刷新后重试")
+        return weight_out(existing), False
     return weight_out(row), True
 
 
-def update_weight(session: Session, customer_id: str, weight_id: int, payload: WeightIn) -> WeightOut:
+def owned_weight(session: Session, customer_id: str, weight_id: int) -> Weight:
     row = session.scalar(
         select(Weight).where(Weight.id == weight_id, Weight.customer_id == customer_id)
     )
     if row is None:
         raise not_found()
+    return row
+
+
+def update_weight(session: Session, customer_id: str, weight_id: int, payload: WeightIn) -> WeightOut:
+    row = owned_weight(session, customer_id, weight_id)
     try:
         grams = weight_logic.parse_kg(payload.kg)
     except ValueError as exc:
@@ -116,21 +151,19 @@ def update_weight(session: Session, customer_id: str, weight_id: int, payload: W
     row.measured_at = to_utc_naive(payload.measured_at)
     row.tag = payload.tag
     row.note = payload.note
+    if payload.feeling_tags is not None:
+        row.feeling_tags = list(dict.fromkeys(payload.feeling_tags))
     session.commit()
     return weight_out(row)
 
 
 def delete_weight(session: Session, customer_id: str, weight_id: int) -> None:
-    row = session.scalar(
-        select(Weight).where(Weight.id == weight_id, Weight.customer_id == customer_id)
-    )
-    if row is None:
-        raise not_found()
+    row = owned_weight(session, customer_id, weight_id)
     session.delete(row)
     session.commit()
 
 
-def summary(session: Session, customer_id: str, days: int) -> WeightSummaryOut:
+def summary(session: Session, customer_id: str, days: int, include_cycle: bool = False) -> WeightSummaryOut:
     if days not in (7, 30):
         raise invalid("days 只支持 7 或 30")
     today = local_today()
@@ -153,6 +186,42 @@ def summary(session: Session, customer_id: str, days: int) -> WeightSummaryOut:
     if latest is not None and all(row.id != latest.id for row in rows):
         rows.append(latest)
     data = weight_logic.summarize(_rows(rows), days, today)
+    profile = session.get(Profile, customer_id)
+    height = profile.height_cm if profile else None
+    bmi = bmi_value(latest.grams, height) if latest else None
+    metrics = {
+        "bmi": MetricSlot(
+            value=bmi,
+            unit="kg/m2",
+            status="available" if bmi is not None else "missing_height" if latest and not height else "no_data",
+            source="profile_calculated" if bmi is not None else None,
+            measured_at=latest.measured_at.isoformat() + "Z" if bmi is not None and latest else None,
+        ),
+        **{
+            key: MetricSlot(unit=unit, status="not_connected")
+            for key, unit in DEVICE_METRIC_UNITS.items()
+        },
+    }
+    cycle_context = None
+    if include_cycle:
+        periods = cycle_records(session, customer_id)
+        feelings = {
+            row.day: row.symptoms for row in session.scalars(
+                select(Feeling).where(Feeling.customer_id == customer_id, Feeling.day.between(start_day, today))
+            )
+        }
+        flagged_days = {
+            to_local(row.measured_at).date()
+            for row in rows
+            if set(row.feeling_tags or []) & {"bloating", "puffy"}
+        }
+        cycle_context = []
+        for offset in range(days):
+            day = start_day + timedelta(days=offset)
+            context = phase_for(day, periods, today)
+            if context.phase == "luteal" and (day in flagged_days or "腹胀" in (feelings.get(day) or [])):
+                context.note = "这天处于估算的黄体期。你记录了身体感受，可以和当天的记录一起回看。"
+            cycle_context.append(context)
     return WeightSummaryOut(
         days=days,
         latest_grams=data.latest_grams,
@@ -174,6 +243,10 @@ def summary(session: Session, customer_id: str, days: int) -> WeightSummaryOut:
         delta_grams=data.delta_grams,
         delta_kg=data.delta_kg,
         suggestion=weight_logic.suggestion(data),
+        latest_record_id=latest.id if latest else None,
+        record_days=len(data.points),
+        metrics=metrics,
+        cycle_context=cycle_context,
     )
 
 
@@ -190,6 +263,8 @@ def _window(session: Session, customer_id: str, start_day: date, end_day: date, 
     points = weight_logic.daily_points(_rows(rows))
     grams = [point.grams for point in points]
     return CompareWindowOut(
+        start_day=start_day,
+        end_day=end_day,
         days=days,
         count=len(rows),
         coverage_days=len(points),
@@ -207,13 +282,13 @@ def compare(session: Session, customer_id: str, days: int) -> CompareOut:
         raise invalid("days 只支持 7 或 30")
     today = local_today()
     current_start = weight_logic.range_start(days, today)
-    previous_end = current_start
+    previous_end = current_start - timedelta(days=1)
     previous_start = weight_logic.range_start(days, previous_end)
     current = _window(session, customer_id, current_start, today, days)
     previous = _window(session, customer_id, previous_start, previous_end, days)
     avg_delta = (
         None
-        if current.avg_kg is None or previous.avg_kg is None
+        if current.coverage_days < 2 or previous.coverage_days < 2
         else round(current.avg_kg - previous.avg_kg, 3)
     )
     if previous.coverage_days == 0:

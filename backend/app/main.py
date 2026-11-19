@@ -149,6 +149,7 @@ def health() -> dict:
         "mysql": mysql_state,
         "redis": redis_state,
         "model_mode": settings.HERLOG_MODEL_MODE,
+        "skin_model_mode": settings.skin_model_mode,
     }
 
 

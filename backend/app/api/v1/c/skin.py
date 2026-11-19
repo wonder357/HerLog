@@ -62,11 +62,12 @@ def list_observations(
     site: str | None = None,
     day_from: date | None = Query(default=None, alias="from"),
     day_to: date | None = Query(default=None, alias="to"),
+    limit: int | None = Query(default=None, ge=1, le=100),
     session: Session = Depends(get_session),
     user: CurrentUser = Depends(get_current_user),
 ) -> ApiResponse[list[SkinSummaryOut]]:
     return ApiResponse(
-        data=skin_service.list_observations(session, user.customer_id, site, day_from, day_to)
+        data=skin_service.list_observations(session, user.customer_id, site, day_from, day_to, limit)
     )
 
 

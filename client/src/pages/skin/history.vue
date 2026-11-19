@@ -1,268 +1,377 @@
 <template>
-  <view class="page">
-    <view class="card">
-      <view class="chips">
-        <view class="chip" :class="{ active: site === '' }" @tap="selectSite('')">全部</view>
-        <view
-          v-for="item in SKIN_SITES"
-          :key="item"
-          class="chip"
-          :class="{ active: site === item }"
-          @tap="selectSite(item)"
+  <view class="hr-page herlog-skin">
+    <template v-if="showPair">
+      <SkinButton class="hr-back" @click="backToSelection">返回选择记录</SkinButton>
+      <HerlogHeading title="同部位对比" />
+      <view class="skin-alert">光线和角度可能影响两张照片的观感。</view>
+      <view class="compare-grid">
+        <view v-for="row in orderedPair" :key="row.id" class="skin-panel compare-column">
+          <HistoryObservation v-if="pairDetails[row.id]" :observation="pairDetails[row.id]" />
+          <template v-else>
+            <view class="skin-date">{{ skinMoment(row.captured_at) }}</view>
+            <view v-if="pairErrors[row.id]" role="alert">
+              <view class="skin-muted">这条记录没有加载成功</view>
+              <SkinButton class="skin-button skin-link" @click="loadPairSide(row.id)">重试</SkinButton>
+            </view>
+            <view v-else class="skin-skeleton" aria-label="正在读取观察" />
+          </template>
+        </view>
+      </view>
+    </template>
+    <template v-else>
+      <HerlogHeading title="照片历史" back-to="/pages/skin/index" back-label="皮肤">
+        <template #actions>
+          <SkinButton v-if="!comparing" class="hr-action" @click="startCompare()">对比记录</SkinButton>
+          <SkinButton v-else class="hr-action" @click="stopCompare">退出对比</SkinButton>
+        </template>
+      </HerlogHeading>
+
+      <view v-if="comparing" class="skin-panel skin-block">
+        <view class="skin-subtitle">{{ selected.length === 0 ? '选第一条记录' : selected.length === 1 ? '选同部位的第二条记录' : '确认要对比的记录' }}</view>
+        <view v-for="(row, index) in selected" :key="row.id" class="selection-line">
+          <text>{{ index === 0 ? '第一条' : '第二条' }} {{ row.site }} {{ skinMoment(row.captured_at) }}</text>
+          <SkinButton class="skin-button skin-link" @click="removePick(row.id)">移除</SkinButton>
+        </view>
+        <view v-if="conflict" class="skin-alert skin-alert-error" role="alert">{{ conflict }}</view>
+        <SkinButton v-if="selected.length === 2" class="skin-button skin-primary skin-wide" @click="openPair">查看对比</SkinButton>
+      </view>
+
+      <scroll-view scroll-x class="site-scroll skin-block">
+        <view class="site-filters">
+          <SkinButton
+            v-for="item in sites" :key="item"
+            class="skin-button" :class="{ 'skin-selected': site === item }"
+            :aria-pressed="site === item" @click="requestSite(item)"
+          >{{ item || '全部部位' }}</SkinButton>
+        </view>
+      </scroll-view>
+      <view class="skin-actions skin-block">
+        <SkinButton class="skin-button" :class="{ 'skin-selected': mode === 'list' }" :aria-pressed="mode === 'list'" @click="mode = 'list'">列表</SkinButton>
+        <SkinButton class="skin-button" :class="{ 'skin-selected': mode === 'calendar' }" :aria-pressed="mode === 'calendar'" @click="mode = 'calendar'">日历</SkinButton>
+      </view>
+      <view class="month-toolbar">
+        <SkinButton class="skin-button skin-link" aria-label="上个月" @click="moveMonth(-1)">‹</SkinButton>
+        <picker mode="date" :value="selectedDay || month" :end="today" @change="jumpToDay">
+          <SkinButton class="skin-button skin-link month-label" aria-label="选择日期">{{ formatMonthLabel(month) }}</SkinButton>
+        </picker>
+        <SkinButton class="skin-button skin-link" aria-label="下个月" :disabled="month >= startOfMonth(today)" @click="moveMonth(1)">›</SkinButton>
+      </view>
+      <view v-if="mode === 'calendar'" class="calendar skin-block">
+        <view v-for="day in weekdays" :key="day" class="weekday">{{ day }}</view>
+        <view v-for="index in grid.leading" :key="'blank-' + index" />
+        <SkinButton
+          v-for="day in grid.days" :key="day" class="day-cell"
+          :class="{ 'day-current': day === selectedDay }"
+          :aria-label="formatDayLabel(day) + (daysWithRecords.has(day) ? '，有记录' : '')"
+          :aria-pressed="day === selectedDay" :disabled="day > today" @click="selectedDay = day"
         >
-          {{ item }}
-        </view>
+          <text class="day-core">
+            {{ Number(day.slice(-2)) }}
+            <text v-if="daysWithRecords.has(day)" class="day-dot" />
+          </text>
+        </SkinButton>
+        <view class="calendar-key skin-muted"><text class="key-dot" /> 有记录</view>
       </view>
-    </view>
 
-    <view v-if="rows.length === 0" class="card empty">还没有符合条件的观察记录。</view>
+      <view v-if="selectedDay" class="skin-header day-heading">
+        <text class="skin-subtitle">{{ formatDayLabel(selectedDay) }}的记录</text>
+        <SkinButton class="skin-button skin-link" @click="selectedDay = ''">看整月</SkinButton>
+      </view>
+      <view v-if="loading" aria-busy="true" aria-label="正在读取历史记录">
+        <view class="skin-skeleton" /><view class="skin-skeleton" />
+      </view>
+      <view v-else-if="loadError" class="skin-alert skin-alert-error" role="alert">
+        <view>历史记录没有加载成功</view>
+        <SkinButton class="skin-button skin-link" @click="loadMonth()">重试</SkinButton>
+      </view>
+      <view v-else-if="!visibleRows.length" class="skin-panel skin-muted">
+        {{ selectedDay ? '这一天还没有记录' : '这个月还没有符合条件的记录' }}
+      </view>
+      <view v-for="row in visibleRows" v-else :key="row.id" class="record-row">
+        <SkinButton class="record-link" @click="openDetail(row.id)">
+          <view>{{ row.site }} <text class="skin-date">{{ skinMoment(row.captured_at) }}</text></view>
+          <ObservationCopy :observation="row" summary />
+        </SkinButton>
+        <SkinButton v-if="comparing" class="skin-button" :class="{ 'skin-selected': isSelected(row.id) }" @click="pick(row)">
+          {{ isSelected(row.id) ? '已选' : '选择' }}
+        </SkinButton>
+      </view>
 
-    <view v-for="row in rows" :key="row.id" class="card record" @tap="openDetail(row.id)">
-      <view>
-        <view class="record-title">{{ row.site }} · {{ formatMoment(row.captured_at) }}</view>
-        <view class="muted">{{ row.visible }}</view>
-      </view>
-      <view class="picks">
-        <view class="pick" :class="{ active: compareSel.includes(row.id) }" @tap.stop="toggleCompare(row.id)">
-          {{ compareSel.includes(row.id) ? '已选' : '对比' }}
-        </view>
-      </view>
-    </view>
-
-    <view v-if="compareSel.length === 2" class="card compare">
-      <view class="section-title">对比（仅文字）</view>
-      <view class="muted">基于两次已保存的文字观察；某次未提及某种现象，不代表该现象消失。</view>
-      <view v-for="item in compareRows" :key="item.id" class="compare-item">
-        <view class="record-title">{{ item.site }} · {{ formatMoment(item.captured_at) }}</view>
-        <view class="compare-line">可见外观：{{ item.visible }}</view>
-        <view class="compare-line">看不清：{{ item.unclear }}</view>
-      </view>
-      <view class="ghost" @tap="clearCompare">清空对比</view>
-    </view>
-
-    <view v-if="detail">
-      <view class="sheet-mask" @tap="closeDetail" />
-      <view class="sheet detail-sheet">
-        <view class="section-title">{{ detail.site }} · {{ formatMoment(detail.captured_at) }}</view>
-        <image v-if="detailUrl" :src="detailUrl" class="detail-image" mode="aspectFill" />
-        <view class="detail-block">
-          <view class="detail-label">可见外观</view>
-          <view class="muted">{{ detail.visible }}</view>
-        </view>
-        <view class="detail-block">
-          <view class="detail-label">看不清之处</view>
-          <view class="muted">{{ detail.unclear }}</view>
-        </view>
-        <view class="detail-block">
-          <view class="detail-label">值得留意</view>
-          <view class="muted">{{ detail.attention }}</view>
-        </view>
-        <view class="muted">AI 观察 · 模型 {{ detail.model_id }} · {{ detail.prompt_version }}</view>
-        <view class="ghost close" @tap="closeDetail">关闭</view>
-      </view>
-    </view>
+      <HerlogSheet v-if="detailId !== null" title="观察详情" @close="closeDetail">
+          <HistoryObservation v-if="detail" :observation="detail" />
+          <view v-else-if="detailError" class="skin-alert skin-alert-error" role="alert">
+            <view>{{ detailError }}</view>
+            <SkinButton v-if="detailRetry" class="skin-button skin-link" @click="openDetail(detailId)">重试</SkinButton>
+          </view>
+          <view v-else class="skin-skeleton" aria-label="正在读取观察" />
+      </HerlogSheet>
+    </template>
   </view>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { onShow, onUnload } from '@dcloudio/uni-app'
-import { formatMoment } from '../../shared/dates'
-import { ApiRequestError, StaleSessionError } from '../../services/httpClient'
-import {
-  SKIN_SITES,
-  getObservation,
-  listObservations,
-  observationImageUrl,
-  releaseBlobUrl
-} from '../../services/skinService'
+import SkinButton from '../../components/H5Button'
+import HerlogHeading from '../../components/HerlogHeading.vue'
+import HerlogSheet from '../../components/HerlogSheet.vue'
+import { computed, ref, watch } from 'vue'
+import { onHide, onLoad, onShow, onUnload } from '@dcloudio/uni-app'
+import { formatDayLabel, formatMonthLabel, monthGrid, shiftMonth, startOfMonth, todayString } from '../../shared/dates'
+import { chronologicalSkinPair, compareSkinRecords, groupSkinDays, skinMoment, skinMonthRange } from '../../shared/skin'
+import { ApiRequestError, currentEpoch } from '../../services/httpClient'
+import { getObservation, listObservations, SKIN_SITES } from '../../services/skinService'
 import type { SkinObservation, SkinSummaryItem } from '../../services/types'
+import { useAuthStore } from '../../stores/auth'
+import HistoryObservation from './HistoryObservation.vue'
+import ObservationCopy from './ObservationCopy.vue'
+import './skin.css'
 
-const rows = ref<SkinSummaryItem[]>([])
+const auth = useAuthStore()
+const sites = ['', ...SKIN_SITES]
+const weekdays = ['一', '二', '三', '四', '五', '六', '日']
+const today = ref(todayString())
+const month = ref(startOfMonth(today.value))
 const site = ref('')
-const compareSel = ref<number[]>([])
-const compareDetails = ref<Map<number, SkinObservation>>(new Map())
+const mode = ref<'list' | 'calendar'>('list')
+const selectedDay = ref('')
+const rows = ref<SkinSummaryItem[]>([])
+const loading = ref(true)
+const loadError = ref(false)
+const comparing = ref(false)
+const selected = ref<SkinSummaryItem[]>([])
+const conflict = ref('')
+const showPair = ref(false)
+const pairDetails = ref<Partial<Record<number, SkinObservation>>>({})
+const pairErrors = ref<Partial<Record<number, true>>>({})
+const detailId = ref<number | null>(null)
 const detail = ref<SkinObservation | null>(null)
-const detailUrl = ref<string | null>(null)
+const detailError = ref('')
+const detailRetry = ref(false)
+let monthVersion = 0
+let detailVersion = 0
+let compareVersion = 0
+let active = false
 
-const compareRows = computed(() => {
-  const picked = rows.value.filter((row) => compareSel.value.includes(row.id))
-  return picked.map((row) => ({
-    id: row.id,
-    site: row.site,
-    captured_at: row.captured_at,
-    visible: compareDetails.value.get(row.id)?.visible ?? row.visible,
-    unclear: compareDetails.value.get(row.id)?.unclear ?? '（正在读取完整文字…）'
-  }))
-})
+const grid = computed(() => monthGrid(month.value))
+const daysWithRecords = computed(() => groupSkinDays(rows.value))
+const visibleRows = computed(() => selectedDay.value ? daysWithRecords.value.get(selectedDay.value) ?? [] : rows.value)
+const orderedPair = computed(() => chronologicalSkinPair(selected.value))
 
-async function load() {
+async function loadMonth() {
+  const version = ++monthVersion
+  const epoch = currentEpoch()
+  loading.value = true
+  loadError.value = false
+  rows.value = []
   try {
-    rows.value = await listObservations({ site: site.value || undefined })
-  } catch (failure) {
-    if (failure instanceof StaleSessionError) {
+    const result = await listObservations({ ...skinMonthRange(month.value), site: site.value || undefined })
+    if (version === monthVersion && epoch === currentEpoch()) rows.value = result
+  } catch {
+    if (version === monthVersion && epoch === currentEpoch()) loadError.value = true
+  } finally {
+    if (version === monthVersion) loading.value = false
+  }
+}
+
+function moveMonth(delta: number) {
+  selectedDay.value = ''
+  month.value = shiftMonth(month.value, delta)
+  void loadMonth()
+}
+
+function jumpToDay(event: { detail: { value: string } }) {
+  selectedDay.value = event.detail.value
+  const nextMonth = startOfMonth(selectedDay.value)
+  if (nextMonth !== month.value) {
+    month.value = nextMonth
+    void loadMonth()
+  }
+}
+
+function requestSite(next: string) {
+  if (next === site.value) return
+  if (selected.value.length && next !== selected.value[0].site) {
+    uni.showModal({
+      title: '更换对比部位',
+      content: '更换部位后会清空已选记录。',
+      confirmText: '更换',
+      success: (answer) => {
+        if (answer.confirm) {
+          selected.value = []
+          applySite(next)
+        }
+      }
+    })
+    return
+  }
+  applySite(next)
+}
+
+function applySite(next: string) {
+  site.value = next
+  conflict.value = ''
+  void loadMonth()
+}
+
+function startCompare() {
+  comparing.value = true
+}
+
+function stopCompare() {
+  backToSelection()
+  comparing.value = false
+  selected.value = []
+  conflict.value = ''
+}
+
+function isSelected(id: number) {
+  return selected.value.some((row) => row.id === id)
+}
+
+function removePick(id: number) {
+  selected.value = selected.value.filter((row) => row.id !== id)
+  conflict.value = ''
+}
+
+function pick(row: SkinSummaryItem) {
+  conflict.value = ''
+  const first = selected.value[0]
+  if (first) {
+    const reason = compareSkinRecords(first, row)
+    if (reason) {
+      conflict.value = reason
       return
     }
-    uni.showToast({
-      title: failure instanceof ApiRequestError ? failure.message : '加载失败',
-      icon: 'none'
-    })
   }
-}
-
-function selectSite(value: string) {
-  site.value = value
-  compareSel.value = []
-  load()
-}
-
-function toggleCompare(id: number) {
-  if (compareSel.value.includes(id)) {
-    compareSel.value = compareSel.value.filter((item) => item !== id)
-    compareDetails.value = new Map()
+  if (selected.value.length === 2) {
+    conflict.value = '已选两条记录。可以移除一条后再选。'
     return
   }
-  // 对比只能挑同一部位的两条。
-  const next = rows.value.find((row) => row.id === id)
-  const picked = rows.value.filter((row) => compareSel.value.includes(row.id))
-  if (picked.length && next && picked[0].site !== next.site) {
-    uni.showToast({ title: '对比仅支持同一部位', icon: 'none' })
-    return
-  }
-  compareSel.value = [...compareSel.value, id].slice(-2)
-  void loadCompareDetails()
+  selected.value = [...selected.value, row]
+  if (!first && site.value !== row.site) applySite(row.site)
 }
 
-async function loadCompareDetails() {
-  const map = new Map<number, SkinObservation>()
-  for (const id of compareSel.value) {
-    try {
-      map.set(id, await getObservation(id))
-    } catch {
-      // 单条读取失败时退回列表摘要。
+function openPair() {
+  if (selected.value.length !== 2) return
+  closeDetail()
+  backToSelection()
+  showPair.value = true
+  for (const row of orderedPair.value) void loadPairSide(row.id)
+}
+
+async function loadPairSide(id: number) {
+  const version = compareVersion
+  const epoch = currentEpoch()
+  delete pairErrors.value[id]
+  try {
+    const record = await getObservation(id)
+    if (version === compareVersion && epoch === currentEpoch()) pairDetails.value[id] = record
+  } catch (failure) {
+    if (version !== compareVersion || epoch !== currentEpoch()) return
+    if (failure instanceof ApiRequestError && failure.status === 404) {
+      backToSelection()
+      removePick(id)
+      conflict.value = '有一条记录无法读取，请重新选择'
+    } else {
+      pairErrors.value[id] = true
     }
   }
-  compareDetails.value = map
 }
 
-function clearCompare() {
-  compareSel.value = []
-  compareDetails.value = new Map()
+function backToSelection() {
+  compareVersion += 1
+  showPair.value = false
+  pairDetails.value = {}
+  pairErrors.value = {}
 }
 
 async function openDetail(id: number) {
+  const version = ++detailVersion
+  const epoch = currentEpoch()
+  detailId.value = id
+  detail.value = null
+  detailError.value = ''
+  detailRetry.value = false
   try {
-    releaseBlobUrl(detailUrl.value)
-    detailUrl.value = null
-    detail.value = await getObservation(id)
-    detailUrl.value = await observationImageUrl(id)
+    const record = await getObservation(id)
+    if (version === detailVersion && epoch === currentEpoch()) detail.value = record
   } catch (failure) {
-    uni.showToast({
-      title: failure instanceof ApiRequestError ? failure.message : '读取失败',
-      icon: 'none'
-    })
+    if (version !== detailVersion || epoch !== currentEpoch()) return
+    detailRetry.value = !(failure instanceof ApiRequestError && failure.status === 404)
+    detailError.value = detailRetry.value ? '这条记录没有加载成功' : '这条记录已无法查看'
   }
 }
 
 function closeDetail() {
+  detailVersion += 1
+  detailId.value = null
   detail.value = null
-  releaseBlobUrl(detailUrl.value)
-  detailUrl.value = null
 }
 
-onShow(load)
-onUnload(closeDetail)
+function clearPrivateState() {
+  monthVersion += 1
+  rows.value = []
+  closeDetail()
+  stopCompare()
+}
+
+watch(() => auth.token, () => {
+  clearPrivateState()
+  if (active && auth.token) void loadMonth()
+})
+onLoad((options) => {
+  if (options?.compare === '1') startCompare()
+  const day = options?.day
+  if (typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day) && day <= today.value) {
+    month.value = startOfMonth(day)
+    selectedDay.value = day
+  }
+})
+onShow(() => {
+  active = true
+  today.value = todayString()
+  if (auth.token) void loadMonth()
+})
+onHide(() => {
+  active = false
+  clearPrivateState()
+})
+onUnload(() => {
+  active = false
+  clearPrivateState()
+})
 </script>
 
 <style scoped>
-.page {
-  min-height: 100vh;
-  padding: 12px 16px 24px;
-  box-sizing: border-box;
+.site-filters { display: flex; width: max-content; gap: 6px; }
+.month-toolbar { display: flex; justify-content: space-between; align-items: center; }
+.month-label { font-family: var(--hr-serif, Georgia, "Songti SC", serif); font-size: 16px; }
+.calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 8px 0; }
+.weekday { text-align: center; color: var(--skin-muted); font-size: 13px; }
+.day-cell {
+  display: grid; place-items: center; width: 100%; min-height: 44px; padding: 0; margin: 0;
+  border: 0; color: var(--skin-ink); background: transparent;
 }
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.day-cell::after, .record-link::after { border: 0; }
+.day-cell[disabled] { color: var(--skin-muted); opacity: .45; background: transparent; }
+.day-cell:focus-visible, .record-link:focus-visible { outline: 2px solid var(--skin-rose); outline-offset: -2px; }
+.day-core {
+  position: relative; display: grid; place-items: center; width: 34px; height: 34px;
+  border: 1px solid transparent; border-radius: 12px;
+  font: 15px var(--hr-serif, Georgia, "Songti SC", serif);
 }
-.chip {
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid #e4d8d3;
-  font-size: 13px;
-  color: #6f635e;
+.day-current .day-core { border-color: var(--skin-ink); background: var(--skin-rose-soft); }
+.day-dot, .key-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--skin-rose); }
+.day-dot { position: absolute; bottom: 4px; }
+.key-dot { display: inline-block; margin-right: 4px; }
+.calendar-key { grid-column: 1 / -1; }
+.day-heading { margin-bottom: 4px; }
+.record-row, .selection-line { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--skin-line); }
+.record-row { padding: 8px 0; }
+.selection-line { justify-content: space-between; padding: 4px 0; font-size: 13px; }
+.record-link {
+  flex: 1; min-width: 0; margin: 0; padding: 4px 2px; border: 0; text-align: start;
+  background: transparent; color: var(--skin-ink); font-size: 14px; line-height: 1.55;
 }
-.chip.active {
-  border-color: #b4544a;
-  color: #b4544a;
-  background: #fdf2ef;
-}
-.record {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-}
-.record-title {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-.picks {
-  display: flex;
-  align-items: flex-start;
-}
-.pick {
-  font-size: 12px;
-  color: #b4544a;
-  border: 1px solid #e4d8d3;
-  border-radius: 999px;
-  padding: 3px 10px;
-}
-.pick.active {
-  background: #b4544a;
-  color: #ffffff;
-  border-color: #b4544a;
-}
-.empty {
-  text-align: center;
-  color: #a89d98;
-  font-size: 13px;
-  padding: 28px 0;
-}
-.section-title {
-  font-size: 15px;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-.compare-item {
-  padding: 10px 0;
-  border-bottom: 1px solid #f4ebe7;
-}
-.compare-line {
-  font-size: 13px;
-  color: #6f635e;
-  line-height: 1.6;
-}
-.detail-sheet {
-  max-height: 82vh;
-  overflow-y: auto;
-}
-.detail-image {
-  width: 100%;
-  height: 180px;
-  border-radius: 12px;
-  margin: 8px 0;
-  background: #f2ece9;
-}
-.detail-block {
-  margin-bottom: 10px;
-}
-.detail-label {
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 2px;
-}
-.close {
-  margin-top: 14px;
-}
+.compare-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-items: start; }
+.compare-column { min-width: 0; padding: 10px; }
 </style>
