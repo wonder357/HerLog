@@ -124,17 +124,3 @@ export function suggestion(summary: WeightSummary): string | null {
 export function rangeStart(days: number, today: string): string {
   return addDays(today, -(days - 1))
 }
-
-// 展示用的虚构曲线；空值用于演示缺测日。只用于趋势卡，不生成 WeightRecord。
-const TREND_EXAMPLE_KG = [
-  58.2, 58.5, 58.2, 58.3, 58.6, null, 58.5,
-  58.2, 58.1, 58.3, 58.4, 58.2, null, 58.6,
-  58.5, 58.4, 58.6, 58.7, 58.5, null, 58.3, 58.2, 58.4,
-  58.5, 58.6, 58.5, 58.3, 58.2, 58.3, 58.4
-]
-
-export function trendExample(days: 7 | 30, today: string): { day: string; kg: number }[] {
-  return TREND_EXAMPLE_KG.slice(-days).flatMap((kg, offset) =>
-    kg === null ? [] : [{ day: addDays(today, offset - days + 1), kg }]
-  )
-}

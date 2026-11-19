@@ -21,7 +21,7 @@
           </view>
         </view>
         <view v-if="error" class="weight-error" role="alert">{{ error }} <H5Button @click="load">重试</H5Button></view>
-        <section class="weight-panel trend-panel" aria-labelledby="weight-trend" :aria-busy="loading && !showSample">
+        <section class="weight-panel trend-panel" aria-labelledby="weight-trend" :aria-busy="loading">
           <view class="weight-header">
             <h2 id="weight-trend" class="weight-heading">体重趋势</h2>
             <view class="weight-options" role="group" aria-label="趋势范围">
@@ -29,25 +29,19 @@
                 :aria-pressed="days === interval" @click="setDays(interval)">近 {{ interval }} 天</H5Button>
             </view>
           </view>
-          <view class="trend-meta">
-            <view class="trend-meta-copy">
-              <span v-if="showSample" class="sample-badge">示例数据</span>
-              <span class="weight-muted">{{ formatDayLabel(trendStart) }} – {{ formatDayLabel(today) }}</span>
-            </view>
-            <H5Button class="hr-action trend-switch" @click="toggleSample">{{ showSample ? '查看我的记录' : '查看示例' }}</H5Button>
-          </view>
-          <TrendChart v-if="showSample || !loading || summary" :points="chartPoints" :from="trendStart" :to="today"
-            :example="showSample" :context="!showSample && showCycle ? summary?.cycle_context : undefined" />
-          <view v-else class="trend-loading weight-muted" role="status">正在读取趋势…</view>
-          <view v-if="!showSample && summary && summary.days !== days" class="weight-muted" role="status">{{ loading ? '正在更新 · ' : '' }}当前显示近 {{ summary.days }} 天</view>
+          <view class="weight-muted">{{ formatDayLabel(trendStart) }} – {{ formatDayLabel(today) }}</view>
+          <TrendChart v-if="summary" :points="summary.points" :from="trendStart" :to="today"
+            :context="showCycle ? summary.cycle_context : undefined" />
+          <view v-else-if="loading" class="trend-loading weight-muted" role="status">正在读取趋势…</view>
+          <view v-if="summary && summary.days !== days" class="weight-muted" role="status">{{ loading ? '正在更新 · ' : '' }}当前显示近 {{ summary.days }} 天</view>
           <view class="weight-stats">
-            <view><strong>{{ showSample ? chartPoints.length : summary?.count ?? '—' }}</strong><text>{{ showSample ? '示例次数' : '记录次数' }}</text></view>
-            <view><strong>{{ showSample ? chartPoints.length : summary?.record_days ?? summary?.points.length ?? '—' }}</strong><text>{{ showSample ? '示例记录日' : '记录日' }}</text></view>
-            <view v-if="chartDelta !== null"><strong>{{ formatDelta(chartDelta) }}</strong><text>{{ showSample ? '示例首尾变化' : '首尾变化' }}</text></view>
+            <view><strong>{{ summary?.count ?? '—' }}</strong><text>记录次数</text></view>
+            <view><strong>{{ summary?.record_days ?? summary?.points.length ?? '—' }}</strong><text>记录日</text></view>
+            <view v-if="summary?.delta_grams != null"><strong>{{ formatDelta(summary.delta_grams) }}</strong><text>首尾变化</text></view>
           </view>
-          <p class="weight-muted trend-note">{{ showSample ? '虚构测量用于预览，缺测日期留空。' : '每天取最后一次测量，缺测日期留空。' }}</p>
-          <H5Button v-if="!showSample" class="weight-secondary" @click="showCycle = !showCycle; load()">{{ showCycle ? '关闭周期背景' : '显示周期背景' }}</H5Button>
-          <template v-if="!showSample && showCycle && summary?.cycle_context">
+          <p class="weight-muted trend-note">每天取最后一次测量，缺测日期留空。</p>
+          <H5Button class="weight-secondary" @click="showCycle = !showCycle; load()">{{ showCycle ? '关闭周期背景' : '显示周期背景' }}</H5Button>
+          <template v-if="showCycle && summary?.cycle_context">
             <view class="weight-muted">阶段按记录估算，仅供回看，不用于诊断或避孕。</view>
             <scroll-view scroll-x class="weight-cycle">
               <view class="cycle-row">
@@ -103,7 +97,7 @@ import TrendChart from '../../components/TrendChart.vue'
 import ExerciseDiscussion from './ExerciseDiscussion.vue'
 import ExerciseSpace from './ExerciseSpace.vue'
 import { formatDayLabel, formatMoment, todayString } from '../../shared/dates'
-import { formatDelta, formatKg, rangeStart, trendExample } from '../../shared/weight'
+import { formatDelta, formatKg, rangeStart } from '../../shared/weight'
 import { currentEpoch } from '../../services/httpClient'
 import { getComparison, getSummary } from '../../services/weightService'
 import type { WeightSummary } from '../../services/types'
@@ -118,7 +112,6 @@ const section = ref<Section>('overview')
 const days = ref<7 | 30>(30)
 const today = ref(todayString())
 const summary = ref<WeightSummary | null>(null)
-const previewChoice = ref<'automatic' | 'sample' | 'records'>('automatic')
 const comparison = ref<Awaited<ReturnType<typeof getComparison>> | null>(null)
 const comparisonDays = ref<7 | 30>(30)
 const comparisonLoading = ref(false)
@@ -134,22 +127,12 @@ const shareReference = ref<ShareReference | null>(null)
 const auth = useAuthStore()
 let summaryVersion = 0
 let comparisonVersion = 0
-const showSample = computed(() => previewChoice.value === 'sample' || (previewChoice.value === 'automatic' &&
-  !!summary.value && !error.value && summary.value.points.length < 2))
-const trendStart = computed(() => rangeStart(showSample.value ? days.value : summary.value?.days ?? days.value, today.value))
-const chartPoints = computed(() => showSample.value ? trendExample(days.value, today.value)
-  : (summary.value?.points ?? []).map(point => ({ day: point.day, kg: point.kg })))
-const chartDelta = computed(() => {
-  if (!showSample.value) return summary.value?.delta_grams ?? null
-  const points = chartPoints.value
-  return Math.round((points[points.length - 1].kg - points[0].kg) * 1000)
-})
+const trendStart = computed(() => rangeStart(summary.value?.days ?? days.value, today.value))
 const selectedPhase = computed(() => summary.value?.cycle_context?.find(item => item.day === activeDay.value))
 watch(() => auth.token, () => {
   summaryVersion += 1
   comparisonVersion += 1
   summary.value = null
-  previewChoice.value = 'automatic'
   loading.value = false
   comparison.value = null
   comparisonLoading.value = false
@@ -205,9 +188,6 @@ function setDays(interval: 7 | 30) {
   void load()
   if (comparing.value) void loadComparison()
 }
-function toggleSample() {
-  previewChoice.value = showSample.value ? 'records' : 'sample'
-}
 function navigate(next: Section) {
   if (next !== 'discussion') shareReference.value = null
   section.value = next
@@ -219,7 +199,6 @@ function openShare(reference: ShareReference) {
 function openDetail() { uni.navigateTo({ url: '/pages/weight/detail' }) }
 function onSaved() {
   formVisible.value = false
-  previewChoice.value = 'records'
   void load()
   if (comparing.value) void loadComparison()
 }
@@ -262,11 +241,6 @@ onHide(() => { formVisible.value = false; pageVisible.value = false; shareRefere
 .weight-heading { font-weight: 680; font-size: 17px; }
 .trend-panel { border-color: var(--hr-line-strong); box-shadow: var(--hr-shadow); }
 .trend-panel h2,.trend-note { margin: 0; }
-.trend-meta,.trend-meta-copy { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
-.trend-meta { justify-content: space-between; }
-.trend-meta-copy { flex: 1; }
-.sample-badge { padding: 3px 7px; border-radius: 8px; background: var(--hr-plum-soft); color: var(--hr-plum); font-size: 12px; font-weight: 650; }
-.trend-switch { padding-inline: 2px; font-size: 13px; }
 .trend-loading { display: grid; place-items: center; min-height: 160px; }
 .weight-stats,.compare-columns { display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; gap: 8px; }
 .weight-stats > view,.weight-stats > uni-view { background: var(--hr-paper); border-radius: 10px; padding: 8px 6px; text-align: center; }

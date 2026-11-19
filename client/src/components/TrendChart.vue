@@ -14,7 +14,7 @@
         </g>
         <path v-for="segment in segments" :key="'area-' + segment[0].day" :d="areaPath(segment)" class="trend-fill" />
         <polyline v-for="segment in segments" :key="segment[0].day" :points="segment.map(dot => dot.x + ',' + dot.y).join(' ')"
-          class="trend-line" :class="{ sample: example }" />
+          class="trend-line" />
         <line v-if="activeDot" :x1="activeDot.x" :x2="activeDot.x" :y1="top" :y2="bottom" class="selection-line" />
         <circle v-for="dot in dots" :key="dot.day" :cx="dot.x" :cy="dot.y" :r="dot.day === activeDot?.day ? 4 : 2.4"
           class="trend-dot" :class="{ current: dot.day === activeDot?.day }" />
@@ -23,7 +23,7 @@
       </svg>
       <div v-if="activeDot" class="point-detail">
         <div class="point-copy" aria-live="polite">
-          <span>{{ formatDayLabel(activeDot.day) }}{{ example ? ' · 示例测量' : ' · 当日测量' }}</span>
+          <span>{{ formatDayLabel(activeDot.day) }} · 当日测量</span>
           <strong>{{ activeDot.kg }} <small>kg</small></strong>
         </div>
         <div v-if="dots.length > 1" class="point-controls" role="group" aria-label="查看不同日期的测量值">
@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import H5Button from './H5Button'
 import { addDays, diffDays, formatDayLabel } from '../shared/dates'
 import type { CycleDay, Phase } from '../services/wellnessService'
@@ -44,7 +44,7 @@ import type { CycleDay, Phase } from '../services/wellnessService'
 interface Point { day: string; kg: number }
 interface Dot extends Point { x: number; y: number }
 
-const props = defineProps<{ points: Point[]; from?: string; to?: string; context?: CycleDay[] | null; example?: boolean }>()
+const props = defineProps<{ points: Point[]; from?: string; to?: string; context?: CycleDay[] | null }>()
 const left = 36
 const right = 309
 const top = 15
@@ -98,7 +98,6 @@ const activeIndex = computed(() => {
   return index >= 0 ? index : dots.value.length - 1
 })
 const activeDot = computed(() => dots.value[activeIndex.value])
-watch(() => props.example, () => { selectedDay.value = '' })
 
 function select(index: number) {
   const dot = dots.value[index]
@@ -140,7 +139,7 @@ const dateTicks = computed(() => {
   })
 })
 
-const chartLabel = computed(() => (props.example ? '示例体重趋势，' : '体重趋势，') + props.points.length + ' 个记录日，单位千克')
+const chartLabel = computed(() => '体重趋势，' + props.points.length + ' 个记录日，单位千克')
 </script>
 
 <style scoped>
@@ -151,7 +150,6 @@ const chartLabel = computed(() => (props.example ? '示例体重趋势，' : '�
 .grid-line { stroke: var(--hr-line); stroke-width: 1; }
 .trend-fill { fill: var(--hr-rose-soft); opacity: .65; }
 .trend-line { fill: none; stroke: var(--hr-rose); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-.trend-line.sample { stroke-dasharray: 4 3; }
 .trend-dot { fill: var(--hr-surface); stroke: var(--hr-rose-deep); stroke-width: 1.15; }
 .trend-dot.current { fill: var(--hr-rose-deep); stroke: var(--hr-surface); stroke-width: 1.7; }
 .selection-line { stroke: var(--hr-line-strong); stroke-dasharray: 2 3; }
