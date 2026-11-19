@@ -17,6 +17,7 @@ from app.schemas.herlog import (
     WeightSummaryOut,
     weight_out,
 )
+from app.schemas.weight_plus import CompareOut, CompareWindowOut
 
 
 def _rows(rows: list[Weight]) -> list[weight_logic.WeightRow]:
@@ -173,4 +174,64 @@ def summary(session: Session, customer_id: str, days: int) -> WeightSummaryOut:
         delta_grams=data.delta_grams,
         delta_kg=data.delta_kg,
         suggestion=weight_logic.suggestion(data),
+    )
+
+
+def _window(session: Session, customer_id: str, start_day: date, end_day: date, days: int) -> CompareWindowOut:
+    rows = list(
+        session.scalars(
+            select(Weight).where(
+                Weight.customer_id == customer_id,
+                Weight.measured_at >= local_day_start_utc(start_day),
+                Weight.measured_at < local_day_end_utc(end_day),
+            )
+        ).all()
+    )
+    points = weight_logic.daily_points(_rows(rows))
+    grams = [point.grams for point in points]
+    return CompareWindowOut(
+        days=days,
+        count=len(rows),
+        coverage_days=len(points),
+        first_kg=None if not grams else round(grams[0] / 1000, 3),
+        last_kg=None if not grams else round(grams[-1] / 1000, 3),
+        avg_kg=None if not grams else round(sum(grams) / len(grams) / 1000, 3),
+        delta_kg=None if len(grams) < 2 else round((grams[-1] - grams[0]) / 1000, 3),
+    )
+
+
+def compare(session: Session, customer_id: str, days: int) -> CompareOut:
+    """同一长度前后两段对比：上周 vs 上上周，或近 30 天 vs 前 30 天。"""
+
+    if days not in (7, 30):
+        raise invalid("days 只支持 7 或 30")
+    today = local_today()
+    current_start = weight_logic.range_start(days, today)
+    previous_end = current_start
+    previous_start = weight_logic.range_start(days, previous_end)
+    current = _window(session, customer_id, current_start, today, days)
+    previous = _window(session, customer_id, previous_start, previous_end, days)
+    avg_delta = (
+        None
+        if current.avg_kg is None or previous.avg_kg is None
+        else round(current.avg_kg - previous.avg_kg, 3)
+    )
+    if previous.coverage_days == 0:
+        message = f"上一个 {days} 天没有记录，先攒一段同长度的数据再对比。"
+    elif current.coverage_days == 0:
+        message = f"最近 {days} 天没有记录，暂时无法对比。"
+    elif avg_delta is None:
+        message = "两段都有记录，但数据点不足，先按天记录再比较。"
+    else:
+        trend = "低" if avg_delta < 0 else ("高" if avg_delta > 0 else "持平")
+        message = (
+            f"最近 {days} 天日均 {current.avg_kg} kg，上一个 {days} 天日均 {previous.avg_kg} kg，"
+            f"日均{trend} {abs(avg_delta)} kg。"
+        )
+    return CompareOut(
+        days=days,
+        current=current,
+        previous=previous,
+        avg_delta_kg=avg_delta,
+        message=message,
     )

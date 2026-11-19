@@ -27,3 +27,7 @@ def invalid(message: str) -> ApiError:
 
 def unauthorized(message: str = "登录状态已失效，请重新登录") -> ApiError:
     return ApiError(401, message)
+
+
+def forbidden(message: str = "没有权限执行该操作") -> ApiError:
+    return ApiError(403, message)
