@@ -25,7 +25,7 @@
 .herlog-skin .skin-muted { color: var(--skin-muted); font-size: 13px; }
 .herlog-skin .skin-date {
   color: var(--skin-muted);
-  font-family: var(--hr-serif);
+  font-family: var(--hr-font);
   font-variant-numeric: tabular-nums;
 }
 .herlog-skin .skin-block { margin-bottom: 18px; }

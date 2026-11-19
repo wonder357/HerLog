@@ -1,6 +1,6 @@
 <template>
   <view class="hr-page hr-tab-page cycle-page">
-    <HerlogHeading title="经期" />
+    <HerlogHeading title="经期" description="按自己的节奏来。" />
     <view class="status-card">
       <view v-if="loadError" class="status-title" role="alert">{{ loadError }}</view>
       <view v-else class="status-title">{{ overview?.status.message || '正在读取周期记录…' }}</view>
@@ -325,14 +325,14 @@ onShow(load)
   color: var(--hr-rose-deep); background: transparent; font: 26px var(--hr-font);
 }
 .month-label {
-  margin: 0; font-family: var(--hr-serif); font-size: 19px; font-weight: 650; font-variant-numeric: tabular-nums;
+  margin: 0; font-family: var(--hr-font); font-size: 19px; font-weight: 650; font-variant-numeric: tabular-nums;
 }
 .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
 .weekday { text-align: center; color: var(--hr-ink-2); font-size: 12px; padding: 4px 0; }
 .cell {
   position: relative; display: grid; place-items: center; min-height: 44px; min-width: 0;
   padding: 1px; border: 1px solid transparent; border-radius: 9px; color: var(--hr-ink);
-  background: transparent; font: 17px var(--hr-serif);
+  background: transparent; font: 17px var(--hr-font);
 }
 .cell[aria-current='date'] .day-number { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .cell.actual { background: var(--hr-rose-soft); color: var(--hr-rose-deep); }

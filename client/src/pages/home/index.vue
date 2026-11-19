@@ -1,6 +1,9 @@
 <template>
   <view class="hr-page hr-tab-page home-page">
-    <HerlogHeading :title="auth.username ? `你好，${auth.username}` : '你好'" />
+    <view class="greeting-banner">
+      <HerlogHeading class="home-greeting" :title="auth.username ? `你好，${auth.username}` : '你好'" description="今天也留一点时间给自己。" />
+      <image class="greeting-art" src="/static/home-cosmos.png" mode="aspectFit" aria-hidden="true" />
+    </view>
 
     <RecordCalendar :key="auth.member?.customer_id" :today="today" :periods="overview?.items ?? null" :revision="calendarRevision" />
 
@@ -25,7 +28,7 @@
 
     <view class="chat">
       <view class="chat-heading">
-        <h2 class="hr-section-title">问问她记</h2>
+        <h2 class="hr-section-title"><HerlogIcon name="message" />问问她记</h2>
         <text class="chat-scope">已保存的记录</text>
       </view>
       <view v-if="messages.length === 0" class="chat-intro">
@@ -264,16 +267,27 @@ async function send() {
 
 <style scoped>
 .home-page { padding-bottom: calc(var(--hr-tab-height) + 92px + env(safe-area-inset-bottom)); }
+.home-greeting :deep(.hr-heading-copy) { grid-column: 1 / -1; text-align: left; }
+.greeting-banner { position: relative; min-height: 58px; margin-bottom: 10px; padding: 12px min(30%, 116px) 10px 0; }
+.home-greeting { margin-bottom: 0; }
+.greeting-art { position: absolute; right: 0; top: 0; width: min(33%, 120px); height: 58px; pointer-events: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .greeting-art { animation: greeting-in .7s ease-out both; }
+}
+@keyframes greeting-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 .snapshot { display: grid; text-align: center; }
-.snapshot { grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 12px 5px; }
+.snapshot { grid-template-columns: repeat(3, minmax(0, 1fr)); box-sizing: border-box; min-height: 72px; align-items: center; padding: 8px 5px; }
 .snapshot > * + * { border-left: 1px solid var(--hr-line); }
-.snapshot strong { display: block; font: 19px var(--hr-serif); }
-.snapshot text, .snapshot uni-text { color: var(--hr-ink-2); font-size: 12px; }
+.snapshot strong { display: block; font: 19px var(--hr-font); }
+.snapshot text, .snapshot uni-text { color: var(--hr-ink-2); font-size: 13px; font-weight: 600; }
 .shortcuts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0 0 12px; }
 .shortcut {
   display: grid; justify-items: center; align-items: center; min-height: 72px; gap: 4px; padding: 7px 2px;
-  border: 1px solid var(--hr-line); border-radius: var(--hr-radius); background: var(--hr-surface);
-  color: var(--hr-ink); box-shadow: var(--hr-shadow); font-size: 13px; font-weight: 600;
+  border: 1px solid var(--hr-line); border-radius: var(--hr-radius); background: var(--hr-glass-fill);
+  color: var(--hr-ink); box-shadow: var(--hr-glass-shadow); font-size: 13px; font-weight: 600;
 }
 .shortcut-symbol {
   display: grid; place-items: center; width: 42px; height: 37px; border-radius: 12px;
@@ -283,7 +297,8 @@ async function send() {
 .shortcut.skin .shortcut-symbol { background: var(--hr-plum-soft); color: var(--hr-plum); }
 .shortcut-symbol svg { width: 22px; height: 22px; }
 .chat-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 12px; }
-.chat-heading h2 { margin: 0; }
+.chat-heading h2 { display: flex; align-items: center; gap: 6px; margin: 0; }
+.chat-heading h2 svg { width: 19px; height: 19px; color: var(--hr-rose-deep); }
 .chat-scope { background: var(--hr-paper-deep); border-radius: 99px; color: var(--hr-ink-2); font-size: 12px; padding: 4px 9px; }
 .chat-intro { padding: 14px; border-radius: var(--hr-radius); border: 1px solid var(--hr-line); background: var(--hr-surface); }
 .examples, .refs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }

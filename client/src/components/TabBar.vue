@@ -41,10 +41,11 @@ function go(path: string) {
   width: min(calc(100% - 24px), var(--hr-shell-width));
   min-height: calc(var(--hr-tab-height) - 10px);
   padding: 4px;
-  background: rgba(255, 255, 255, .94);
+  background: var(--hr-glass-fill);
+  backdrop-filter: blur(16px) saturate(135%);
   border: 1px solid var(--hr-line);
   border-radius: 22px;
-  box-shadow: 0 14px 30px -14px #7846465c;
+  box-shadow: var(--hr-glass-shadow);
 }
 .tab {
   display: grid;

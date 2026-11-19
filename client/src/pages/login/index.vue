@@ -2,10 +2,9 @@
   <view class="hr-page auth-page">
     <view class="auth-shell">
       <header class="auth-heading">
-        <span class="brand-mark" aria-hidden="true"><span /></span>
+        <image class="brand-mark" src="/static/herlog-icon.svg" aria-hidden="true" />
         <view class="brand-name">她记 HerLog</view>
         <h1>{{ mode === 'login' ? '欢迎回来' : '创建账号' }}</h1>
-        <view class="muted">女性健康记录助手</view>
       </header>
 
       <H5Form class="card auth-form" novalidate @submit.prevent="submit">
@@ -38,6 +37,7 @@
       <H5Button class="hr-action mode-switch" :disabled="submitting" @click="switchMode">
         {{ mode === 'login' ? '还没有账号？注册' : '已有账号？去登录' }}
       </H5Button>
+      <view class="auth-decoration" aria-hidden="true" />
     </view>
   </view>
 </template>
@@ -116,17 +116,13 @@ async function submit() {
 <style scoped>
 .auth-page { padding-top: calc(clamp(42px, 9vh, 86px) + env(safe-area-inset-top)); }
 .auth-shell { width: min(100%, 400px); margin: 0 auto; display: grid; gap: 12px; justify-items: stretch; }
-.auth-heading { text-align: center; margin-bottom: 8px; }
+.auth-heading {
+  text-align: center; margin-bottom: 8px;
+}
 .brand-mark {
-  display: grid; place-items: center; width: 58px; height: 58px; margin: 0 auto 11px; border-radius: 18px;
-  background: linear-gradient(145deg, var(--hr-rose), var(--hr-rose-deep)); color: #fff;
+  display: block; width: 58px; height: 58px; margin: 0 auto 11px; border-radius: 14px;
   box-shadow: 0 10px 21px -13px #7f3652cc;
 }
-.brand-mark > span {
-  display: grid; place-items: center; width: 28px; height: 28px;
-  border: 2px solid currentColor; border-radius: 50%;
-}
-.brand-mark > span::after { content: ""; width: 11px; height: 11px; border-radius: 50%; border: 2px solid currentColor; }
 .brand-name { font-size: 14px; font-weight: 650; color: var(--hr-rose-deep); }
 h1 { margin: 4px 0 3px; font-size: 30px; line-height: 1.25; }
 .auth-form { padding: 16px; margin: 0; }
@@ -139,4 +135,11 @@ h1 { margin: 4px 0 3px; font-size: 30px; line-height: 1.25; }
 }
 .password-help { margin-bottom: 6px; }
 .mode-switch { justify-self: center; }
+.auth-decoration {
+  height: clamp(88px, 24svh, 210px);
+  pointer-events: none;
+  background: url('/static/home-cosmos.png') center / contain no-repeat;
+  filter: grayscale(1) sepia(1) saturate(1.4) hue-rotate(285deg);
+  opacity: .4;
+}
 </style>
