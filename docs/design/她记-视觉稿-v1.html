@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>她记 · 前端视觉稿 V1.0（390×844）</title>
+<style>
+  :root{
+    --paper:#FBF6F3; --surface:#fff;
+    --ink:#2B2229; --ink-2:#6B5F66; --ink-3:#9A8E93;
+    --line:#EBE0DC; --line-strong:#DCCCC7;
+    --rouge:#B23A55; --rouge-soft:#F7E4E6; --rouge-mid:#D98396;
+    --plum:#5F4E6B; --plum-soft:#EFEAF3;
+    --sage:#55685C; --sage-soft:#E7EDE8;
+    --warn:#9A5B27; --warn-soft:#F6E8DC;
+    --serif: Georgia,"Songti SC","Source Han Serif SC","Times New Roman",serif;
+    --sans:"PingFang SC","HarmonyOS Sans SC","Source Han Sans SC","Microsoft YaHei",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;padding:44px 32px 72px;background:#E7DFDB;color:var(--ink);
+    font-family:var(--sans);-webkit-font-smoothing:antialiased;
+  }
+  .board{max-width:1820px;margin:0 auto}
+  .board-hd{display:flex;align-items:baseline;gap:16px;padding:0 4px 28px;border-bottom:1px solid #D6CBC6;margin-bottom:36px}
+  .board-hd h1{font-size:22px;font-weight:600;margin:0;letter-spacing:.01em}
+  .board-hd p{margin:0;font-size:13px;color:#7A6C72;line-height:20px}
+  .sheet{display:flex;flex-wrap:wrap;gap:40px 38px;justify-content:center}
+  .cell{width:390px}
+  .cap{display:flex;align-items:baseline;gap:8px;margin-bottom:12px;padding-left:2px}
+  .cap b{font-size:13px;font-weight:600}
+  .cap span{font-size:11px;color:#857780}
+
+  .phone{
+    position:relative;width:390px;height:844px;background:var(--paper);border-radius:30px;overflow:hidden;
+    display:flex;flex-direction:column;
+    box-shadow:0 0 0 1px rgba(43,34,41,.07),0 3px 0 rgba(43,34,41,.05),0 20px 44px rgba(43,34,41,.14);
+  }
+  .phone.dim::after{content:"";position:absolute;inset:0;background:rgba(43,34,41,.34);z-index:5}
+
+  /* 状态栏 */
+  .sb{flex:0 0 auto;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font-size:13px;font-weight:600;letter-spacing:.02em}
+  .sb .ic{display:flex;align-items:center;gap:5px}
+  .sb i{display:block;width:3px;border-radius:1px;background:var(--ink)}
+  .sb i:nth-child(1){height:5px;opacity:.4}.sb i:nth-child(2){height:8px;opacity:.6}
+  .sb i:nth-child(3){height:11px;opacity:.85}.sb i:nth-child(4){height:13px}
+  .sb .bat{width:22px;height:11px;border:1px solid var(--ink);border-radius:3px;position:relative;margin-left:4px}
+  .sb .bat::after{content:"";position:absolute;inset:1.5px;width:60%;background:var(--ink);border-radius:1.5px}
+
+  /* 页面骨架 */
+  .ct{flex:1 1 auto;padding:0 20px;overflow:hidden;display:flex;flex-direction:column}
+  .hd{flex:0 0 auto;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+  .hd h2{font-size:21px;font-weight:600;margin:0;line-height:28px}
+  .hd .act{font-size:13px;font-weight:500;color:var(--rouge)}
+  .hd .back{width:24px;height:24px;color:var(--ink);display:grid;place-items:center}
+  .hd.center{position:relative}
+  .hd.center h2{position:absolute;left:0;right:0;text-align:center;font-size:17px}
+
+  /* 文本 */
+  .h1{font-size:21px;font-weight:600;line-height:28px;margin:0}
+  .h2{font-size:16px;font-weight:600;line-height:24px;margin:0}
+  .b{font-size:15px;line-height:24px;margin:0}
+  .k{font-size:13px;line-height:20px;color:var(--ink-2);margin:0}
+  .micro{font-size:11px;line-height:16px;color:var(--ink-2);margin:0}
+  .ph{color:var(--ink-3)}
+  .serif{font-family:var(--serif)}
+  .rule{height:1px;background:var(--line);flex:0 0 auto}
+  .row{display:flex;align-items:center}
+  .between{justify-content:space-between}
+  .g4{gap:4px}.g6{gap:6px}.g8{gap:8px}.g10{gap:10px}.g12{gap:12px}
+  .mt4{margin-top:4px}.mt6{margin-top:6px}.mt8{margin-top:8px}.mt10{margin-top:10px}
+  .mt12{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}.mt24{margin-top:24px}
+
+  /* 按钮 */
+  .btn{height:48px;border:0;border-radius:12px;width:100%;font-family:inherit;font-size:16px;font-weight:600;
+       display:flex;align-items:center;justify-content:center;gap:8px;cursor:default}
+  .primary{background:var(--rouge);color:#fff}
+  .secondary{background:transparent;color:var(--rouge);border:1.5px solid var(--rouge)}
+  .ghost{background:transparent;color:var(--ink-2);font-size:13px;font-weight:500;height:40px}
+  .btn.sm{height:40px;font-size:14px;border-radius:10px;width:auto;padding:0 18px}
+  .btn.disabled{background:#DCB6BF;color:#fff}
+
+  /* 字段 */
+  .field{border-bottom:1px solid var(--line-strong);padding-bottom:6px}
+  .field .lbl{font-size:13px;color:var(--ink-2)}
+  .field .val{font-size:15px;line-height:22px;padding-top:6px;display:flex;align-items:center;justify-content:space-between}
+  .field.err{border-color:var(--rouge)}
+  .field-msg{font-size:12px;line-height:18px;color:var(--rouge);padding-top:6px}
+
+  /* chip */
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:999px;
+        border:1px solid var(--line);font-size:13px;line-height:1;color:var(--ink-2);background:transparent;white-space:nowrap}
+  .chip.on{background:var(--rouge-soft);color:var(--rouge);border:1.5px solid var(--rouge);font-weight:500}
+
+  /* segmented */
+  .seg{display:inline-flex;background:#F3E9E5;border-radius:10px;padding:3px}
+  .seg span{height:26px;padding:0 14px;display:flex;align-items:center;font-size:13px;color:var(--ink-2);border-radius:8px}
+  .seg span.on{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(43,34,41,.08)}
+
+  /* alert */
+  .alert{display:flex;gap:10px;padding:10px 12px;border-radius:8px;border-left:3px solid;font-size:13px;line-height:20px}
+  .alert.err{background:#FBEDEE;border-color:var(--rouge);color:#8E2B41}
+  .alert.warn{background:var(--warn-soft);border-color:var(--warn);color:#7C481F}
+  .alert.info{background:var(--plum-soft);border-color:var(--plum);color:var(--plum)}
+  .alert .dot{flex:0 0 auto;width:6px;height:6px;border-radius:50%;margin-top:7px;background:currentColor}
+
+  /* 底栏 */
+  .tb{flex:0 0 auto;height:76px;padding-bottom:16px;background:var(--surface);border-top:1px solid var(--line);
+      display:flex;align-items:flex-start;padding-top:8px}
+  .tb .it{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--ink-3)}
+  .tb .it .pill{width:38px;height:26px;border-radius:999px;display:grid;place-items:center}
+  .tb .it.on{color:var(--rouge)}
+  .tb .it.on .pill{background:var(--rouge-soft)}
+  .tb .it span{font-size:11px;line-height:14px;letter-spacing:.01em}
+  .tb .it.on span{font-weight:600}
+  .tb svg{width:22px;height:22px}
+
+  /* 首页 */
+  .idxtabs{display:flex;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .idxtabs .cell2{flex:1;padding:14px 10px 12px;border-left:1px solid var(--line);display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+  .idxtabs .cell2:first-child{border-left:0;padding-left:2px}
+  .idxtabs .t{font-size:15px;font-weight:600;line-height:20px}
+  .idxtabs .s{font-size:12px;line-height:16px;color:var(--ink-2)}
+  .idxtabs .s.mute{color:var(--ink-3)}
+  .bubble{align-self:flex-end;max-width:78%;background:var(--rouge-soft);border-radius:16px 16px 4px 16px;
+          padding:10px 14px;font-size:15px;line-height:22px}
+  .answer{border-left:2px solid var(--plum);padding-left:12px;margin-top:20px}
+  .answer .lab{font-size:11px;font-weight:600;color:var(--plum);letter-spacing:.02em}
+  .answer p{font-size:15px;line-height:24px;margin:6px 0 0}
+  .refchip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:999px;
+           background:var(--plum-soft);color:var(--plum);font-size:12px;margin-top:10px}
+  .inputbar{margin:12px 20px 14px;height:52px;background:#fff;border:1px solid var(--line-strong);border-radius:14px;
+            display:flex;align-items:center;gap:8px;padding:0 6px 0 14px;font-size:14px;color:var(--ink-3);flex:0 0 auto}
+  .send{margin-left:auto;width:38px;height:38px;border-radius:10px;background:var(--rouge);display:grid;place-items:center;flex:0 0 auto}
+
+  /* 日历 */
+  .wk{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;color:var(--ink-2);padding-bottom:2px}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr)}
+  .day{height:43px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+  .day .d{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;
+          font-family:var(--serif);font-size:15px;line-height:1;color:var(--ink);position:relative}
+  .day .tag{height:10px;display:flex;align-items:center;gap:3px;font-size:9px;line-height:10px;color:var(--ink-2)}
+  .day .fd{width:4px;height:4px;border-radius:50%;background:var(--sage)}
+  .day.actual .d{background:var(--rouge);color:#fff;font-weight:600}
+  .day.pred .d{border:1.5px dashed var(--plum);color:var(--plum);width:30px;height:30px}
+  .day.sel .d{box-shadow:0 0 0 1.5px var(--ink);}
+  .day.sel.actual .d{box-shadow:0 0 0 4px var(--paper),0 0 0 5.5px var(--ink)}
+  .day.out .d{color:#C9BBB6}
+  .legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .legend .li{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-2)}
+  .lg-actual{width:12px;height:12px;border-radius:50%;background:var(--rouge)}
+  .lg-pred{width:12px;height:12px;border-radius:50%;border:1.5px dashed var(--plum)}
+  .lg-feel{width:5px;height:5px;border-radius:50%;background:var(--sage)}
+  .lg-sel{width:12px;height:12px;border-radius:50%;box-shadow:0 0 0 1.5px var(--ink)}
+
+  /* 记录行 */
+  .rec{border-left:3px solid var(--rouge);padding-left:12px}
+  .rec.saved{border-color:var(--sage)}
+  .listrow{display:flex;align-items:center;justify-content:space-between;height:52px;border-bottom:1px solid var(--line)}
+  .listrow .d{font-family:var(--serif);font-size:15px}
+  .listrow .v{font-family:var(--serif);font-size:17px}
+  .tap{font-size:13px;color:var(--ink-2);display:flex;align-items:center;gap:2px}
+  .chev{width:8px;height:8px;border-right:1.2px solid var(--ink-3);border-bottom:1.2px solid var(--ink-3);transform:rotate(-45deg)}
+
+  /* 图表 */
+  .chart{position:relative;height:176px}
+  .chart svg{display:block;width:100%;height:100%}
+  .xaxis{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;color:var(--ink-2);
+         font-family:var(--serif);margin-top:2px}
+  .xaxis .on{color:var(--rouge);font-weight:600;font-family:var(--sans);font-size:11px}
+  .stat{display:flex;padding:14px 0}
+  .stat .c{flex:1;display:flex;flex-direction:column;gap:2px}
+  .stat .c + .c{border-left:1px solid var(--line);padding-left:16px}
+  .stat .v{font-family:var(--serif);font-size:24px;line-height:30px}
+  .stat .l{font-size:13px;color:var(--ink-2)}
+
+  /* 缩略图占位 */
+  .thumb{width:96px;height:96px;border-radius:16px;background:
+    linear-gradient(135deg,#F3E5E7 0%,#EFE7F0 55%,#F6EEE9 100%);display:grid;place-items:center;color:#B79AA1;flex:0 0 auto;position:relative;overflow:hidden}
+  .thumb::after{content:"示意区";position:absolute;bottom:6px;right:8px;font-size:9px;color:#B79AA1}
+  .thumb.sm{width:56px;height:56px;border-radius:12px;font-size:9px}
+  .hero-img{width:100%;height:196px;border-radius:16px;background:
+    linear-gradient(135deg,#F4E4E6 0%,#EEE6F1 50%,#F7EFE9 100%);display:grid;place-items:center;color:#B79AA1;position:relative;overflow:hidden}
+  .hero-img::after{content:"图片示意区（真机为原图）";position:absolute;bottom:10px;font-size:10px;color:#B79AA1}
+
+  /* 弹层 */
+  .scrim{position:absolute;inset:0;background:rgba(43,34,41,.34);z-index:6}
+  .modal-scrim{position:absolute;inset:0;background:rgba(43,34,41,.28);z-index:6;display:grid;place-items:center;padding:0 34px}
+  .modal{width:100%;background:#fff;border-radius:16px;padding:20px;box-shadow:0 20px 44px rgba(43,34,41,.18)}
+  .modal h4{margin:0;font-size:16px;font-weight:600;line-height:24px}
+  .modal p{margin:6px 0 0;font-size:13px;line-height:20px;color:var(--ink-2)}
+  .modal .acts{display:flex;justify-content:flex-end;gap:22px;margin-top:20px;font-size:15px;font-weight:500}
+  .modal .acts .cancel{color:var(--ink-2)}
+  .modal .acts .danger{color:var(--rouge);font-weight:600}
+  .sheet-panel{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:28px 28px 0 0;z-index:7;
+    box-shadow:0 -12px 32px rgba(43,34,41,.10);padding:10px 20px 20px;display:flex;flex-direction:column}
+  .grabber{width:36px;height:4px;border-radius:2px;background:var(--line-strong);margin:0 auto 10px}
+
+  /* 令牌板 */
+  .tokens{width:100%;background:#fff;border-radius:20px;padding:32px 36px;margin-top:52px;
+          box-shadow:0 0 0 1px rgba(43,34,41,.06),0 12px 32px rgba(43,34,41,.08)}
+  .tokens h3{font-size:15px;font-weight:600;margin:0 0 14px}
+  .tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(196px,1fr));gap:20px 28px}
+  .sw{border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+  .sw .c{height:56px}
+  .sw .m{padding:8px 10px;font-size:11px;line-height:16px;color:var(--ink-2)}
+  .sw .m b{display:block;font-size:12px;color:var(--ink);font-weight:600}
+  .type-row{display:flex;align-items:baseline;gap:18px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .type-row .spec{width:150px;font-size:11px;color:var(--ink-2);flex:0 0 auto}
+  .shape-row{display:flex;gap:34px;flex-wrap:wrap;align-items:center;padding-top:6px}
+  .shape-row .item{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:11px;color:var(--ink-2)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:36px}
+  @media (max-width:1100px){.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="board">
+  <div class="board-hd">
+    <h1>她记 · 前端视觉稿 V1.0</h1>
+    <p>390 × 844 · 五个一级页 + 登录 + 两个二级/弹层状态 · 与《前端样式设计规范 V1.0》配套</p>
+  </div>
+
+  <div class="sheet">
+
+    <!-- ① 登录 -->
+    <div class="cell">
+      <div class="cap"><b>① 登录 / 注册</b><span>无底栏 · 主按钮贴键盘</span></div>
+      <div class="phone">
+        <div class="sb"><span>9:41</span><span class="ic"><i></i><i></i><i></i><i></i><span class="bat"></span></span></div>
+        <div class="ct" style="padding-top:76px">
+          <div class="serif" style="font-size:34px;line-height:44px">她记</div>
+          <p class="k mt6">女性健康记录助手</p>
+
+          <div class="mt24" style="height:26px"></div>
+
+          <div class="field">
+            <div class="lbl">用户名</div>
+            <div class="val">小满</div>
+          </div>
+          <div class="field mt20">
+            <div class="lbl">密码</div>
+            <div class="val"><span>••••••••</span></div>
+            <div class="field-msg">用户名或密码不正确</div>
+          </div>
+
+          <button class="btn primary mt24">登录</button>
+          <div class="row" style="justify-content:center;margin-top:20px">
+            <span class="k">还没有账号？<b style="color:var(--rouge);font-weight:500">注册</b></span>
+          </div>
+          <p class="micro mt16" style="text-align:center;color:var(--ink-3)">用户名 2–32 个字符，区分大小写；密码至少 8 位</p>
+        </div>
+        <div style="height:24px;flex:0 0 auto"></div>
+      </div>
+    </div>
+
+    <!-- ② 首页 -->
+    <div class="cell">
+      <div class="cap"><b>② 首页</b><span>日期头 + 三个记录入口 + 只读问答</span></div>
+      <div class="phone">
+        <div class="sb"><span>9:41</span><span class="ic"><i></i><i></i><i></i><i></i><span class="bat"></span></span></div>
+        <div class="ct">
+          <div class="row between" style="padding:8px 0 0">
+            <div>
+              <div class="serif" style="font-size:15px;color:var(--ink-2)">11月18日 周三</div>
+              <p class="b mt4" style="font-weight:500">今天记一笔，或者问我一句</p>
+            </div>
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--rouge-soft);color:var(--rouge);
+                        display:grid;place-items:center;font-size:15px;font-weight:600">满</div>
+          </div>
+
+          <div class="idxtabs mt16">
+            <div class="cell2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--rouge)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.6c3.1 3.6 5.3 6.3 5.3 9.1a5.3 5.3 0 0 1-10.6 0c0-2.8 2.2-5.5 5.3-9.1z"/></svg>
+              <div class="t">记经期</div>
+              <div class="s">第 3 天</div>
+            </div>
+            <div class="cell2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--rouge)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="5.4" width="18.4" height="13.2" rx="4.4"/><path d="M8.6 14.4a3.6 3.6 0 0 1 6.8 0"/><path d="M12 14.4l1.9-2.4"/></svg>
+              <div class="t">记体重</div>
+              <div class="s">56.8 kg</div>
+            </div>
+            <div class="cell2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--plum)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="6.6" width="17.6" height="12.8" rx="4"/><circle cx="12" cy="13" r="3.4"/><path d="M8.6 6.6l1-2.1h4.8l1 2.1"/></svg>
+              <div class="t">拍照分析</div>
+              <div class="s mute">还没有记录</div>
+            </div>
+          </div>
+
+          <div class="mt16">
+            <p class="k">试试这样问</p>
+            <div class="chips mt8">
+              <span class="chip">这周体重有变化吗</span>
+              <span class="chip">上次经期是哪天</span>
+            </div>
+          </div>
+
+          <div class="mt16" style="display:flex;flex-direction:column">
+            <div class="bubble">这周体重有变化吗</div>
+            <div class="answer">
+              <div class="lab">11月12日–11月18日</div>
+              <p>这七天你记录了 5 次体重：11月12日 57.2 kg，11月18日 56.8 kg，前后相差 −0.4 kg。11月14日、17日没有记录。</p>
+              <span class="refchip">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 18l5-6 4 3 6-8"/></svg>
+                体重明细 5 次记录
+              </span>
+            </div>
+            <p class="micro mt10" style="color:var(--ink-3)">回答只读取已保存的记录，不会新增或修改任何一笔</p>
+          </div>
+        </div>
+        <div class="inputbar">
+          <span>问我一个关于记录的问题</span>
+          <span class="send">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></svg>
+          </span>
+        </div>
+        <div class="tb">
+          <div class="it on"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M6.4 4.2h8.8a2.4 2.4 0 0 1 2.4 2.4v13.2H6.4z"/><path d="M6.4 4.2a2.4 2.4 0 0 0-2.4 2.4v13.2h2.4"/><path d="M9.4 9.2h5.4M9.4 13h3.6"/></svg></span><span>首页</span></div>
+          <div class="it"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3.6c3.1 3.6 5.3 6.3 5.3 9.1a5.3 5.3 0 0 1-10.6 0c0-2.8 2.2-5.5 5.3-9.1z"/></svg></span><span>经期</span></div>
+          <div class="it"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="5.4" width="18.4" height="13.2" rx="4.4"/><path d="M8.6 14.4a3.6 3.6 0 0 1 6.8 0"/><path d="M12 14.4l1.9-2.4"/></svg></span><span>体重</span></div>
+          <div class="it"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="6.6" width="17.6" height="12.8" rx="4"/><circle cx="12" cy="13" r="3.4"/><path d="M8.6 6.6l1-2.1h4.8l1 2.1"/></svg></span><span>皮肤</span></div>
+          <div class="it"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.6" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span><span>我的</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ③ 经期 -->
+    <div class="cell">
+      <div class="cap"><b>③ 经期</b><span>日历四态 · 实色/虚线环/感受点/选中描边</span></div>
+      <div class="phone">
+        <div class="sb"><span>9:41</span><span class="ic"><i></i><i></i><i></i><i></i><span class="bat"></span></span></div>
+        <div class="hd"><h2>经期</h2><span class="act">回到今天</span></div>
+        <div class="ct">
+          <div class="row g6" style="align-items:baseline">
+            <span class="k">经期第</span>
+            <span class="serif" style="font-size:40px;line-height:46px;font-weight:300">3</span>
+            <span class="k">天</span>
+          </div>
+          <p class="k" style="margin-top:2px">11月16日开始，未记录结束</p>
+          <p class="micro" style="margin-top:6px;color:var(--plum)">预计下次 12月15日 · 按最近两个周期估算</p>
+
+          <div class="row between mt12">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+            <span class="serif" style="font-size:17px">2026年11月</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+          </div>
+
+          <div class="wk mt8"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+          <div class="cal">
+            <div class="day"><span class="d">1</span><span class="tag"></span></div>
+            <div class="day"><span class="d">2</span><span class="tag"></span></div>
+            <div class="day"><span class="d">3</span><span class="tag"></span></div>
+            <div class="day"><span class="d">4</span><span class="tag"></span></div>
+            <div class="day"><span class="d">5</span><span class="tag"></span></div>
+            <div class="day"><span class="d">6</span><span class="tag"></span></div>
+            <div class="day"><span class="d">7</span><span class="tag"></span></div>
+
+            <div class="day"><span class="d">8</span><span class="tag"></span></div>
+            <div class="day"><span class="d">9</span><span class="tag"></span></div>
+            <div class="day"><span class="d">10</span><span class="tag"></span></div>
+            <div class="day"><span class="d">11</span><span class="tag"></span></div>
+            <div class="day"><span class="d">12</span><span class="tag"></span></div>
+            <div class="day"><span class="d">13</span><span class="tag"></span></div>
+            <div class="day"><span class="d">14</span><span class="tag"></span></div>
+
+            <div class="day"><span class="d">15</span><span class="tag"></span></div>
+            <div class="day actual"><span class="d">16</span><span class="tag"></span></div>
+            <div class="day actual"><span class="d">17</span><span class="tag"><i class="fd"></i></span></div>
+            <div class="day actual sel"><span class="d">18</span><span class="tag">今天</span></div>
+            <div class="day"><span class="d">19</span><span class="tag"></span></div>
+            <div class="day"><span class="d">20</span><span class="tag"></span></div>
+            <div class="day"><span class="d">21</span><span class="tag"></span></div>
+
+            <div class="day"><span class="d">22</span><span class="tag"></span></div>
+            <div class="day"><span class="d">23</span><span class="tag"></span></div>
+            <div class="day"><span class="d">24</span><span class="tag"></span></div>
+            <div class="day"><span class="d">25</span><span class="tag"></span></div>
+            <div class="day"><span class="d">26</span><span class="tag"></span></div>
+            <div class="day"><span class="d">27</span><span class="tag"></span></div>
+            <div class="day"><span class="d">28</span><span class="tag"></span></div>
+
+            <div class="day"><span class="d">29</span><span class="tag"></span></div>
+            <div class="day"><span class="d">30</span><span class="tag"></span></div>
+            <div class="day out"><span class="d">1</span><span class="tag"></span></div>
+            <div class="day out"><span class="d">2</span><span class="tag"></span></div>
+            <div class="day out"><span class="d">3</span><span class="tag"></span></div>
+            <div class="day out"><span class="d">4</span><span class="tag"></span></div>
+            <div class="day out"><span class="d">5</span><span class="tag"></span></div>
+          </div>
+
+          <div class="legend mt4">
+            <span class="li"><i class="lg-actual"></i>经期</span>
+            <span class="li"><i class="lg-pred"></i>预计开始</span>
+            <span class="li"><i class="lg-feel"></i>有感受</span>
+            <span class="li"><i class="lg-sel"></i>已选</span>
+          </div>
+
+          <div class="rule mt12"></div>
+
+          <div class="mt12 rec">
+            <div class="row between" style="padding-bottom:4px">
+              <span class="b" style="font-weight:600">11月18日 周三</span>
+              <span class="micro">今天</span>
+            </div>
+            <div class="row between" style="height:28px">
+              <span class="k">经期</span>
+              <span class="row g12"><span class="b">11月16日开始</span><span class="tap">修改</span></span>
+            </div>
+            <div class="row between" style="height:28px">
+              <span class="k">感受</span>
+              <span class="b" style="color:var(--ink-3)">未记录</span>
+            </div>
+            <div class="row g10 mt10">
+              <button class="btn secondary sm" style="flex:1">记录经期</button>
+              <button class="btn primary sm" style="flex:1">记录感受</button>
+            </div>
+          </div>
+
+          <div class="mt12">
+            <h3 class="h2">历史周期</h3>
+            <div class="listrow"><span class="d">11月16日</span><span class="k">未记录结束</span></div>
+            <div class="listrow"><span class="d">10月17日</span><span class="k">6 天　间隔 30 天</span></div>
+          </div>
+        </div>
+        <div class="tb">
+          <div class="it"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M6.4 4.2h8.8a2.4 2.4 0 0 1 2.4 2.4v13.2H6.4z"/><path d="M6.4 4.2a2.4 2.4 0 0 0-2.4 2.4v13.2h2.4"/><path d="M9.4 9.2h5.4M9.4 13h3.6"/></svg></span><span>首页</span></div>
+          <div class="it on"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3.6c3.1 3.6 5.3 6.3 5.3 9.1a5.3 5.3 0 0 1-10.6 0c0-2.8 2.2-5.5 5.3-9.1z"/></svg></span><span>经期</span></div>
+          <div class="it"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="5.4" width="18.4" height="13.2" rx="4.4"/><path d="M8.6 14.4a3.6 3.6 0 0 1 6.8 0"/><path d="M12 14.4l1.9-2.4"/></svg></span><span>体重</span></div>
+          <div class="it"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="6.6" width="17.6" height="12.8" rx="4"/><circle cx="12" cy="13" r="3.4"/><path d="M8.6 6.6l1-2.1h4.8l1 2.1"/></svg></span><span>皮肤</span></div>
+          <div class="it"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.6" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span><span>我的</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ④ 经期 · 记录感受弹层 -->
+    <div class="cell">
+      <div class="cap"><b>④ 经期 · 记录感受</b><span>底部弹层 · 单选/多选/备注</span></div>
+      <div class="phone dim">
+        <div class="sb"><span>9:41</span><span class="ic"><i></i><i></i><i></i><i></i><span class="bat"></span></span></div>
+        <div class="hd"><h2>经期</h2><span class="act">回到今天</span></div>
+        <div class="ct">
+          <div class="row g6" style="align-items:baseline">
+            <span class="k">经期第</span><span class="serif" style="font-size:40px;line-height:46px;font-weight:300">3</span><span class="k">天</span>
+          </div>
+          <p class="k" style="margin-top:2px">11月16日开始，未记录结束</p>
+          <p class="micro" style="margin-top:6px;color:var(--plum)">预计下次 12月15日 · 按最近两个周期估算</p>
+
+          <div class="row between mt12">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+            <span class="serif" style="font-size:17px">2026年11月</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+          </div>
+
+          <div class="wk mt8"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+          <div class="cal">
+            <div class="day"><span class="d">1</span><span class="tag"></span></div>
+            <div class="day"><span class="d">2</span><span class="tag"></span></div>
+            <div class="day"><span class="d">3</span><span class="tag"></span></div>
+            <div class="day"><span class="d">4</span><span class="tag"></span></div>
+            <div class="day"><span class="d">5</span><span class="tag"></span></div>
+            <div class="day"><span class="d">6</span><span class="tag"></span></div>
+            <div class="day"><span class="d">7</span><span class="tag"></span></div>
+            <div class="day"><span class="d">8</span><span class="tag"></span></div>
+            <div class="day"><span class="d">9</span><span class="tag"></span></div>
+            <div class="day"><span class="d">10</span><span class="tag"></span></div>
+            <div class="day"><span class="d">11</span><span class="tag"></span></div>
+            <div class="day"><span class="d">12</span><span class="tag"></span></div>
+            <div class="day"><span class="d">13</span><span class="tag"></span></div>
+            <div class="day"><span class="d">14</span><span class="tag"></span></div>
+            <div class="day"><span class="d">15</span><span class="tag"></span></div>
+            <div class="day actual"><span class="d">16</span><span class="tag"></span></div>
+            <div class="day actual"><span class="d">17</span><span class="tag"><i class="fd"></i></span></div>
+            <div class="day actual sel"><span class="d">18</span><span class="tag">今天</span></div>
+            <div class="day"><span class="d">19</span><span class="tag"></span></div>
+            <div class="day"><span class="d">20</span><span class="tag"></span></div>
+            <div class="day"><span class="d">21</span><span class="tag"></span></div>
+            <div class="day"><span class="d">22</span><span class="tag"></span></div>
+            <div class="day"><span class="d">23</span><span class="tag"></span></div>
+            <div class="day"><span class="d">24</span><span class="tag"></span></div>
+            <div class="day"><span class="d">25</span><span class="tag"></span></div>
+            <div class="day"><span class="d">26</span><span class="tag"></span></div>
+            <div class="day"><span class="d">27</span><span class="tag"></span></div>
+            <div class="day"><span class="d">28</span><span class="tag"></span></div>
+            <div class="day"><span class="d">29</span><span class="tag"></span></div>
+            <div class="day"><span class="d">30</span><span class="tag"></span></div>
+            <div class="day out"><span class="d">1</span><span class="tag"></span></div>
+            <div class="day out"><span class="d">2</span><span class="tag"></span></div>
+            <div class="day out"><span class="d">3</span><span class="tag"></span></div>
+            <div class="day out"><span class="d">4</span><span class="tag"></span></div>
+            <div class="day out"><span class="d">5</span><span class="tag"></span></div>
+          </div>
+
+          <div class="legend mt4">
+            <span class="li"><i class="lg-actual"></i>经期</span>
+            <span class="li"><i class="lg-pred"></i>预计开始</span>
+            <span class="li"><i class="lg-feel"></i>有感受</span>
+            <span class="li"><i class="lg-sel"></i>已选</span>
+          </div>
+        </div>
+        <div class="scrim"></div>
+        <div class="sheet-panel" style="padding-bottom:20px">
+          <div class="grabber"></div>
+          <div class="row between">
+            <h3 class="h2">记录感受</h3>
+            <span class="tap">关闭</span>
+          </div>
+          <p class="k mt4">11月18日 周三</p>
+
+          <div class="mt16">
+            <div class="k" style="margin-bottom:8px">经量</div>
+            <div class="chips"><span class="chip">少量</span><span class="chip on">中等</span><span class="chip">较多</span></div>
+          </div>
+
+          <div class="mt16">
+            <div class="k" style="margin-bottom:8px">症状</div>
+            <div class="chips">
+              <span class="chip on">腹痛</span><span class="chip">腹胀</span><span class="chip">头痛</span>
+              <span class="chip on">疲惫</span><span class="chip">情绪变化</span><span class="chip">腰酸</span>
+              <span class="chip">恶心</span><span class="chip">乳房胀痛</span>
+            </div>
+          </div>
+
+          <div class="mt16">
+            <div class="k" style="margin-bottom:8px">生活影响</div>
+            <div class="chips"><span class="chip">无影响</span><span class="chip on">轻微影响</span><span class="chip">影响日常</span><span class="chip">影响睡眠</span></div>
+          </div>
+
+          <div class="field mt16">
+            <div class="lbl">备注（可空）</div>
+            <div class="val"><span class="ph">想补充的可以写在这里</span></div>
+          </div>
+
+          <button class="btn primary mt20">保存</button>
+          <p class="micro mt8" style="text-align:center">清空全部字段后保存，这一天的感受会被删除</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑤ 体重 -->
+    <div class="cell">
+      <div class="cap"><b>⑤ 体重</b><span>最近体重 · 趋势口径 · 统计 · 一条建议</span></div>
+      <div class="phone">
+        <div class="sb"><span>9:41</span><span class="ic"><i></i><i></i><i></i><i></i><span class="bat"></span></span></div>
+        <div class="hd"><h2>体重</h2><span class="act">记录明细</span></div>
+        <div class="ct">
+          <div class="row g6" style="align-items:baseline">
+            <span class="serif" style="font-size:44px;line-height:48px;font-weight:300;letter-spacing:-.5px">56.8</span>
+            <span class="k" style="padding-bottom:6px">kg</span>
+          </div>
+          <p class="k" style="margin-top:2px">11月18日 08:00 测量</p>
+          <button class="btn primary mt12">记体重</button>
+
+          <div class="row between mt20">
+            <div class="seg"><span class="on">近 7 天</span><span>近 30 天</span></div>
+            <span class="micro">每天取最后一次</span>
+          </div>
+
+          <div class="chart mt10">
+            <svg viewBox="0 0 350 176" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="wfill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#B23A55" stop-opacity=".10"/>
+                  <stop offset="100%" stop-color="#B23A55" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <!-- 网格 -->
+              <line x1="0" y1="34" x2="350" y2="34" stroke="#EBE0DC" stroke-width="1"/>
+              <line x1="0" y1="86" x2="350" y2="86" stroke="#EBE0DC" stroke-width="1"/>
+              <line x1="0" y1="138" x2="350" y2="138" stroke="#EBE0DC" stroke-width="1"/>
+              <!-- 面积 -->
+              <path d="M25 44.4 L75 56.7 L125 62 L175 68.9 L225 81.1 L275 87 L325 93.3 L325 150 L25 150 Z" fill="url(#wfill)"/>
+              <!-- 有记录：实线 -->
+              <path d="M25 44.4 L75 56.7" stroke="#B23A55" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <path d="M175 68.9 L225 81.1" stroke="#B23A55" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <!-- 跨空日：虚线 -->
+              <path d="M75 56.7 L175 68.9" stroke="#D98396" stroke-width="1.5" stroke-dasharray="4 5" fill="none"/>
+              <path d="M225 81.1 L325 93.3" stroke="#D98396" stroke-width="1.5" stroke-dasharray="4 5" fill="none"/>
+              <!-- 空日 -->
+              <circle cx="125" cy="62" r="2" fill="#DCCCC7"/>
+              <circle cx="275" cy="87" r="2" fill="#DCCCC7"/>
+              <!-- 数据点 -->
+              <circle cx="25" cy="44.4" r="3.4" fill="#FBF6F3" stroke="#B23A55" stroke-width="2"/>
+              <circle cx="75" cy="56.7" r="3.4" fill="#FBF6F3" stroke="#B23A55" stroke-width="2"/>
+              <circle cx="175" cy="68.9" r="3.4" fill="#FBF6F3" stroke="#B23A55" stroke-width="2"/>
+              <circle cx="225" cy="81.1" r="3.4" fill="#FBF6F3" stroke="#B23A55" stroke-width="2"/>
+              <circle cx="325" cy="93.3" r="5" fill="#B23A55"/>
+              <circle cx="325" cy="93.3" r="8.5" fill="none" stroke="#B23A55" stroke-opacity=".22" stroke-width="1.5"/>
+              <!-- 末端标签 -->
+              <text x="325" y="76" text-anchor="middle" font-family="Georgia,serif" font-size="12" fill="#2B2229">56.8</text>
+            </svg>
+          </div>
+          <div class="xaxis"><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span class="on">18</span></div>
+          <p class="micro mt6">11月12日–11月18日，虚线处没有记录，不补值</p>
+
+          <div class="rule mt12"></div>
+          <div class="stat">
+            <div class="c"><span class="v">5 次</span><span class="l">记录次数</span></div>
+            <div class="c"><span class="v">−0.4 kg</span><span class="l">首尾变化</span></div>
+          </div>
+          <div class="rule"></div>
+
+          <div class="mt16">
+            <h3 class="h2">一条建议</h3>
+            <p class="b mt6">这七天里有两天没记录。想比较长期变化，尽量在相近的时间和条件下称重。</p>
+          </div>
+        </div>
+        <div class="tb">
+          <div class="it"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M6.4 4.2h8.8a2.4 2.4 0 0 1 2.4 2.4v13.2H6.4z"/><path d="M6.4 4.2a2.4 2.4 0 0 0-2.4 2.4v13.2h2.4"/><path d="M9.4 9.2h5.4M9.4 13h3.6"/></svg></span><span>首页</span></div>
+          <div class="it"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3.6c3.1 3.6 5.3 6.3 5.3 9.1a5.3 5.3 0 0 1-10.6 0c0-2.8 2.2-5.5 5.3-9.1z"/></svg></span><span>经期</span></div>
+          <div class="it on"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="5.4" width="18.4" height="13.2" rx="4.4"/><path d="M8.6 14.4a3.6 3.6 0 0 1 6.8 0"/><path d="M12 14.4l1.9-2.4"/></svg></span><span>体重</span></div>
+          <div class="it"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="6.6" width="17.6" height="12.8" rx="4"/><circle cx="12" cy="13" r="3.4"/><path d="M8.6 6.6l1-2.1h4.8l1 2.1"/></svg></span><span>皮肤</span></div>
+          <div class="it"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.6" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span><span>我的</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑥ 体重 · 记录明细 -->
+    <div class="cell">
+      <div class="cap"><b>⑥ 体重 · 记录明细</b><span>二级页 · 倒序 · 标签筛选</span></div>
+      <div class="phone">
+        <div class="sb"><span>9:41</span><span class="ic"><i></i><i></i><i></i><i></i><span class="bat"></span></span></div>
+        <div class="hd center">
+          <span class="back"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></span>
+          <h2>记录明细</h2>
+          <span style="width:24px"></span>
+        </div>
+        <div class="ct">
+          <div class="chips">
+            <span class="chip on">全部</span><span class="chip">晨起</span><span class="chip">运动后</span>
+            <span class="chip">餐前</span><span class="chip">餐后</span>
+          </div>
+
+          <div class="mt12">
+            <div class="listrow">
+              <div><div class="d">11月18日</div><div class="micro">08:00　晨起</div></div>
+              <div class="row g12"><span class="v">56.8 kg</span><span class="tap">…</span></div>
+            </div>
+            <div class="listrow">
+              <div><div class="d">11月17日</div><div class="micro">07:40</div></div>
+              <div class="row g12"><span class="v">56.9 kg</span><span class="tap">…</span></div>
+            </div>
+            <div class="listrow">
+              <div><div class="d">11月16日</div><div class="micro">21:10　运动后</div></div>
+              <div class="row g12"><span class="v">57.0 kg</span><span class="tap">…</span></div>
+            </div>
+            <div class="listrow">
+              <div><div class="d">11月15日</div><div class="micro">07:30　晨起</div></div>
+              <div class="row g12"><span class="v">57.0 kg</span><span class="tap">…</span></div>
+            </div>
+            <div class="listrow">
+              <div><div class="d">11月13日</div><div class="micro">22:05　餐后</div></div>
+              <div class="row g12"><span class="v">57.1 kg</span><span class="tap">…</span></div>
+            </div>
+            <div class="listrow" style="border-bottom:0">
+              <div><div class="d">11月12日</div><div class="micro">07:20　晨起</div></div>
+              <div class="row g12"><span class="v">57.2 kg</span><span class="tap">…</span></div>
+            </div>
+          </div>
+
+          <p class="micro mt16" style="text-align:center">同一天的多笔测量全部保留，趋势只取每天最后一次</p>
+        </div>
+        <div class="modal-scrim">
+          <div class="modal">
+            <h4>删除这笔记录？</h4>
+            <p>11月18日 08:00 的 56.8 kg 会被删除，趋势和明细会一起更新。</p>
+            <div class="acts"><span class="cancel">取消</span><span class="danger">删除</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑦ 皮肤 · 观察结果 -->
+    <div class="cell">
+      <div class="cap"><b>⑦ 皮肤 · 观察结果</b><span>三段固定顺序 · AI 标识 · 保存/不保存/重拍</span></div>
+      <div class="phone">
+        <div class="sb"><span>9:41</span><span class="ic"><i></i><i></i><i></i><i></i><span class="bat"></span></span></div>
+        <div class="hd center">
+          <span class="back"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></span>
+          <h2>观察结果</h2>
+          <span style="width:24px"></span>
+        </div>
+        <div class="ct">
+          <div class="hero-img">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="6.6" width="17.6" height="12.8" rx="4"/><circle cx="12" cy="13" r="3.4"/><path d="M8.6 6.6l1-2.1h4.8l1 2.1"/></svg>
+          </div>
+          <div class="row between mt10">
+            <span class="b" style="font-weight:600">下巴</span>
+            <span class="k">11月18日 21:04</span>
+          </div>
+
+          <div class="alert warn mt12">
+            <span class="dot"></span>
+            <span>这张照片偏暗，部分细节看不清。想要更完整的结果，可以在自然光下重拍。</span>
+          </div>
+
+          <div class="row between mt16">
+            <span class="lab" style="font-size:11px;font-weight:600;color:var(--plum);letter-spacing:.02em">AI 观察</span>
+            <span class="micro" style="color:var(--ink-3)">不用于诊断</span>
+          </div>
+
+          <div class="mt8" style="border-left:2px solid var(--plum);padding-left:12px">
+            <h4 class="b" style="font-weight:600;margin:0">可见外观</h4>
+            <p class="b mt4">下巴区域有几处偏红的丘疹样隆起，皮肤表面能看到轻微不均。</p>
+            <div class="rule mt12"></div>
+            <div style="padding-top:12px">
+              <h4 class="b" style="font-weight:600;margin:0">看不清之处</h4>
+              <p class="b mt4">光线偏暗，右侧边缘细节不足，毛孔与肤色差异看不清楚。</p>
+            </div>
+            <div class="rule mt12"></div>
+            <div style="padding-top:12px">
+              <h4 class="b" style="font-weight:600;margin:0;display:flex;align-items:center;gap:6px">
+                <i style="width:5px;height:5px;border-radius:50%;background:var(--plum)"></i>值得留意
+              </h4>
+              <p class="b mt4">同一部位短期反复出现时，可以按周继续记录，方便回看变化。</p>
+            </div>
+          </div>
+        </div>
+        <div style="flex:0 0 auto;padding:0 20px 20px">
+          <div class="rule" style="margin-bottom:14px"></div>
+          <div class="row g10">
+            <button class="btn ghost" style="width:auto;padding:0 6px">不保存</button>
+            <button class="btn secondary sm" style="flex:1">重拍</button>
+            <button class="btn primary sm" style="flex:1.4">保存</button>
+          </div>
+          <p class="micro mt8" style="text-align:center">模型 herlog-vision v1　推理 2.4 s　保存后进入历史</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑧ 我的 -->
+    <div class="cell">
+      <div class="cap"><b>⑧ 我的</b><span>只读用户名 · 行式字段 · 退出</span></div>
+      <div class="phone">
+        <div class="sb"><span>9:41</span><span class="ic"><i></i><i></i><i></i><i></i><span class="bat"></span></span></div>
+        <div class="hd"><h2>我的</h2></div>
+        <div class="ct">
+          <div class="row g12" style="padding:6px 0 18px">
+            <div style="width:48px;height:48px;border-radius:50%;background:var(--rouge-soft);color:var(--rouge);
+                        display:grid;place-items:center;font-size:19px;font-weight:600">满</div>
+            <div>
+              <div style="font-size:20px;font-weight:600;line-height:26px">小满</div>
+              <p class="micro">用户名不可修改</p>
+            </div>
+          </div>
+
+          <div class="rule"></div>
+
+          <div class="field" style="border-bottom:1px solid var(--line);padding:12px 0">
+            <div class="lbl">生日</div>
+            <div class="val"><span>1996年4月8日</span><i class="chev"></i></div>
+          </div>
+          <div class="field" style="border-bottom:1px solid var(--line);padding:12px 0">
+            <div class="lbl">身高</div>
+            <div class="val"><span>165.0 cm</span><i class="chev"></i></div>
+          </div>
+          <div class="field" style="border-bottom:1px solid var(--line);padding:12px 0">
+            <div class="lbl">电话</div>
+            <div class="val"><span class="ph">未填写</span><i class="chev"></i></div>
+          </div>
+          <p class="micro mt8">生日、身高和电话都可以不填；电话只保存在资料里，不用于登录。</p>
+
+          <button class="btn disabled mt20">保存资料</button>
+          <p class="micro mt8" style="text-align:center">资料没有改动</p>
+
+          <div class="rule" style="margin-top:auto"></div>
+          <div style="text-align:center;padding:20px 0 8px">
+            <span class="b" style="color:var(--rouge);font-weight:500">退出登录</span>
+            <p class="micro mt8">退出后记录仍在，下次用同一用户名登录即可查看</p>
+          </div>
+        </div>
+        <div class="tb">
+          <div class="it"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M6.4 4.2h8.8a2.4 2.4 0 0 1 2.4 2.4v13.2H6.4z"/><path d="M6.4 4.2a2.4 2.4 0 0 0-2.4 2.4v13.2h2.4"/><path d="M9.4 9.2h5.4M9.4 13h3.6"/></svg></span><span>首页</span></div>
+          <div class="it"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3.6c3.1 3.6 5.3 6.3 5.3 9.1a5.3 5.3 0 0 1-10.6 0c0-2.8 2.2-5.5 5.3-9.1z"/></svg></span><span>经期</span></div>
+          <div class="it"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="5.4" width="18.4" height="13.2" rx="4.4"/><path d="M8.6 14.4a3.6 3.6 0 0 1 6.8 0"/><path d="M12 14.4l1.9-2.4"/></svg></span><span>体重</span></div>
+          <div class="it"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="6.6" width="17.6" height="12.8" rx="4"/><circle cx="12" cy="13" r="3.4"/><path d="M8.6 6.6l1-2.1h4.8l1 2.1"/></svg></span><span>皮肤</span></div>
+          <div class="it on"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.6" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span><span>我的</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 令牌板 -->
+  <div class="tokens">
+    <div class="two">
+      <div>
+        <h3>色彩令牌</h3>
+        <div class="tgrid">
+          <div class="sw"><div class="c" style="background:#FBF6F3"></div><div class="m"><b>paper</b>#FBF6F3 页面底</div></div>
+          <div class="sw"><div class="c" style="background:#2B2229"></div><div class="m"><b>ink</b>#2B2229 正文 14.5:1</div></div>
+          <div class="sw"><div class="c" style="background:#6B5F66"></div><div class="m"><b>ink-2</b>#6B5F66 次级 5.7:1</div></div>
+          <div class="sw"><div class="c" style="background:#B23A55"></div><div class="m"><b>rouge</b>#B23A55 主操作/我的记录</div></div>
+          <div class="sw"><div class="c" style="background:#F7E4E6"></div><div class="m"><b>rouge-soft</b>#F7E4E6 浅底</div></div>
+          <div class="sw"><div class="c" style="background:#5F4E6B"></div><div class="m"><b>plum</b>#5F4E6B 预测/AI 7.0:1</div></div>
+          <div class="sw"><div class="c" style="background:#EFEAF3"></div><div class="m"><b>plum-soft</b>#EFEAF3 引用底</div></div>
+          <div class="sw"><div class="c" style="background:#55685C"></div><div class="m"><b>sage</b>#55685C 已保存/感受</div></div>
+          <div class="sw"><div class="c" style="background:#9A5B27"></div><div class="m"><b>warn</b>#9A5B27 需重拍</div></div>
+          <div class="sw"><div class="c" style="background:#EBE0DC"></div><div class="m"><b>line</b>#EBE0DC 发丝线</div></div>
+        </div>
+      </div>
+      <div>
+        <h3>字阶与形状</h3>
+        <div class="type-row"><span class="spec">主数字 44 / 300 serif</span><span class="serif" style="font-size:44px;line-height:48px;font-weight:300">56.8</span></div>
+        <div class="type-row"><span class="spec">页面标题 21 / 600</span><span style="font-size:21px;font-weight:600">体重</span></div>
+        <div class="type-row"><span class="spec">正文 15 / 24</span><span style="font-size:15px;line-height:24px;max-width:330px">这七天你记录了 5 次体重，前后相差 −0.4 kg。</span></div>
+        <div class="type-row" style="border-bottom:0"><span class="spec">说明 13 / 20 · 微文案 11</span><span style="font-size:13px;color:var(--ink-2)">11月18日 08:00 测量　<span style="font-size:11px">每天取最后一次</span></span></div>
+
+        <div class="shape-row" style="padding-top:18px;margin-top:14px;border-top:1px solid var(--line);gap:20px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:56px">
+            <div class="day actual" style="width:56px"><span class="d">16</span><span class="tag"></span></div>
+            <span style="font-size:10px;color:var(--ink-2)">实际经期</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:56px">
+            <div class="day actual" style="width:56px"><span class="d">17</span><span class="tag"><i class="fd"></i></span></div>
+            <span style="font-size:10px;color:var(--ink-2)">+ 有感受</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:56px">
+            <div class="day sel" style="width:56px"><span class="d">18</span><span class="tag">今天</span></div>
+            <span style="font-size:10px;color:var(--ink-2)">选中 + 今天</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:56px">
+            <div class="day pred" style="width:56px"><span class="d">27</span><span class="tag"></span></div>
+            <span style="font-size:10px;color:var(--ink-2)">预计开始</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:56px">
+            <div class="day" style="width:56px"><span class="d">5</span><span class="tag"><i class="fd"></i></span></div>
+            <span style="font-size:10px;color:var(--ink-2)">仅感受</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:56px">
+            <div class="day actual sel" style="width:56px"><span class="d">20</span><span class="tag"></span></div>
+            <span style="font-size:10px;color:var(--ink-2)">选中 + 经期</span>
+          </div>
+        </div>
+        <div class="shape-row">
+          <div class="item"><span class="lg-actual" style="width:22px;height:22px"></span>实色=实际经期</div>
+          <div class="item"><span class="lg-pred" style="width:20px;height:20px"></span>虚线环=预计</div>
+          <div class="item"><span class="lg-feel" style="width:8px;height:8px"></span>点=有感受</div>
+          <div class="item"><span class="lg-sel" style="width:22px;height:22px"></span>深描边=选中</div>
+          <div class="item"><span style="width:22px;height:22px;border-radius:6px;border:1.5px solid var(--rouge)"></span>输入/选中 12 圆角</div>
+          <div class="item"><span style="width:22px;height:22px;border-radius:999px;background:var(--rouge-soft);border:1.5px solid var(--rouge)"></span>chip 胶囊</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

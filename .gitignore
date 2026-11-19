@@ -1,0 +1,29 @@
+# local toolchain (uv/python/node downloaded for this machine)
+.tools/
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.env
+.env.*.local
+backend/.env*
+
+# node / uni-app
+node_modules/
+client/dist/
+client/src/uni-pages.d.ts
+
+# editors / os
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# nightly test output and private runtime files
+artifacts/
+infra.env
+.env.contest
+.env.production.local
+*.bundle

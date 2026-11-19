@@ -1,0 +1,24 @@
+{
+  "name": "herlog-client",
+  "version": "1.0.0",
+  "private": true,
+  "description": "她记 · 女性健康记录助手 —— uni-app / Vue 3 / Pinia H5 客户端",
+  "scripts": {
+    "dev:h5": "uni",
+    "build:h5": "uni build",
+    "test:logic": "node --experimental-strip-types --test tests/*.test.ts",
+    "typecheck:shared": "tsc -p tsconfig.shared.json"
+  },
+  "dependencies": {
+    "@dcloudio/uni-app": "3.0.0-alpha-5030720261117001",
+    "@dcloudio/uni-components": "3.0.0-alpha-5030720261117001",
+    "@dcloudio/uni-h5": "3.0.0-alpha-5030720261117001",
+    "pinia": "2.1.7",
+    "vue": "3.4.21"
+  },
+  "devDependencies": {
+    "@dcloudio/vite-plugin-uni": "3.0.0-alpha-5030720261117001",
+    "typescript": "5.4.5",
+    "vite": "5.2.8"
+  }
+}
