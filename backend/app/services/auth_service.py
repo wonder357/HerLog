@@ -69,6 +69,7 @@ def login(session: Session, username: str, password: str) -> dict:
     if found is None:
         raise unauthorized("用户名或密码错误")
     profile, member = found
+    session.refresh(member, with_for_update=True)
     if not verify_password(password, member.password):
         raise unauthorized("用户名或密码错误")
     if member.status != "active":

@@ -57,6 +57,7 @@ export interface PeriodOverview {
 export interface FeelingItem {
   day: string
   flow: string | null
+  mood?: string | null
   symptoms: string[]
   impact: string | null
   note: string | null

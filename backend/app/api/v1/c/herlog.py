@@ -5,7 +5,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, own_account
 from app.core.clock import local_today
 from app.db.session import get_session
 from app.schemas.common import ApiResponse
@@ -23,14 +23,14 @@ from app.services.auth_service import CurrentUser
 router = APIRouter(prefix="/herlog", tags=["herlog"])
 
 
-@router.get("/profile", response_model=ApiResponse[ProfileOut])
+@router.get("/profile", response_model=ApiResponse[ProfileOut], dependencies=[Depends(own_account)])
 def read_profile(
     session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)
 ) -> ApiResponse[ProfileOut]:
     return ApiResponse(data=profile_service.get_profile(session, user.customer_id))
 
 
-@router.put("/profile", response_model=ApiResponse[ProfileOut])
+@router.put("/profile", response_model=ApiResponse[ProfileOut], dependencies=[Depends(own_account)])
 def write_profile(
     payload: ProfileUpdate,
     session: Session = Depends(get_session),

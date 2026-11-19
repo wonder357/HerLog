@@ -5,7 +5,6 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.errors import invalid
 from app.models.herlog import Feeling
 from app.schemas.herlog import FeelingIn, FeelingOut
 
@@ -14,6 +13,7 @@ def _to_out(row: Feeling) -> FeelingOut:
     return FeelingOut(
         day=row.day,
         flow=row.flow,
+        mood=row.mood,
         symptoms=list(row.symptoms or []),
         impact=row.impact,
         note=row.note,
@@ -35,17 +35,18 @@ def upsert_feeling(session: Session, customer_id: str, day: date, payload: Feeli
     row = session.scalar(
         select(Feeling).where(Feeling.customer_id == customer_id, Feeling.day == day)
     )
-    if payload.is_empty:
+    # 旧版表单没有心情字段，编辑已有记录时保留心情。
+    mood = payload.mood if "mood" in payload.model_fields_set else (row.mood if row else None)
+    if not any((payload.flow, mood, payload.symptoms, payload.impact, payload.note)):
         if row is not None:
             session.delete(row)
             session.commit()
         return None
-    if payload.symptoms and not isinstance(payload.symptoms, list):  # pragma: no cover - 防御
-        raise invalid("症状需为列表")
     if row is None:
         row = Feeling(customer_id=customer_id, day=day)
         session.add(row)
     row.flow = payload.flow
+    row.mood = mood
     row.symptoms = payload.symptoms
     row.impact = payload.impact
     row.note = payload.note

@@ -1,25 +1,29 @@
 <template>
-  <HerlogSheet v-if="visible" title="记录经期" :context="selectableDay ? undefined : formatDayLabel(day)" :busy="saving" @close="cancel">
-    <view class="modes" aria-label="记录类型">
-      <H5Button class="mode" :class="{ active: mode === 'start' }" :aria-pressed="mode === 'start'"
-        @click="mode = 'start'">经期开始</H5Button>
-      <H5Button class="mode" :class="{ active: mode === 'end' }" :aria-pressed="mode === 'end'"
-        @click="mode = 'end'">经期最后一天</H5Button>
+  <HerlogSheet v-if="visible" :title="editing ? '更正经期' : '记录经期'" :context="selectableDay ? undefined : formatDayLabel(day)"
+    :busy="saving" @close="cancel">
+    <view v-if="!editing" class="modes" role="group" aria-label="记录类型">
+      <H5Button v-for="option in modes" :key="option.value" class="mode"
+        :class="{ active: mode === option.value }" :aria-pressed="mode === option.value"
+        @click="setMode(option.value)">{{ option.label }}</H5Button>
     </view>
-    <template v-if="selectableDay">
-      <H5Label class="hr-field-label" for="period-record-day">{{ mode === 'start' ? '开始日期' : '结束日期' }}</H5Label>
-      <H5Input id="period-record-day" v-model="selectedDay" class="field" type="date"
-        :min="mode === 'end' ? openPeriod?.startDay : undefined" :max="todayString()" :disabled="saving" />
-    </template>
-    <view class="hint">
-      {{ mode === 'start' ? '把选中的日期记为经期第一天。'
-        : openPeriod ? '这段经期从 ' + formatDayLabel(openPeriod.startDay) + ' 开始。'
-        : '请先补记这段经期的开始日。' }}
+    <view class="date-fields">
+      <view v-if="mode === 'end' && !editing" class="hint">
+        这段经期从 {{ formatDayLabel(start) }} 开始。
+      </view>
+      <view v-else>
+        <H5Label class="hr-field-label" for="period-start">开始日期</H5Label>
+        <H5Input id="period-start" v-model="start" class="field" type="date" :max="today" />
+      </view>
+      <view v-if="editing || mode !== 'start'">
+        <H5Label class="hr-field-label" for="period-end">最后一天 {{ editing ? '（选填）' : '' }}</H5Label>
+        <H5Input id="period-end" v-model="end" class="field" type="date" :min="start" :max="today" />
+        <H5Button v-if="editing && end" class="hr-action" @click="end = ''">清除结束日期</H5Button>
+      </view>
     </view>
-    <view v-if="error" class="error" role="alert">{{ error }}</view>
+    <p v-if="error" ref="errorNotice" class="error" role="alert" tabindex="-1">{{ error }}</p>
     <template #actions>
-      <slot name="extra-action" :day="selectableDay ? selectedDay : day" :disabled="saving" />
-      <H5Button class="primary" :disabled="saving" @click="submit">{{ saving ? '保存中…' : '保存' }}</H5Button>
+      <slot name="extra-action" :day="mode === 'end' || mode === 'range' ? end : start" :disabled="saving" />
+      <H5Button class="primary" :disabled="saving" @click="submit">{{ saving ? '保存中…' : '保存经期' }}</H5Button>
     </template>
   </HerlogSheet>
 </template>
@@ -29,79 +33,89 @@ import H5Button from './H5Button'
 import { H5Label } from './H5Form'
 import H5Input from './H5Input'
 import HerlogSheet from './HerlogSheet.vue'
-import { ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { formatDayLabel, todayString } from '../shared/dates'
 import { ApiRequestError, StaleSessionError } from '../services/httpClient'
 import { createPeriod, updatePeriod } from '../services/periodService'
+import type { PeriodItem } from '../services/types'
 
 interface OpenPeriod {
   id: number
   startDay: string
 }
 
+type Mode = 'start' | 'end' | 'range'
+
 const props = defineProps<{
   visible: boolean
   day: string
   openPeriod: OpenPeriod | null
+  editing?: PeriodItem | null
   selectableDay?: boolean
 }>()
-const emit = defineEmits<{ (event: 'close'): void; (event: 'saved'): void }>()
+const emit = defineEmits<{ close: []; saved: [day: string] }>()
 
-const mode = ref<'start' | 'end'>('start')
-const selectedDay = ref(props.day)
+const mode = ref<Mode>('start')
+const start = ref('')
+const end = ref('')
+const today = ref(todayString())
 const error = ref('')
+const errorNotice = ref<HTMLElement | null>(null)
 const saving = ref(false)
 
-watch(
-  () => props.visible,
-  (visible) => {
-    if (!visible) {
-      return
-    }
-    mode.value = props.openPeriod ? 'end' : 'start'
-    selectedDay.value = props.day
-    error.value = ''
-    saving.value = false
-  }
-)
+const modes = computed<{ value: Mode; label: string }[]>(() => [
+  { value: 'start', label: '记开始' },
+  ...(props.openPeriod ? [{ value: 'end' as const, label: '补最后一天' }] : []),
+  { value: 'range', label: '补记一段' }
+])
+
+watch(() => props.visible, visible => {
+  if (!visible) return
+  today.value = todayString()
+  setMode(!props.editing && props.openPeriod ? 'end' : 'start')
+}, { immediate: true })
+
+function setMode(value: Mode) {
+  mode.value = value
+  start.value = props.editing?.start_day ?? (value === 'end' ? props.openPeriod?.startDay : props.day) ?? props.day
+  end.value = props.editing?.end_day ?? (props.editing ? '' : props.day)
+  error.value = ''
+}
 
 function cancel() {
-  if (saving.value) {
-    return
-  }
-  emit('close')
+  if (!saving.value) emit('close')
+}
+
+function showError(message: string) {
+  error.value = message
+  void nextTick(() => errorNotice.value?.focus())
 }
 
 async function submit() {
-  if (saving.value) {
-    return
-  }
+  if (saving.value) return
   error.value = ''
-  const day = props.selectableDay ? selectedDay.value : props.day
-  if (!day || day > todayString()) {
-    error.value = '请选择今天或更早的日期'
+  const lastDay = props.editing || mode.value !== 'start' ? end.value || null : null
+  const requiredEnd = !props.editing && mode.value !== 'start'
+  if (!start.value || (requiredEnd && !lastDay)) {
+    showError('请选择需要记录的日期')
     return
   }
+  if (start.value > today.value || (lastDay && lastDay > today.value)) {
+    showError('实际经期只能记今天或更早的日期')
+    return
+  }
+  if (lastDay && lastDay < start.value) {
+    showError('最后一天不能早于开始日期')
+    return
+  }
+  const id = props.editing?.id ?? (mode.value === 'end' ? props.openPeriod?.id : undefined)
   saving.value = true
   try {
-    if (mode.value === 'start') {
-      await createPeriod(day, null)
-    } else if (!props.openPeriod) {
-      error.value = '这一天之前没有未记录结束的经期，请先补记开始日'
-      return
-    } else if (props.openPeriod.startDay > day) {
-      error.value = '最后一天不能早于开始日'
-      return
-    } else {
-      await updatePeriod(props.openPeriod.id, props.openPeriod.startDay, day)
-    }
-    emit('saved')
+    const saved = id ? await updatePeriod(id, start.value, lastDay) : await createPeriod(start.value, lastDay)
+    emit('saved', mode.value === 'end' && saved.end_day ? saved.end_day : saved.start_day)
   } catch (failure) {
-    if (failure instanceof StaleSessionError) {
-      return
-    }
-    error.value =
-      failure instanceof ApiRequestError ? failure.message : '保存失败，请检查网络后重试'
+    if (failure instanceof StaleSessionError) return
+    showError(failure instanceof ApiRequestError ? failure.message : '保存失败，请检查网络后重试')
   } finally {
     saving.value = false
   }
@@ -109,11 +123,13 @@ async function submit() {
 </script>
 
 <style scoped>
-.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 12px; }
+.modes { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
 .mode {
-  min-height: 46px; padding: 6px; border: 1px solid var(--hr-line);
+  flex: 1 0 auto; min-height: 46px; padding: 6px 9px; border: 1px solid var(--hr-line);
   border-radius: 12px; background: var(--hr-paper); color: var(--hr-ink-2); font-size: 14px;
 }
 .mode.active { background: var(--hr-rose-soft); color: var(--hr-rose-deep); border-color: var(--hr-rose); font-weight: 650; }
-.hint { padding: 11px; margin-bottom: 8px; background: var(--hr-peach); color: var(--hr-peach-ink); border-radius: 11px; font-size: 14px; }
+.date-fields { display: grid; gap: 10px; margin-bottom: 8px; }
+.date-fields .field { width: 100%; min-width: 0; }
+.hint { padding: 10px 12px; background: var(--hr-peach); color: var(--hr-peach-ink); border-radius: 12px; font-size: 14px; }
 </style>
