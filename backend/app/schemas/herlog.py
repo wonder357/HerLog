@@ -301,8 +301,12 @@ class SkinSummaryOut(BaseModel):
     demo_sample: bool = False
 
 
+AssistantTopic = Literal["weight", "period", "skin"]
+
+
 class AssistantQueryIn(BaseModel):
     question: str = Field(min_length=1, max_length=500)
+    follow_up_topic: AssistantTopic | None = None
 
     @field_validator("question")
     @classmethod

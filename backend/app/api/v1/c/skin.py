@@ -101,5 +101,5 @@ def assistant_query(
     user: CurrentUser = Depends(get_current_user),
 ) -> ApiResponse[AssistantAnswerOut]:
     return ApiResponse(
-        data=assistant_service.answer_question(session, user.customer_id, payload.question)
+        data=assistant_service.answer_question(session, user.customer_id, payload.question, payload.follow_up_topic)
     )

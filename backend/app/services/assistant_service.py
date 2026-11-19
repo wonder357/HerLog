@@ -5,12 +5,13 @@
 
 from __future__ import annotations
 
+import re
 from datetime import timedelta
 
 from sqlalchemy.orm import Session
 
 from app.core.clock import local_today
-from app.schemas.herlog import AssistantAnswerOut, AssistantRange, RecordRef
+from app.schemas.herlog import AssistantAnswerOut, AssistantRange, AssistantTopic, RecordRef
 from app.services import period_service, skin_service, weight_service
 
 WEIGHT_WORDS = ("体重", "kg", "公斤", "斤", "称重", "瘦", "胖", "重量")
@@ -42,7 +43,30 @@ def _kg(grams: int | None) -> str:
     return f"{grams / 1000:.3f}".rstrip("0").rstrip(".")
 
 
-def answer_question(session: Session, customer_id: str, question: str) -> AssistantAnswerOut:
+def _resolve_follow_up(question: str, topic: AssistantTopic | None) -> str:
+    """只承接可识别的简短追问，所有记录仍由本次登录账号读取。"""
+
+    phrase = re.sub(r"[\s？?。！!，,]+", "", question)
+    phrase = re.sub(r"^那(?:么)?|(?:呢|吗)$", "", phrase)
+    if topic == "weight":
+        if re.fullmatch(r"(?:近|最近|过去)?(?:30天|三十天|一个月)", phrase):
+            return "最近 30 天体重怎么样"
+        if re.fullmatch(r"(?:近|最近|过去)?(?:7天|七天|一周)|这周|本周", phrase):
+            return "最近 7 天体重怎么样"
+    if topic == "period":
+        if phrase in {"上次", "上一次", "最近一次", "最近一次是哪天"}:
+            return "最近一次经期从哪天开始"
+        if phrase in {"下次", "下一次", "下次大概什么时候", "下次什么时候"}:
+            return "下次经期大概什么时候"
+    if topic == "skin" and phrase in {"最近一条", "最近一次"}:
+        return "最近一次皮肤观察是什么"
+    return question
+
+
+def answer_question(
+    session: Session, customer_id: str, question: str, follow_up_topic: AssistantTopic | None = None,
+) -> AssistantAnswerOut:
+    question = _resolve_follow_up(question, follow_up_topic)
     weight_hit = _hits(question, WEIGHT_WORDS)
     period_hit = _hits(question, PERIOD_WORDS)
     skin_hit = _hits(question, SKIN_WORDS)
@@ -141,15 +165,6 @@ def _period_answer(session: Session, customer_id: str, question: str) -> Assista
             record_refs=[RecordRef(type="period", id=str(latest.id), label="查看经期记录", route=PERIOD_ROUTE)] if latest else [],
         )
     prediction = data["prediction"]
-    facts = [
-        f"查看日期：{today.isoformat()}",
-        f"已记录经期段数：{len(rows)}",
-        f"当前状态：{data['status']['message']}",
-    ]
-    if rows:
-        facts.append("最近开始日：" + "、".join(row.start_day.isoformat() for row in rows[:4]))
-    facts.append(f"预测状态：{prediction['status']}，提示：{prediction['message']}")
-
     if not rows:
         text = "还没有经期记录。补记开始日期后，我会按历史间隔估算下次开始日。"
     elif prediction["status"] == "insufficient":
@@ -193,7 +208,7 @@ def _period_answer(session: Session, customer_id: str, question: str) -> Assista
 
 
 def _skin_answer(session: Session, customer_id: str) -> AssistantAnswerOut:
-    rows = skin_service.list_observations(session, customer_id)
+    rows = skin_service.list_observations(session, customer_id, limit=1)
     if not rows:
         return AssistantAnswerOut(
             answer="还没有保存过皮肤观察。到皮肤页选好部位拍照，确认结果后保存，历史里才会出现。",
@@ -203,10 +218,12 @@ def _skin_answer(session: Session, customer_id: str) -> AssistantAnswerOut:
         )
     latest = rows[0]
     text = (
-        f"最近一次已保存的观察在 {latest.site}，拍摄时间 {latest.captured_at}。"
-        f"当时记录的可见外观是：{latest.visible}"
+        f"最近一次已保存的观察在 {latest.site}。\n"
+        f"AI 观察 · 不用于诊断\n{latest.visible}\n"
         "想对比可以到皮肤页历史里挑同一部位的两条记录。"
     )
+    if latest.demo_sample:
+        text = "演示样例 · 未调用模型推理\n" + text
     return AssistantAnswerOut(
         answer=text,
         domain="skin",

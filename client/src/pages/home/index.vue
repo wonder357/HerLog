@@ -42,6 +42,8 @@
         </div>
       </section>
 
+      <AssistantChat ref="assistant" :key="assistantKey" :examples="examples" :show-questions="preferences.show_questions"
+        @reference="openRef" />
       <section v-if="preferences.show_summary" class="card summary">
         <H5Button class="summary-toggle" :aria-expanded="summaryOpen" @click="summaryOpen = !summaryOpen">
           <span><strong>本周已记录 {{ data?.week.recorded_days ?? '—' }} 天</strong><small v-if="preferences.weekly_record_days_target">每周记录目标 {{ preferences.weekly_record_days_target }} 天</small></span>
@@ -59,35 +61,6 @@
         :recorded="data?.week.days" :loading="calendarLoading" :error="calendarError"
         @open="openCalendar" @close="selected = null" @retry="retryCalendar" @details="go" />
 
-      <section class="card chat">
-        <div class="chat-heading">
-          <div><h2 class="hr-section-title">问问她记</h2><small>只读 · 已保存的记录</small></div>
-          <H5Button class="hr-action" :aria-expanded="chatOpen" @click="chatOpen = !chatOpen">{{ chatOpen ? '收起' : '打开问答 ›' }}</H5Button>
-        </div>
-        <div v-if="preferences.show_questions" class="examples">
-          <H5Button v-for="question in examples" :key="question" class="question" @click="chooseQuestion(question)">{{ question }}</H5Button>
-        </div>
-        <template v-if="chatOpen">
-        <div class="chat-feed" aria-live="polite">
-          <div v-if="lastQuestion" class="chat-question">{{ lastQuestion }}</div>
-          <div v-if="answer" class="answer">
-            <p>{{ answer.answer }}</p>
-            <small>{{ answer.range.label }}</small>
-            <div v-if="answer.record_refs.length" class="examples">
-              <H5Button v-for="reference in answer.record_refs" :key="reference.type + reference.id" class="question"
-                @click="openRef(reference.route)">{{ reference.label }} ›</H5Button>
-            </div>
-          </div>
-          <p v-if="sending" class="muted" role="status">正在读取你的记录…</p>
-        </div>
-        <H5Form class="composer" @submit.prevent="send">
-          <H5Input v-model="draft" class="composer-input field" aria-label="问题" placeholder="问问我的健康记录…" maxlength="300" @keydown.enter="onComposerEnter" />
-          <H5Button type="submit" class="send" :disabled="sending || !draft.trim()" aria-label="发送问题"><HerlogIcon name="send" /></H5Button>
-        </H5Form>
-        <p v-if="chatError" class="error" role="alert">{{ chatError }}</p>
-        </template>
-      </section>
-
       <WeightForm :visible="weightVisible" @close="weightVisible = false" @saved="saved" />
       <PeriodForm :visible="periodVisible" :day="today" :open-period="openPeriod" selectable-day @close="periodVisible = false" @saved="saved">
         <template #extra-action="{ day, disabled }">
@@ -104,24 +77,22 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { onHide, onShow } from '@dcloudio/uni-app'
 import H5Button from '../../components/H5Button'
-import H5Form from '../../components/H5Form'
-import H5Input from '../../components/H5Input'
 import HerlogIcon from '../../components/HerlogIcon.vue'
 import TabBar from '../../components/TabBar.vue'
 import WeightForm from '../../components/WeightForm.vue'
 import PeriodForm from '../../components/PeriodForm.vue'
 import FeelingForm from '../../components/FeelingForm.vue'
 import RecordCalendar from './RecordCalendar.vue'
+import AssistantChat from './AssistantChat.vue'
 import SkinCapture from '../skin/SkinCapture.vue'
 import { TIME_ZONE, todayString } from '../../shared/dates'
 import { suggestedQuestions } from '../../shared/home'
 import { useAuthStore } from '../../stores/auth'
-import { ask } from '../../services/assistantService'
 import { ApiRequestError, currentEpoch } from '../../services/httpClient'
 import { fetchHome, fetchRecordingPreferences, recordingDefaults } from '../../services/homeService'
 import type { HomeOverview } from '../../services/homeService'
 import { listFeelings } from '../../services/periodService'
-import type { FeelingItem } from '../../services/types'
+import type { FeelingItem, RecordRef } from '../../services/types'
 
 const auth = useAuthStore()
 const today = ref(todayString())
@@ -143,16 +114,11 @@ const feelingVisible = ref(false)
 const feelingLoading = ref(false)
 const feelingDay = ref(today.value)
 const existingFeeling = ref<FeelingItem | null>(null)
-const draft = ref('')
-const lastQuestion = ref('')
-const answer = ref<Awaited<ReturnType<typeof ask>> | null>(null)
-const sending = ref(false)
-const chatError = ref('')
-const chatOpen = ref(false)
+const assistant = ref<{ close(): void } | null>(null)
+const assistantKey = ref(0)
 let overviewSequence = 0
 let calendarSequence = 0
 let formSequence = 0
-let chatSequence = 0
 let settingsSequence = 0
 let captureScroll = 0
 let captureFocus: HTMLElement | null = null
@@ -256,9 +222,11 @@ function go(page: Tab) {
   uni.switchTab({ url: '/pages/' + page + '/index' })
 }
 
-function openRef(route: string) {
-  const page = (['period', 'weight', 'skin'] as const).find(tab => route === '/pages/' + tab + '/index')
-  if (page) go(page)
+function openRef(reference: RecordRef) {
+  const page = (['period', 'weight', 'skin'] as const).find(tab => reference.route === '/pages/' + tab + '/index')
+  if (!page) return
+  if (reference.id === 'entry') runShortcut(page)
+  else go(page)
 }
 
 function runFocus() {
@@ -322,56 +290,25 @@ function afterCapture() {
   saved()
 }
 
-function onComposerEnter(event: KeyboardEvent) {
-  if (event.isComposing || event.keyCode === 229) event.preventDefault()
-}
-
-function chooseQuestion(question: string) {
-  draft.value = question
-  chatOpen.value = true
-}
-
-async function send() {
-  const question = draft.value.trim()
-  if (!question || sending.value) return
-  const epoch = currentEpoch()
-  const request = ++chatSequence
-  const active = () => epoch === currentEpoch() && request === chatSequence
-  sending.value = true
-  chatError.value = ''
-  try {
-    const result = await ask(question)
-    if (!active()) return
-    lastQuestion.value = question
-    answer.value = result
-    if (draft.value.trim() === question) draft.value = ''
-  } catch (failure) {
-    if (active()) chatError.value = failure instanceof ApiRequestError ? failure.message : '暂时无法回答，可重试。'
-  } finally {
-    if (active()) sending.value = false
-  }
-}
-
 function reset() {
   overviewSequence += 1
   calendarSequence += 1
   formSequence += 1
-  chatSequence += 1
+  assistantKey.value += 1
   settingsSequence += 1
   data.value = otherMonth.value = null
   selected.value = null
   existingFeeling.value = null
   focusClosed.value = summaryOpen.value = checkins.value = false
-  chatOpen.value = false
   weightVisible.value = periodVisible.value = feelingVisible.value = captureVisible.value = false
-  loading.value = otherLoading.value = sending.value = feelingLoading.value = false
-  loadError.value = otherError.value = chatError.value = draft.value = lastQuestion.value = ''
-  answer.value = null
+  loading.value = otherLoading.value = feelingLoading.value = false
+  loadError.value = otherError.value = ''
   preferences.value = { ...recordingDefaults }
 }
 
 watch(() => [auth.token, auth.privateCacheRevision], reset, { flush: 'sync' })
 onHide(() => {
+  assistant.value?.close()
   formSequence += 1
   selected.value = null
   captureVisible.value = periodVisible.value = weightVisible.value = feelingVisible.value = feelingLoading.value = false
@@ -405,7 +342,7 @@ onShow(() => {
 .phase-ring { display:grid; place-items:center; width:40px; height:40px; border:2px dotted var(--hr-line-strong); border-radius:50%; color:var(--hr-rose-deep); background:var(--hr-surface); }
 .phase-ring.known { border:2px solid var(--hr-rose); background:var(--hr-rose-soft); }
 .phase-ring.estimated { border:2px dashed var(--hr-rose); }
-.phase-ring svg,.focus-close svg,.send svg { width:20px; height:20px; }
+.phase-ring svg,.focus-close svg { width:20px; height:20px; }
 .focus { display:grid; grid-template-columns:minmax(0,1fr) 44px; background:linear-gradient(115deg,var(--hr-rose-soft),var(--hr-peach)); padding:12px 12px 7px 15px; align-items:start; }
 .focus h2 { margin:0 0 5px; color:var(--hr-rose-deep); font-size:14px; }
 .focus p { margin:0; font-size:15px; overflow-wrap:anywhere; }
@@ -432,18 +369,5 @@ onShow(() => {
 .summary-detail { border-top:1px solid var(--hr-line); display:grid; justify-items:start; }
 .summary-detail .hr-action { padding-inline:0; font-size:13px; }
 .error-row { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px; color:var(--hr-danger); padding-block:3px; }
-.chat-heading { display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px; align-items:center; }
-.chat-heading h2 { margin:0; }
-.chat-heading small { font-size:12px; color:var(--hr-ink-2); }
-.chat-heading .hr-action { padding-inline:0; }
-.examples { display:flex; flex-wrap:wrap; gap:6px; margin-block:10px; }
-.question { min-height:44px; text-align:left; border:1px solid var(--hr-line); border-radius:16px; background:var(--hr-rose-soft); color:var(--hr-rose-deep); padding:6px 9px; font-size:13px; max-width:100%; overflow-wrap:anywhere; }
-.chat-question { margin:8px 0; padding:7px 10px; background:var(--hr-paper-deep); border-radius:12px; overflow-wrap:anywhere; }
-.answer { border-left:2px solid var(--hr-rose); padding:2px 10px; margin:8px 0; overflow-wrap:anywhere; }
-.answer p { margin:4px 0; font-size:14px; }
-.answer small { color:var(--hr-ink-2); font-size:12px; }
-.composer { display:grid; grid-template-columns:minmax(0,1fr) 44px; gap:8px; align-items:center; margin-top:12px; }
-.composer-input { min-width:0; margin:0; }
-.send { display:grid; place-items:center; min-height:44px; background:var(--hr-action-fill); color:white; border:0; border-radius:50%; }
 @media (max-width:350px) { .shortcuts { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 </style>
