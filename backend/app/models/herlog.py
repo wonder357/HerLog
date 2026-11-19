@@ -64,6 +64,7 @@ class Feeling(Base):
     )
     day: Mapped[date] = mapped_column(sa.Date, primary_key=True)
     flow: Mapped[str | None] = mapped_column(sa.String(16), nullable=True)
+    mood: Mapped[str | None] = mapped_column(sa.String(16), nullable=True)
     symptoms: Mapped[list[str]] = mapped_column(sa.JSON, nullable=False, default=list)
     impact: Mapped[str | None] = mapped_column(sa.String(64), nullable=True)
     note: Mapped[str | None] = mapped_column(sa.String(500), nullable=True)

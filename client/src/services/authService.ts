@@ -22,5 +22,5 @@ export function fetchMe(): Promise<MemberInfo> {
 }
 
 export function logout(): Promise<null> {
-  return request<null>('/auth/logout', { method: 'POST' })
+  return request<null>('/auth/logout', { method: 'POST', timeout: 3500 })
 }

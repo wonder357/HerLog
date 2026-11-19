@@ -22,6 +22,7 @@ export class StaleSessionError extends Error {
 
 let sessionEpoch = 0
 let redirecting = false
+const privateUrls = new Set<string>()
 
 export function currentEpoch(): number {
   return sessionEpoch
@@ -51,7 +52,7 @@ export function getMember(): MemberInfo | null {
 }
 
 export function saveSession(result: LoginResult): void {
-  bumpEpoch()
+  clearPrivateCache()
   uni.setStorageSync(TOKEN_KEY, result.token)
   uni.setStorageSync(MEMBER_KEY, result)
 }
@@ -61,9 +62,15 @@ export function touchMember(member: MemberInfo): void {
 }
 
 export function clearSession(): void {
-  bumpEpoch()
+  clearPrivateCache()
   uni.removeStorageSync(TOKEN_KEY)
   uni.removeStorageSync(MEMBER_KEY)
+}
+
+export function clearPrivateCache(): void {
+  bumpEpoch()
+  for (const url of privateUrls) URL.revokeObjectURL(url)
+  privateUrls.clear()
 }
 
 function toLogin(): void {
@@ -85,6 +92,7 @@ interface RequestOptions {
   /** 匿名入口（注册、登录）遇 401 不跳登录页。 */
   anonymous?: boolean
   responseType?: 'text' | 'arraybuffer'
+  timeout?: number
 }
 
 interface Envelope<T> {
@@ -103,6 +111,7 @@ export function request<T>(path: string, options: RequestOptions = {}): Promise<
       method: options.method ?? 'GET',
       data: options.data,
       responseType: options.responseType,
+      timeout: options.timeout,
       header: token ? { token } : {},
       success: (response) => {
         if (currentEpoch() !== epoch) {
@@ -164,7 +173,9 @@ export function fetchBlobUrl(path: string): Promise<string> {
           .find(([key]) => key.toLowerCase() === 'content-type')?.[1]
         const mime = typeof contentType === 'string' ? contentType : 'image/jpeg'
         const blob = new Blob([response.data as ArrayBuffer], { type: mime })
-        resolve(URL.createObjectURL(blob))
+        const url = URL.createObjectURL(blob)
+        privateUrls.add(url)
+        resolve(url)
       },
       fail: () => reject(new ApiRequestError(0, '图片读取失败'))
     })
@@ -173,6 +184,7 @@ export function fetchBlobUrl(path: string): Promise<string> {
 
 export function releaseBlobUrl(url: string | null): void {
   if (url && url.startsWith('blob:')) {
+    privateUrls.delete(url)
     URL.revokeObjectURL(url)
   }
 }

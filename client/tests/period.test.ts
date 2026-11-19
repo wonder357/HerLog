@@ -7,7 +7,15 @@ import {
   currentStatus,
   durationDays,
   estimateCycleDays,
-  predictNextStart
+  predictNextStart,
+  createReminderCalendar,
+  matchesFeeling,
+  openPeriodOnDay,
+  periodOnDay,
+  recentCycleStats,
+  reminderDay,
+  selectedDayInMonth,
+  summarizeDiary
 } from '../src/shared/period.ts'
 
 test('UTC 时间按上海自然日归档', () => {
@@ -85,4 +93,51 @@ test('当前状态只认已确认区间', () => {
   const ended = currentStatus([{ startDay: '2026-11-01', endDay: '2026-11-05' }], '2026-11-18')
   assert.equal(ended.inPeriod, false)
   assert.equal(ended.message, '最近一次经期开始 2026-11-01')
+})
+
+test('月份切换同步选中日，历史未结束记录不覆盖较新周期', () => {
+  const rows = [
+    { start_day: '2026-11-03', end_day: '2026-11-06' },
+    { start_day: '2026-10-06', end_day: null }
+  ]
+  assert.equal(selectedDayInMonth('2026-10-01', '2026-11-18'), '2026-10-01')
+  assert.equal(selectedDayInMonth('2026-11-01', '2026-11-18'), '2026-11-18')
+  assert.equal(openPeriodOnDay(rows, '2026-10-07'), rows[1])
+  assert.equal(openPeriodOnDay(rows, '2026-11-18'), null)
+  assert.equal(periodOnDay(rows, '2026-10-07'), null)
+  assert.equal(periodOnDay(rows, '2026-11-06'), rows[0])
+  assert.equal(currentStatus(rows.map(row => ({ startDay: row.start_day, endDay: row.end_day })), '2026-11-18').inPeriod, false)
+})
+
+test('本月小结按实际记录日期去重，支持按心情或身体感受筛选', () => {
+  const rows = [
+    { day: '2026-11-02', symptoms: ['腹胀', '腹胀'], mood: '平静' },
+    { day: '2026-11-03', symptoms: ['腹胀'] },
+    { day: '2026-11-04', symptoms: [], mood: '平静' }
+  ]
+  assert.deepEqual(summarizeDiary(rows), {
+    days: 3, symptoms: [{ label: '腹胀', days: 2 }], moods: [{ label: '平静', days: 2 }]
+  })
+  assert.deepEqual(rows.filter(row => matchesFeeling(row, { kind: 'mood', label: '平静' })).map(row => row.day),
+    ['2026-11-02', '2026-11-04'])
+  assert.equal(matchesFeeling(rows[2], { kind: 'symptom', label: '腹胀' }), false)
+})
+
+test('周期回顾排除缺失值，只取最近六个完整样本', () => {
+  const rows = [null, 4, 5, null, 6, 5, 4, 5, 12].map((duration_days, i) => ({
+    duration_days, cycle_days: i % 2 ? 28 : null
+  }))
+  assert.deepEqual(recentCycleStats(rows), { interval: { count: 4, min: 28, max: 28 }, duration: { count: 6, min: 4, max: 6 } })
+  assert.deepEqual(recentCycleStats([]), { interval: null, duration: null })
+})
+
+test('日历提醒处理跨月和过期，文件只含通用提示与正确的 UTC 时间', () => {
+  const day = reminderDay('2026-12-01', 2, '2026-11-28T01:00:00.000Z')
+  assert.equal(day, '2026-11-29')
+  assert.equal(reminderDay('2026-12-01', 2, '2026-11-29T01:00:00.000Z'), null)
+  const file = createReminderCalendar(day!, 'sample-id', '2026-11-28T03:41:12.250Z')
+  assert.match(file, /DTSTART:20261129T010000Z\r\n/)
+  assert.match(file, /DTSTAMP:20261128T034112Z\r\n/)
+  assert.match(file, /SUMMARY:个人日程提醒\r\nCLASS:PRIVATE/)
+  assert.doesNotMatch(file, /经期|20261201/)
 })

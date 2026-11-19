@@ -20,7 +20,7 @@ function partsOf(iso: string): Record<string, string> {
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false
+    hourCycle: 'h23'
   })
   return formatter.formatToParts(date).reduce<Record<string, string>>((acc, part) => {
     if (part.type !== 'literal') {

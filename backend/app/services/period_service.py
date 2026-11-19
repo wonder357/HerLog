@@ -13,7 +13,7 @@ from app.models.member import MemberAuth
 from app.schemas.herlog import PeriodIn, PeriodOut
 
 
-def _lock_member(session: Session, customer_id: str) -> None:
+def lock_member(session: Session, customer_id: str) -> None:
     """区间检查与写入必须在同一会员行锁内完成，防止并发插入两段重叠经期。"""
 
     session.execute(
@@ -69,8 +69,8 @@ def list_periods(session: Session, customer_id: str) -> dict:
     rows = load_periods(session, customer_id)
     history = period_logic.build_history([(row.id, row.start_day, row.end_day) for row in rows])
     by_id = {item["id"]: item for item in history}
-    starts = [row.start_day for row in rows]
     today = local_today()
+    starts = [row.start_day for row in rows if row.start_day <= today]
     prediction = period_logic.predict_next_start(starts, today)
     return {
         "items": [_to_out(row, by_id) for row in rows],
@@ -82,23 +82,23 @@ def list_periods(session: Session, customer_id: str) -> dict:
             "starts_used": prediction.starts_used,
             "message": prediction.message,
         },
-        "status": _current_status(rows, today),
+        "status": _current_status(rows, today, prediction.status == period_logic.OVERDUE),
     }
 
 
-def _current_status(rows: list[Period], today: date) -> dict:
-    for row in rows:
-        if row.start_day <= today and (row.end_day is None or row.end_day >= today):
-            day_index = (today - row.start_day).days + 1
+def _current_status(rows: list[Period], today: date, overdue: bool) -> dict:
+    latest = next((row for row in rows if row.start_day <= today), None)
+    if latest is not None:
+        active = latest.end_day >= today if latest.end_day is not None else not overdue
+        if active:
+            day_index = (today - latest.start_day).days + 1
             return {
                 "in_period": True,
                 "day_index": day_index,
                 "message": f"经期第 {day_index} 天",
-                "start_day": row.start_day,
-                "end_day": row.end_day,
+                "start_day": latest.start_day,
+                "end_day": latest.end_day,
             }
-    if rows:
-        latest = rows[0]
         if latest.end_day is not None:
             return {
                 "in_period": False,
@@ -118,7 +118,7 @@ def _current_status(rows: list[Period], today: date) -> dict:
 
 
 def create_period(session: Session, customer_id: str, payload: PeriodIn) -> PeriodOut:
-    _lock_member(session, customer_id)
+    lock_member(session, customer_id)
     _assert_no_conflict(session, customer_id, payload.start_day, payload.end_day, None)
     row = Period(customer_id=customer_id, start_day=payload.start_day, end_day=payload.end_day)
     session.add(row)
@@ -129,7 +129,7 @@ def create_period(session: Session, customer_id: str, payload: PeriodIn) -> Peri
 
 
 def update_period(session: Session, customer_id: str, period_id: int, payload: PeriodIn) -> PeriodOut:
-    _lock_member(session, customer_id)
+    lock_member(session, customer_id)
     row = session.scalar(
         select(Period).where(Period.id == period_id, Period.customer_id == customer_id)
     )
@@ -145,7 +145,7 @@ def update_period(session: Session, customer_id: str, period_id: int, payload: P
 
 
 def delete_period(session: Session, customer_id: str, period_id: int) -> None:
-    _lock_member(session, customer_id)
+    lock_member(session, customer_id)
     row = session.scalar(
         select(Period).where(Period.id == period_id, Period.customer_id == customer_id)
     )

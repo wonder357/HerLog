@@ -33,6 +33,7 @@ export function listFeelings(from: string, to: string): Promise<FeelingItem[]> {
 
 export interface FeelingPayload {
   flow?: string | null
+  mood?: string | null
   symptoms?: string[]
   impact?: string | null
   note?: string | null

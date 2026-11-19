@@ -5,7 +5,7 @@
     <view v-if="error" class="skin-alert skin-alert-error" role="alert">{{ error }}</view>
     <template v-if="expired">
       <view class="skin-actions">
-        <SkinButton class="skin-button" @click="emit('discarded')">返回皮肤</SkinButton>
+        <SkinButton class="skin-button" @click="emit('discarded')">{{ returnLabel ?? '返回皮肤' }}</SkinButton>
         <SkinButton class="skin-button skin-primary" @click="emit('retake')">重拍</SkinButton>
       </view>
     </template>
@@ -22,7 +22,7 @@
         <text v-if="analysis.inference_ms != null"> · 推理 {{ (analysis.inference_ms / 1000).toFixed(1) }} 秒</text>
       </view>
       <view class="skin-actions result-actions">
-        <SkinButton v-if="uncertain" class="skin-button skin-link" :disabled="busy" @click="emit('discarded')">返回皮肤</SkinButton>
+        <SkinButton v-if="uncertain" class="skin-button skin-link" :disabled="busy" @click="emit('discarded')">{{ returnLabel ?? '返回皮肤' }}</SkinButton>
         <template v-else>
           <SkinButton class="skin-button skin-link" :disabled="busy" @click="discard(false)">不保存</SkinButton>
           <SkinButton class="skin-button" :disabled="busy" @click="discard(true)">重拍</SkinButton>
@@ -45,7 +45,7 @@ import { discardPending, saveObservation } from '../../services/skinService'
 import type { SkinAnalysis } from '../../services/types'
 import ObservationCopy from './ObservationCopy.vue'
 
-const props = defineProps<{ analysis: SkinAnalysis; previewUrl?: string }>()
+const props = defineProps<{ analysis: SkinAnalysis; previewUrl?: string; returnLabel?: string }>()
 const emit = defineEmits<{ saved: []; expired: []; discarded: []; retake: [] }>()
 const error = ref('')
 const busy = ref(false)
