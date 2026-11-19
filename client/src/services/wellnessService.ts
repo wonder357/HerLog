@@ -1,4 +1,6 @@
 import { request } from './httpClient'
+import { checkinPhotoPath } from './privatePhotoService'
+import type { PrivatePhotoPayload } from './privatePhotoService'
 
 export type Topic = 'exercise' | 'skin'
 export type Phase = 'menstrual' | 'follicular' | 'ovulatory' | 'luteal' | 'unknown'
@@ -30,8 +32,9 @@ export interface CheckinInput {
   started_at: string
   duration_minutes: number | null
   effort: 'easy' | 'moderate' | 'hard' | null
+  photo?: PrivatePhotoPayload
 }
-export interface Checkin extends CheckinInput { id: number }
+export interface Checkin extends Omit<CheckinInput, 'photo'> { id: number; has_photo: boolean }
 
 export interface Group { group_key: string; title: string; joined: boolean }
 export interface ShareReference { day?: string; checkin_id?: number; activity?: string; duration?: number | null }
@@ -85,6 +88,8 @@ export const saveCheckin = (payload: CheckinInput, client_key: string) =>
   request<Checkin>(root + '/exercise/checkins', { method: 'POST', data: { ...payload, client_key } })
 export const deleteCheckin = (id: number) =>
   request<null>(root + '/exercise/checkins/' + id, { method: 'DELETE' })
+export const updateCheckinPhoto = (id: number, photo: PrivatePhotoPayload | null) =>
+  request<Checkin>(checkinPhotoPath(id), { method: 'PUT', data: { photo } })
 
 const groupPath = (topic: Topic, key: string) => root + '/' + topic + '/groups/' + key
 const sharePath = (topic: Topic) => root + '/' + topic + '/shares'

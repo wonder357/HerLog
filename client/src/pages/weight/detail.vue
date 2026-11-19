@@ -32,6 +32,7 @@
           <view class="muted">{{ formatMoment(item.measured_at) }}<text v-if="item.tag"> · {{ item.tag }}</text></view>
           <view class="muted">{{ item.source === 'scale' ? '设备测量' : '手动记录' }}<text v-if="item.feeling_tags?.length"> · {{ item.feeling_tags.map(code => feelingLabels[code]).join('、') }}</text></view>
           <view v-if="item.note" class="muted">{{ item.note }}</view>
+          <H5Button v-if="item.has_photo" class="hr-action" @click="startEdit(item, true)">查看照片</H5Button>
         </view>
         <view class="record-actions">
           <H5Button class="hr-action" @click="startEdit(item)" :aria-label="'修改 ' + formatMoment(item.measured_at) + ' 的记录'">编辑</H5Button>
@@ -50,7 +51,7 @@
     </view>
 
     <HerlogSheet v-if="editVisible" title="修改体重" :context="formatMoment(editing?.measured_at || '')"
-      :busy="saving" @close="editVisible = false">
+      :busy="saving" @close="closeEdit">
       <H5Label class="hr-field-label" for="edit-weight">体重（kg）</H5Label>
       <H5Input id="edit-weight" v-model="editKg" class="field" inputmode="decimal" />
       <view class="filter-grid">
@@ -66,9 +67,13 @@
         <H5Button v-for="(label, code) in feelingLabels" :key="code" :class="{ chosen: editFeelings.includes(code) }"
           :aria-pressed="editFeelings.includes(code)" @click="toggleFeeling(code)">{{ label }}</H5Button>
       </view>
+      <div ref="photoField">
+        <PrivatePhotoEditor v-model="editPhoto" v-model:processing="photoProcessing" label="测量照片" :disabled="saving"
+          :saved-path="editing?.has_photo ? weightPhotoPath(editing.id) : undefined" />
+      </div>
       <view v-if="editError" class="error" role="alert">{{ editError }}</view>
       <template #actions>
-        <H5Button class="primary" :disabled="saving" @click="saveEdit">{{ saving ? '保存中…' : '保存修改' }}</H5Button>
+        <H5Button class="primary" :disabled="saving || photoProcessing" @click="saveEdit">{{ saving ? '保存中…' : '保存修改' }}</H5Button>
       </template>
     </HerlogSheet>
   </view>
@@ -80,14 +85,17 @@ import HerlogHeading from '../../components/HerlogHeading.vue'
 import HerlogSheet from '../../components/HerlogSheet.vue'
 import H5Input from '../../components/H5Input'
 import H5Button from '../../components/H5Button'
-import { ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import PrivatePhotoEditor from '../../components/PrivatePhotoEditor.vue'
+import { nextTick, ref } from 'vue'
+import { onHide, onShow } from '@dcloudio/uni-app'
 import { formatMoment, shanghaiDayKey, toZonedIso, todayString } from '../../shared/dates'
 import { parseKgToGrams } from '../../shared/weight'
 import { ApiRequestError, currentEpoch, StaleSessionError } from '../../services/httpClient'
 import { deleteWeight, getSummary, listWeights, updateWeight } from '../../services/weightService'
 import type { WeightItem, WeightSummary } from '../../services/types'
 import type { Feeling } from '../../services/wellnessService'
+import { weightPhotoPath } from '../../services/privatePhotoService'
+import type { PrivatePhotoPayload } from '../../services/privatePhotoService'
 
 const today = todayString()
 const items = ref<WeightItem[]>([])
@@ -107,6 +115,9 @@ const editDay = ref(today)
 const editTime = ref('08:00')
 const editTag = ref('')
 const editNote = ref('')
+const editPhoto = ref<PrivatePhotoPayload | null>()
+const photoField = ref<HTMLElement | null>(null)
+const photoProcessing = ref(false)
 const editError = ref('')
 const saving = ref(false)
 
@@ -154,17 +165,24 @@ function resetFilters() {
   load()
 }
 
-function startEdit(item: WeightItem) {
+function startEdit(item: WeightItem, focusPhoto = false) {
+  editPhoto.value = undefined
   editing.value = item
   editKg.value = String(item.kg)
   editDay.value = shanghaiDayKey(item.measured_at)
-  const moment = formatMoment(item.measured_at)
-  editTime.value = moment.slice(-5)
+  editTime.value = formatMoment(item.measured_at).slice(-5)
   editTag.value = item.tag ?? ''
   editNote.value = item.note ?? ''
   editFeelings.value = [...(item.feeling_tags ?? [])]
   editError.value = ''
   editVisible.value = true
+  if (focusPhoto) void nextTick(() => photoField.value?.scrollIntoView({ block: 'start' }))
+}
+
+function closeEdit() {
+  editVisible.value = false
+  editPhoto.value = undefined
+  editing.value = null
 }
 
 function toggleFeeling(code: Feeling) {
@@ -175,7 +193,7 @@ function toggleFeeling(code: Feeling) {
 
 async function saveEdit() {
   const target = editing.value
-  if (!target || saving.value) {
+  if (!target || saving.value || photoProcessing.value) {
     return
   }
   editError.value = ''
@@ -190,20 +208,24 @@ async function saveEdit() {
     return
   }
   saving.value = true
+  const sameMoment = editDay.value === shanghaiDayKey(target.measured_at) &&
+    editTime.value === formatMoment(target.measured_at).slice(-5)
   try {
     await updateWeight(target.id, {
       client_key: target.client_key,
       kg: editKg.value.trim(),
-      measured_at: toZonedIso(editDay.value, editTime.value),
+      measured_at: sameMoment ? target.measured_at : toZonedIso(editDay.value, editTime.value),
       tag: editTag.value.trim() || null,
       note: editNote.value.trim() || null,
-      feeling_tags: editFeelings.value
+      feeling_tags: editFeelings.value,
+      ...(editPhoto.value !== undefined ? { photo: editPhoto.value } : {})
     })
-    editVisible.value = false
+    closeEdit()
     page.value = 1
     await load()
     void loadMetrics()
   } catch (failure) {
+    if (failure instanceof StaleSessionError) return
     editError.value =
       failure instanceof ApiRequestError ? failure.message : '保存失败，请稍后重试'
   } finally {
@@ -214,7 +236,7 @@ async function saveEdit() {
 function remove(item: WeightItem) {
   uni.showModal({
     title: '删除体重记录',
-    content: `${formatMoment(item.measured_at)} 的 ${item.kg} kg 记录将被删除，趋势与明细会同步刷新。`,
+    content: `${formatMoment(item.measured_at)} 的 ${item.kg} kg 记录将被删除。${item.has_photo ? '照片将一并删除。' : ''}趋势与明细会同步刷新。`,
     confirmText: '删除',
     success: async (result) => {
       if (!result.confirm) {
@@ -250,6 +272,7 @@ function openProfile() {
   uni.switchTab({ url: '/pages/me/index' })
 }
 
+onHide(closeEdit)
 onShow(() => {
   page.value = 1
   load()

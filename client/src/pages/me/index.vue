@@ -2,7 +2,10 @@
   <view class="hr-page hr-tab-page profile-page">
     <HerlogHeading title="我的" />
     <section class="card identity">
-      <span class="identity-icon"><HerlogIcon name="me" /></span>
+      <span class="identity-icon">
+        <img v-if="avatarUrl" :src="avatarUrl" alt="个人头像" />
+        <HerlogIcon v-else name="me" />
+      </span>
       <div class="identity-copy"><strong>{{ auth.username || '个人账号' }}</strong><span>个人资料</span></div>
       <H5Button class="hr-action" @click="openProfile">编辑资料 ›</H5Button>
     </section>
@@ -56,12 +59,14 @@
       <H5Button class="settings-row logout" :disabled="loggingOut" @click="panel = 'logout'">退出登录</H5Button>
     </section>
 
-    <HerlogSheet v-if="panel === 'profile'" title="编辑资料" :busy="profileSaving" @close="panel = null">
+    <HerlogSheet v-if="panel === 'profile'" title="编辑资料" :busy="profileSaving" @close="closeProfile">
       <p v-if="profileLoading" class="muted" role="status">正在读取资料…</p>
       <div v-else-if="!profile" class="inline-state" role="alert">
         <span>{{ profileError }}</span><H5Button class="hr-action" @click="loadProfile">重试</H5Button>
       </div>
       <H5Form v-else id="profile-form" @submit.prevent="saveProfile">
+        <PrivatePhotoEditor v-model="avatarChange" v-model:processing="avatarProcessing" label="头像" avatar
+          :saved-path="profile.has_avatar ? avatarPath : undefined" :disabled="profileSaving" />
         <H5Label class="hr-field-label" for="profile-username">用户名</H5Label>
         <H5Input id="profile-username" :model-value="profile.username" class="field" readonly />
         <H5Label class="hr-field-label" for="profile-birthday">生日（选填）</H5Label>
@@ -75,7 +80,7 @@
         <p v-if="profileError" class="error" role="alert">{{ profileError }}</p>
       </H5Form>
       <template #actions>
-        <H5Button class="primary" type="submit" form="profile-form" :disabled="profileLoading || profileSaving || !profile">
+        <H5Button class="primary" type="submit" form="profile-form" :disabled="profileLoading || profileSaving || avatarProcessing || !profile">
           {{ profileSaving ? '保存中…' : '保存资料' }}
         </H5Button>
       </template>
@@ -115,6 +120,7 @@
       <ul class="privacy-copy">
         <li>健康记录仅在当前登录账号下读取。首页问答只读取当前账号已保存的记录。</li>
         <li>皮肤照片的使用范围在分析前说明，确认保存后才进入账号历史。查看照片需要登录。</li>
+        <li>头像、体重和运动照片仅自己可见，可在对应记录中更换或移除。</li>
         <li>清除本机缓存或退出登录会清理本机浏览数据，账号内已保存的记录仍可在下次登录后查看。</li>
       </ul>
       <template #actions><H5Button class="primary" @click="panel = null">完成</H5Button></template>
@@ -147,12 +153,16 @@ import HerlogIcon from '../../components/HerlogIcon.vue'
 import HerlogSheet from '../../components/HerlogSheet.vue'
 import TabBar from '../../components/TabBar.vue'
 import WeightForm from '../../components/WeightForm.vue'
+import PrivatePhotoEditor from '../../components/PrivatePhotoEditor.vue'
+import { usePrivatePhoto } from '../../components/usePrivatePhoto'
 import CycleModeSheet from '../period/CycleModeSheet.vue'
 import PasswordSheet from './PasswordSheet.vue'
 import { useAuthStore } from '../../stores/auth'
 import { useCyclePreference } from '../../stores/cyclePreference'
 import { ApiRequestError, currentEpoch } from '../../services/httpClient'
 import { getProfile, updateProfile } from '../../services/profileService'
+import { avatarPath } from '../../services/privatePhotoService'
+import type { PrivatePhotoPayload } from '../../services/privatePhotoService'
 import { fetchHealthSummary, fetchRecordingPreferences, fetchReminders, saveRecordingPreferences, saveReminders } from '../../services/homeService'
 import type { HealthSummary, RecordingPreferences, ReminderSettings } from '../../services/homeService'
 import type { ProfileInfo } from '../../services/types'
@@ -164,6 +174,12 @@ const auth = useAuthStore()
 const cyclePreference = useCyclePreference()
 const today = ref(todayString())
 const summary = ref<HealthSummary | null>(null)
+const pageVisible = ref(false)
+const { url: avatarUrl, reload: reloadAvatar } = usePrivatePhoto(() =>
+  pageVisible.value && summary.value?.has_avatar ? avatarPath : undefined
+)
+const avatarChange = ref<PrivatePhotoPayload | null>()
+const avatarProcessing = ref(false)
 const summaryLoading = ref(false)
 const summaryError = ref(false)
 const bmi = computed(() => summary.value?.bmi)
@@ -244,14 +260,20 @@ async function loadProfile() {
 }
 
 function openProfile() {
+  avatarChange.value = undefined
   birthdayError.value = heightError.value = profileError.value = ''
   profile.value = null
   panel.value = 'profile'
   void loadProfile()
 }
 
+function closeProfile() {
+  panel.value = null
+  avatarChange.value = undefined
+}
+
 async function saveProfile() {
-  if (profileSaving.value) return
+  if (profileSaving.value || avatarProcessing.value) return
   const value = height.value.trim()
   birthdayError.value = birthday.value && birthday.value > today.value ? '生日不能晚于今天。' : ''
   heightError.value = value && (!/^\d{1,3}(\.\d{1,2})?$/.test(value) || Number(value) <= 0)
@@ -261,10 +283,20 @@ async function saveProfile() {
   profileSaving.value = true
   profileError.value = ''
   try {
-    const result = await updateProfile({ birthday: birthday.value || null, height_cm: value || null, contact_phone: phone.value.trim() || null })
+    const result = await updateProfile({
+      birthday: birthday.value || null,
+      height_cm: value || null,
+      contact_phone: phone.value.trim() || null,
+      ...(avatarChange.value !== undefined ? { avatar: avatarChange.value } : {})
+    })
     if (epoch !== currentEpoch()) return
     applyProfile(result)
-    panel.value = null
+    if (summary.value) {
+      const replaced = summary.value.has_avatar && result.has_avatar && avatarChange.value !== undefined
+      summary.value = { ...summary.value, has_avatar: result.has_avatar }
+      if (replaced) void reloadAvatar()
+    }
+    closeProfile()
     uni.showToast({ title: '资料已保存', icon: 'none' })
     void loadSummary()
   } catch (failure) {
@@ -374,6 +406,7 @@ function reset() {
   preferenceSequence += 1
   summary.value = profile.value = reminders.value = recording.value = null
   panel.value = null
+  avatarChange.value = undefined
   modeSettings.value = weightVisible.value = false
   summaryLoading.value = profileLoading.value = profileSaving.value = preferenceLoading.value = preferenceSaving.value = false
   loggingOut.value = false
@@ -399,13 +432,14 @@ function passwordSaved() {
 }
 
 watch(() => [auth.token, auth.privateCacheRevision], reset, { flush: 'sync' })
-onHide(() => { panel.value = null; weightVisible.value = modeSettings.value = false })
+onHide(() => { closeProfile(); pageVisible.value = weightVisible.value = modeSettings.value = false })
 onShow(() => {
   if (!auth.isLoggedIn) {
     uni.reLaunch({ url: '/pages/login/index' })
     return
   }
   today.value = todayString()
+  pageVisible.value = true
   void loadSummary()
   void cyclePreference.load()
 })
@@ -415,6 +449,7 @@ onShow(() => {
 .identity { display:flex; align-items:center; gap:11px; }
 .identity-icon { flex:0 0 44px; height:44px; display:grid; place-items:center; color:var(--hr-rose-deep); background:var(--hr-rose-soft); border-radius:14px; }
 .identity-icon svg { width:23px; height:23px; }
+.identity-icon img { width:44px; height:44px; object-fit:cover; border-radius:inherit; }
 .identity-copy { min-width:0; flex:1; overflow-wrap:anywhere; }
 .identity-copy strong,.identity-copy span { display:block; }
 .identity-copy span { color:var(--hr-ink-2); font-size:13px; }

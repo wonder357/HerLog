@@ -17,6 +17,7 @@ export interface LoginResult extends MemberInfo {
 }
 
 export interface ProfileInfo {
+  has_avatar: boolean
   username: string
   birthday: string | null
   height_cm: string | null
@@ -64,6 +65,7 @@ export interface FeelingItem {
 }
 
 export interface WeightItem {
+  has_photo?: boolean
   feeling_tags?: Feeling[]
   source?: 'manual' | 'scale'
   device_id?: number | null

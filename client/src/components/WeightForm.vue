@@ -33,9 +33,10 @@
       <H5Label class="hr-field-label" for="weight-note">备注</H5Label>
       <H5Input id="weight-note" v-model="note" class="field" maxlength="500" />
     </details>
+    <PrivatePhotoEditor v-model="photo" v-model:processing="photoProcessing" label="测量照片" :disabled="saving" />
     <view v-if="error" class="error" role="alert">{{ error }}</view>
     <template #actions>
-      <H5Button class="primary" :disabled="saving" @click="submit">{{ saving ? '保存中…' : '保存' }}</H5Button>
+      <H5Button class="primary" :disabled="saving || photoProcessing" @click="submit">{{ saving ? '保存中…' : '保存' }}</H5Button>
     </template>
   </HerlogSheet>
 </template>
@@ -45,12 +46,14 @@ import { H5Label } from './H5Form'
 import H5Input from './H5Input'
 import HerlogSheet from './HerlogSheet.vue'
 import H5Button from './H5Button'
+import PrivatePhotoEditor from './PrivatePhotoEditor.vue'
 import { ref, watch } from 'vue'
 import { currentTime, formatDayLabel, todayString, toZonedIso } from '../shared/dates'
 import { parseKgToGrams } from '../shared/weight'
 import { ApiRequestError, StaleSessionError } from '../services/httpClient'
 import { createWeight, newClientKey } from '../services/weightService'
 import type { Feeling } from '../services/wellnessService'
+import type { PrivatePhotoPayload } from '../services/privatePhotoService'
 
 const props = defineProps<{ visible: boolean; presetDay?: string; presetTime?: string }>()
 const emit = defineEmits<{ (event: 'close'): void; (event: 'saved'): void }>()
@@ -60,6 +63,8 @@ const day = ref(todayString())
 const time = ref(currentTime())
 const tag = ref('')
 const note = ref('')
+const photo = ref<PrivatePhotoPayload | null>()
+const photoProcessing = ref(false)
 const feelingTags = ref<Feeling[]>([])
 const feelingOptions: { code: Feeling; label: string }[] = [
   { code: 'comfortable', label: '舒适' }, { code: 'tired', label: '疲惫' },
@@ -75,6 +80,7 @@ const today = todayString()
 watch(
   () => props.visible,
   (visible) => {
+    photo.value = undefined
     if (!visible) {
       return
     }
@@ -100,7 +106,7 @@ function cancel() {
 }
 
 async function submit() {
-  if (saving.value) {
+  if (saving.value || photoProcessing.value) {
     return
   }
   error.value = ''
@@ -122,7 +128,8 @@ async function submit() {
       measured_at: toZonedIso(day.value, time.value),
       tag: tag.value.trim() || null,
       note: note.value.trim() || null,
-      feeling_tags: feelingTags.value
+      feeling_tags: feelingTags.value,
+      ...(photo.value ? { photo: photo.value } : {})
     })
     kg.value = ''
     tag.value = ''

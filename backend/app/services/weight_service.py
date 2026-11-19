@@ -10,6 +10,7 @@ from app.core.clock import local_day_end_utc, local_day_start_utc, local_today, 
 from app.core.errors import conflict, invalid, not_found
 from app.logic import weight as weight_logic
 from app.models.herlog import Feeling, Profile, Weight
+from app.models.private_photo import WeightPhoto
 from app.schemas.herlog import (
     WeightIn,
     WeightListOut,
@@ -22,6 +23,7 @@ from app.schemas.herlog import (
 from app.schemas.weight_plus import CompareOut, CompareWindowOut
 from app.logic.metabolism import bmi_value
 from app.services.cycle_context import cycle_records, phase_for
+from app.services import private_photo
 
 DEVICE_METRIC_UNITS = {
     "body_fat_pct": "percent",
@@ -73,8 +75,9 @@ def list_weights(
         .offset((page - 1) * page_size)
         .limit(page_size)
     ).all()
+    photo_ids = private_photo.visible_ids(session, WeightPhoto, [row.id for row in rows])
     return WeightListOut(
-        items=[weight_out(row) for row in rows],
+        items=[weight_out(row, row.id in photo_ids) for row in rows],
         total=total,
         page=page,
         page_size=page_size,
@@ -100,13 +103,19 @@ def create_weight(session: Session, customer_id: str, payload: WeightIn) -> tupl
         grams = weight_logic.parse_kg(payload.kg)
     except ValueError as exc:
         raise invalid(str(exc)) from exc
+    photo = private_photo.prepare(payload.photo)
+
+    def existing_response(existing: Weight) -> tuple[WeightOut, bool]:
+        digest = private_photo.digest_for(session, WeightPhoto, existing.id)
+        if _same_content(existing, payload, measured_at_utc, grams) and digest == (photo.digest if photo else None):
+            return weight_out(existing, digest is not None), False
+        raise conflict("该请求已用于另一笔体重记录，请刷新后重试")
+
     existing = session.scalar(
         select(Weight).where(Weight.customer_id == customer_id, Weight.client_key == payload.client_key)
     )
     if existing is not None:
-        if _same_content(existing, payload, measured_at_utc, grams):
-            return weight_out(existing), False
-        raise conflict("该请求已用于另一笔体重记录，请刷新后重试")
+        return existing_response(existing)
     row = Weight(
         customer_id=customer_id,
         client_key=payload.client_key,
@@ -118,6 +127,9 @@ def create_weight(session: Session, customer_id: str, payload: WeightIn) -> tupl
     )
     session.add(row)
     try:
+        if photo is not None:
+            session.flush()
+            private_photo.replace(session, WeightPhoto, row.id, photo)
         session.commit()
     except IntegrityError:
         session.rollback()
@@ -126,23 +138,20 @@ def create_weight(session: Session, customer_id: str, payload: WeightIn) -> tupl
         )
         if existing is None:
             raise
-        if not _same_content(existing, payload, measured_at_utc, grams):
-            raise conflict("该请求已用于另一笔体重记录，请刷新后重试")
-        return weight_out(existing), False
-    return weight_out(row), True
+        return existing_response(existing)
+    return weight_out(row, photo is not None), True
 
 
-def owned_weight(session: Session, customer_id: str, weight_id: int) -> Weight:
-    row = session.scalar(
-        select(Weight).where(Weight.id == weight_id, Weight.customer_id == customer_id)
-    )
+def owned_weight(session: Session, customer_id: str, weight_id: int, *, lock: bool = False) -> Weight:
+    query = select(Weight).where(Weight.id == weight_id, Weight.customer_id == customer_id)
+    row = session.scalar(query.with_for_update() if lock else query)
     if row is None:
         raise not_found()
     return row
 
 
 def update_weight(session: Session, customer_id: str, weight_id: int, payload: WeightIn) -> WeightOut:
-    row = owned_weight(session, customer_id, weight_id)
+    row = owned_weight(session, customer_id, weight_id, lock=True)
     try:
         grams = weight_logic.parse_kg(payload.kg)
     except ValueError as exc:
@@ -153,12 +162,16 @@ def update_weight(session: Session, customer_id: str, weight_id: int, payload: W
     row.note = payload.note
     if payload.feeling_tags is not None:
         row.feeling_tags = list(dict.fromkeys(payload.feeling_tags))
+    if "photo" in payload.model_fields_set:
+        private_photo.replace(session, WeightPhoto, row.id, private_photo.prepare(payload.photo))
     session.commit()
-    return weight_out(row)
+    return weight_out(row, private_photo.digest_for(session, WeightPhoto, row.id) is not None)
 
 
 def delete_weight(session: Session, customer_id: str, weight_id: int) -> None:
-    row = owned_weight(session, customer_id, weight_id)
+    row = owned_weight(session, customer_id, weight_id, lock=True)
+    private_photo.replace(session, WeightPhoto, row.id, None)
+    session.flush()
     session.delete(row)
     session.commit()
 

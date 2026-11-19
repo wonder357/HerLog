@@ -83,8 +83,8 @@
           </template>
         </view>
       </template>
-      <ExerciseSpace v-else-if="section === 'movement'" @share="openShare" />
-      <ExerciseDiscussion v-else-if="pageVisible && auth.token" :key="auth.token" :reference="shareReference"
+      <ExerciseSpace v-else-if="section === 'movement' && pageVisible && auth.token" :key="auth.token" @share="openShare" />
+      <ExerciseDiscussion v-else-if="section === 'discussion' && pageVisible && auth.token" :key="auth.token" :reference="shareReference"
         @clear-reference="shareReference = null" />
     </view>
     <WeightForm :visible="formVisible" @close="formVisible = false" @saved="onSaved" />

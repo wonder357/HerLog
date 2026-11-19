@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.schemas.private_photo import PrivatePhotoIn
+
 Topic = Literal["exercise", "skin"]
 GroupKey = Literal["general", "menstrual", "follicular", "ovulatory", "luteal"]
 ActivityCode = Literal["walk", "mobility", "strength", "cycle", "rest"]
@@ -25,6 +27,7 @@ class CheckinIn(StrictInput):
     duration_minutes: int | None = Field(default=None, ge=1, le=1440, strict=True)
     effort: Literal["easy", "moderate", "hard"] | None = None
     feeling_code: Literal["comfortable", "tired", "energetic"] | None = None
+    photo: PrivatePhotoIn | None = None
 
     @field_validator("started_at")
     @classmethod

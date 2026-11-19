@@ -13,6 +13,7 @@ from app.models.herlog import (
 )
 from app.models.member import MemberAuth, MemberAuthSession
 from app.models.home import HomePreference
+from app.models.private_photo import CheckinPhoto, ProfilePhoto, WeightPhoto
 from app.models.wellness import Checkin, DiscussionReply, DiscussionReplyReport, GroupMembership, GroupShare, ShareReport, SkinJournal
 
 __all__ = [
@@ -22,6 +23,7 @@ __all__ = [
     "HomePreference",
     "Feeling",
     "Checkin",
+    "CheckinPhoto",
     "DiscussionReply",
     "DiscussionReplyReport",
     "GroupMembership",
@@ -31,10 +33,12 @@ __all__ = [
     "MemberAuthSession",
     "Period",
     "Profile",
+    "ProfilePhoto",
     "SkinObservation",
     "SkinJournal",
     "ShareReport",
     "Weight",
+    "WeightPhoto",
     "WeightGoal",
     "WeightPost",
 ]

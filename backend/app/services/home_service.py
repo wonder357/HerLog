@@ -16,6 +16,8 @@ from app.models.fertility import CyclePreference
 from app.models.herlog import Feeling, Period, Profile, SkinObservation, Weight
 from app.models.home import HomePreference
 from app.models.member import MemberAuth, MemberAuthSession
+from app.models.private_photo import ProfilePhoto
+from app.services import private_photo
 from app.services.cycle_context import phase_for
 from app.services.period_service import lock_member
 
@@ -47,6 +49,7 @@ def health_summary(session: Session, customer_id: str) -> dict:
         bmi = (Decimal(weight.grams) * 10 / height**2).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
     status = "available" if bmi is not None else "missing_both" if not height and not weight else "missing_height" if not height else "missing_weight"
     return {
+        "has_avatar": private_photo.digest_for(session, ProfilePhoto, customer_id) is not None,
         "bmi": {"value": str(bmi) if bmi is not None else None, "status": status,
                 "height_cm": str(height) if height else None, "weight_day": weight_day},
         "latest_period_start": period_start, "latest_weight_day": weight_day,

@@ -44,13 +44,13 @@ export function chooseImage(source?: 'camera' | 'album'): Promise<string | null>
   })
 }
 
-export async function encodeJpeg(path: string): Promise<EncodedImage> {
+export async function encodeJpeg(path: string, maxSide = MAX_SIDE): Promise<EncodedImage> {
   const image = await loadImage(path)
   const { naturalWidth, naturalHeight } = image
   if (!naturalWidth || !naturalHeight || naturalWidth * naturalHeight > MAX_PIXELS) {
     throw new Error('图片尺寸过大或无法读取，请换一张')
   }
-  const scale = Math.min(1, MAX_SIDE / Math.max(naturalWidth, naturalHeight))
+  const scale = Math.min(1, maxSide / Math.max(naturalWidth, naturalHeight))
   const width = Math.max(1, Math.round(naturalWidth * scale))
   const height = Math.max(1, Math.round(naturalHeight * scale))
   const canvas = document.createElement('canvas')

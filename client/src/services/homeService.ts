@@ -24,6 +24,7 @@ export interface HomeOverview {
     action: 'review_today' | 'open_period' | 'open_calendar' | 'record_period' | 'record_feeling' }
 }
 export interface HealthSummary {
+  has_avatar: boolean
   bmi: { value: string | null; status: 'available' | 'missing_height' | 'missing_weight' | 'missing_both'; height_cm: string | null; weight_day: string | null }
   latest_period_start: string | null
   latest_weight_day: string | null

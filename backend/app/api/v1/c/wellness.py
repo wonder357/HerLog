@@ -13,12 +13,14 @@ from app.core.config import settings
 from app.core.errors import invalid, not_found
 from app.db.session import get_session
 from app.models.wellness import Checkin, GroupShare, ShareReport, SkinJournal
+from app.models.private_photo import CheckinPhoto
 from app.schemas.common import ApiResponse
+from app.schemas.private_photo import PrivatePhotoChange
 from app.schemas.wellness import (
     CheckinIn, GroupKey, JoinGroupIn, ModerationIn, ReplyIn, ReportIn, ShareIn,
     SkinJournalIn, SkinJournalOut, Topic,
 )
-from app.services import wellness
+from app.services import private_photo, wellness
 from app.services.auth_service import CurrentUser
 from app.services.exercise_discussion import DISCUSSION_KEY
 from app.services.period_service import lock_member
@@ -38,8 +40,9 @@ def exercise_list(db: Db, user: User, before_id: int | None = Query(default=None
     statement = select(Checkin).where(Checkin.customer_id == user.customer_id)
     if before_id is not None:
         statement = statement.where(Checkin.id < before_id)
-    rows = db.scalars(statement.order_by(Checkin.id.desc()).limit(40))
-    return ApiResponse(data=[wellness.checkin_out(row) for row in rows])
+    rows = db.scalars(statement.order_by(Checkin.id.desc()).limit(40)).all()
+    photo_ids = private_photo.visible_ids(db, CheckinPhoto, [row.id for row in rows])
+    return ApiResponse(data=[wellness.checkin_out(row, row.id in photo_ids) for row in rows])
 
 
 @router.post("/exercise/checkins", response_model=ApiResponse[dict])
@@ -52,6 +55,8 @@ def exercise_delete(checkin_id: int, db: Db, user: User):
     lock_member(db, user.customer_id)
     row = wellness.member_checkin(db, user.customer_id, checkin_id, lock=True)
     wellness.withdraw_reference(db, user.customer_id, "exercise", str(row.id))
+    private_photo.replace(db, CheckinPhoto, row.id, None)
+    db.flush()
     db.delete(row)
     db.commit()
     return ApiResponse(data=None)
@@ -59,7 +64,23 @@ def exercise_delete(checkin_id: int, db: Db, user: User):
 
 @router.get("/exercise/checkins/{checkin_id}", response_model=ApiResponse[dict])
 def exercise_get(checkin_id: int, db: Db, user: User):
-    return ApiResponse(data=wellness.checkin_out(wellness.member_checkin(db, user.customer_id, checkin_id)))
+    row = wellness.member_checkin(db, user.customer_id, checkin_id)
+    return ApiResponse(data=wellness.checkin_out(row, private_photo.digest_for(db, CheckinPhoto, row.id) is not None))
+
+
+@router.get("/exercise/checkins/{checkin_id}/photo", response_class=Response)
+def exercise_photo(checkin_id: int, db: Db, user: User) -> Response:
+    row = wellness.member_checkin(db, user.customer_id, checkin_id)
+    return private_photo.image_response(db, CheckinPhoto, row.id)
+
+
+@router.put("/exercise/checkins/{checkin_id}/photo", response_model=ApiResponse[dict])
+def exercise_photo_update(checkin_id: int, payload: PrivatePhotoChange, db: Db, user: User):
+    row = wellness.member_checkin(db, user.customer_id, checkin_id, lock=True)
+    photo = private_photo.prepare(payload.photo)
+    private_photo.replace(db, CheckinPhoto, row.id, photo)
+    db.commit()
+    return ApiResponse(data=wellness.checkin_out(row, photo is not None))
 
 
 @router.get("/skin/journal", response_model=ApiResponse[list[SkinJournalOut]])

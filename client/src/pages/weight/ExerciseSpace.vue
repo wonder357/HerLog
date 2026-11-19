@@ -8,10 +8,10 @@
     <view class="exercise-cards">
       <view v-for="activity in activityOptions" :key="activity" class="exercise-card">
         <view class="exercise-symbol"><HerlogIcon :name="activity" /></view>
-        <H5Button class="soft" @click="begin(activity)">记{{ activities[activity] }}</H5Button>
+        <H5Button class="soft" :disabled="saving || photoProcessing" @click="begin(activity)">记{{ activities[activity] }}</H5Button>
       </view>
     </view>
-    <view v-if="selected" class="card checkin-form">
+    <view v-if="selected" :key="clientKey" class="card checkin-form">
       <view class="headline">记录{{ activities[selected] }}</view>
       <picker mode="date" :value="day" :end="todayString()" @change="day = $event.detail.value">
         <view class="field">{{ day }}</view>
@@ -26,10 +26,11 @@
             :class="{ active: effort === option.code }" @click="effort = effort === option.code ? null : option.code">{{ option.title }}</H5Button>
         </view>
       </template>
+      <PrivatePhotoEditor v-model="photo" v-model:processing="photoProcessing" label="运动照片" :disabled="saving" />
       <view v-if="formError" class="exercise-error" role="alert">{{ formError }}</view>
       <view class="buttons">
-        <H5Button class="soft" :disabled="saving" @click="selected = null">取消</H5Button>
-        <H5Button class="exercise-primary" :disabled="saving" @click="save">{{ saving ? '保存中…' : '保存打卡' }}</H5Button>
+        <H5Button class="soft" :disabled="saving" @click="cancelCheckin">取消</H5Button>
+        <H5Button class="exercise-primary" :disabled="saving || photoProcessing" @click="save">{{ saving ? '保存中…' : '保存打卡' }}</H5Button>
       </view>
     </view>
     <view class="exercise-history">
@@ -41,22 +42,37 @@
           <view class="quiet">{{ formatMoment(entry.started_at) }}<text v-if="entry.duration_minutes"> · {{ entry.duration_minutes }} 分钟</text><text v-if="entry.effort"> · {{ effortNames[entry.effort] }}</text></view>
         </view>
         <view class="buttons">
+          <H5Button class="soft" @click="openPhoto(entry)">{{ entry.has_photo ? '查看照片' : '添加照片' }}</H5Button>
           <H5Button class="soft" @click="share(entry)">发起讨论</H5Button>
           <H5Button class="soft" @click="remove(entry.id)">删除</H5Button>
         </view>
       </view>
     </view>
+    <HerlogSheet v-if="photoEntry" title="运动照片" :context="formatMoment(photoEntry.started_at)"
+      :busy="photoSaving" @close="closePhoto">
+      <PrivatePhotoEditor v-model="photoChange" v-model:processing="editProcessing" label="打卡照片"
+        :saved-path="photoEntry.has_photo ? checkinPhotoPath(photoEntry.id) : undefined" :disabled="photoSaving" />
+      <view v-if="photoError" class="exercise-error" role="alert">{{ photoError }}</view>
+      <template #actions>
+        <H5Button class="exercise-primary" :disabled="photoSaving || editProcessing || photoChange === undefined"
+          @click="savePhoto">{{ photoSaving ? '保存中…' : '保存照片' }}</H5Button>
+      </template>
+    </HerlogSheet>
   </view>
 </template>
 
 <script setup lang="ts">
 import H5Button from '../../components/H5Button'
 import HerlogIcon from '../../components/HerlogIcon.vue'
+import HerlogSheet from '../../components/HerlogSheet.vue'
+import PrivatePhotoEditor from '../../components/PrivatePhotoEditor.vue'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { currentTime, formatMoment, todayString, toZonedIso } from '../../shared/dates'
-import { currentEpoch } from '../../services/httpClient'
+import { ApiRequestError, currentEpoch } from '../../services/httpClient'
+import { checkinPhotoPath } from '../../services/privatePhotoService'
+import type { PrivatePhotoPayload } from '../../services/privatePhotoService'
 import { newClientKey } from '../../services/weightService'
-import { activities, deleteCheckin, exerciseHistory, saveCheckin } from '../../services/wellnessService'
+import { activities, deleteCheckin, exerciseHistory, saveCheckin, updateCheckinPhoto } from '../../services/wellnessService'
 import type { Activity, Checkin, CheckinInput, ShareReference } from '../../services/wellnessService'
 
 const emit = defineEmits<{ share: [ShareReference] }>()
@@ -67,6 +83,13 @@ const day = ref(todayString())
 const time = ref(currentTime())
 const minutes = ref('')
 const effort = ref<CheckinInput['effort']>(null)
+const photo = ref<PrivatePhotoPayload | null>()
+const photoProcessing = ref(false)
+const photoEntry = ref<Checkin | null>(null)
+const photoChange = ref<PrivatePhotoPayload | null>()
+const editProcessing = ref(false)
+const photoSaving = ref(false)
+const photoError = ref('')
 const loading = ref(false)
 const saving = ref(false)
 const error = ref('')
@@ -99,13 +122,19 @@ function begin(activity: Activity) {
   time.value = currentTime()
   minutes.value = ''
   effort.value = null
+  photo.value = undefined
   formError.value = ''
   clientKey = newClientKey()
 }
 
+function cancelCheckin() {
+  selected.value = null
+  photo.value = undefined
+}
+
 async function save() {
   const activity = selected.value
-  if (!activity || saving.value) return
+  if (!activity || saving.value || photoProcessing.value) return
   const duration = minutes.value.trim() ? Number(minutes.value) : null
   if (duration !== null && (!Number.isInteger(duration) || duration < 1 || duration > 1440)) {
     formError.value = '请输入 1 到 1440 分钟之间的整数'
@@ -118,16 +147,45 @@ async function save() {
       activity_code: activity,
       started_at: toZonedIso(day.value, time.value),
       duration_minutes: duration,
-      effort: effort.value
+      effort: effort.value,
+      ...(photo.value ? { photo: photo.value } : {})
     }, clientKey)
     if (!isActive()) return
-    selected.value = null
+    cancelCheckin()
     entries.value = [entry, ...entries.value.filter(item => item.id !== entry.id)]
     uni.showToast({ title: activity === 'rest' ? '已记下今天的休息' : '已记下这次活动', icon: 'none' })
-  } catch {
-    if (isActive()) formError.value = '这次打卡未保存，请重试'
+  } catch (failure) {
+    if (isActive()) formError.value = failure instanceof ApiRequestError ? failure.message : '这次打卡未保存，请重试'
   } finally {
     saving.value = false
+  }
+}
+
+function openPhoto(entry: Checkin) {
+  photoChange.value = undefined
+  photoError.value = ''
+  photoEntry.value = entry
+}
+
+function closePhoto() {
+  photoEntry.value = null
+  photoChange.value = undefined
+}
+
+async function savePhoto() {
+  if (!photoEntry.value || photoChange.value === undefined || photoSaving.value || editProcessing.value) return
+  photoSaving.value = true
+  photoError.value = ''
+  try {
+    const entry = await updateCheckinPhoto(photoEntry.value.id, photoChange.value)
+    if (!isActive()) return
+    entries.value = entries.value.map(item => item.id === entry.id ? entry : item)
+    closePhoto()
+    uni.showToast({ title: '运动照片已更新', icon: 'none' })
+  } catch (failure) {
+    if (isActive()) photoError.value = failure instanceof ApiRequestError ? failure.message : '照片保存失败，请重试。'
+  } finally {
+    photoSaving.value = false
   }
 }
 
@@ -137,7 +195,7 @@ function share(entry: Checkin) {
 
 function remove(id: number) {
   uni.showModal({
-    title: '删除这次打卡？', content: '关联这次打卡的讨论和分享也会撤回。',
+    title: '删除这次打卡？', content: '打卡照片将一并删除，关联的讨论和分享也会撤回。',
     success: async result => {
       if (!result.confirm || !isActive()) return
       try {

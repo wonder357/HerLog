@@ -1,6 +1,7 @@
 import { request } from './httpClient'
 import type { Feeling } from './wellnessService'
 import type { WeightItem, WeightList, WeightSummary } from './types'
+import type { PrivatePhotoPayload } from './privatePhotoService'
 
 export interface WeightPayload {
   client_key: string
@@ -9,6 +10,7 @@ export interface WeightPayload {
   tag?: string | null
   note?: string | null
   feeling_tags?: Feeling[]
+  photo?: PrivatePhotoPayload | null
 }
 
 export interface WeightQuery {

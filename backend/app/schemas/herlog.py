@@ -6,6 +6,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from app.schemas.private_photo import PrivatePhotoIn
+
 SITES = ("面部", "额头", "下巴", "脸颊", "颈部", "背部", "胸口", "手臂", "其他")
 SKIN_MIME_TYPES = ("image/jpeg", "image/png")
 FLOWS = ("少量", "中等", "较多")
@@ -31,12 +33,14 @@ class ProfileOut(BaseModel):
     birthday: date | None = None
     height_cm: Decimal | None = None
     contact_phone: str | None = None
+    has_avatar: bool = False
 
 
 class ProfileUpdate(BaseModel):
     birthday: date | None = None
     height_cm: Decimal | None = Field(default=None, decimal_places=2)
     contact_phone: str | None = Field(default=None, max_length=32)
+    avatar: PrivatePhotoIn | None = None
 
     @field_validator("height_cm")
     @classmethod
@@ -149,6 +153,7 @@ class WeightIn(BaseModel):
     tag: str | None = Field(default=None, max_length=32)
     note: str | None = Field(default=None, max_length=500)
     feeling_tags: list[WeightFeeling] | None = Field(default=None, max_length=3)
+    photo: PrivatePhotoIn | None = None
 
     @field_validator("measured_at")
     @classmethod
@@ -187,6 +192,7 @@ class WeightOut(BaseModel):
     feeling_tags: list[WeightFeeling] = Field(default_factory=list)
     source: Literal["manual", "scale"] = "manual"
     device_id: int | None = None
+    has_photo: bool = False
 
 
 class WeightPointOut(BaseModel):
@@ -339,7 +345,7 @@ class AssistantAnswerOut(BaseModel):
     model_id: str | None = None
 
 
-def weight_out(row: Any) -> WeightOut:
+def weight_out(row: Any, has_photo: bool = False) -> WeightOut:
     return WeightOut(
         id=row.id,
         client_key=row.client_key,
@@ -351,4 +357,5 @@ def weight_out(row: Any) -> WeightOut:
         feeling_tags=row.feeling_tags or [],
         source=row.source,
         device_id=row.device_id,
+        has_photo=has_photo,
     )

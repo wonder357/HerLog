@@ -12,8 +12,10 @@ from app.core.clock import local_today, to_utc_naive, utc_now
 from app.core.config import settings
 from app.core.errors import conflict, invalid, not_found
 from app.models.wellness import Checkin, GroupMembership, GroupReply, GroupShare, ShareReport, SkinJournal
+from app.models.private_photo import CheckinPhoto
 from app.schemas.wellness import CheckinIn, ShareIn, SkinJournalIn, SkinJournalOut
 from app.services.cycle_context import current_phase
+from app.services import private_photo
 
 ACTIVITIES = {
     "walk": ("散步", "选择熟悉的路线，以自己舒服的节奏活动。"),
@@ -52,22 +54,27 @@ SKIN_REPLIES = {
 }
 
 
-def checkin_out(row: Checkin) -> dict:
+def checkin_out(row: Checkin, has_photo: bool = False) -> dict:
     return {
         "id": row.id, "activity_code": row.activity_code,
         "started_at": row.started_at.isoformat() + "Z",
         "duration_minutes": row.duration_minutes, "effort": row.effort,
         "feeling_code": row.feeling_code,
+        "has_photo": has_photo,
     }
 
 
 def create_checkin(session: Session, customer_id: str, payload: CheckinIn) -> dict:
-    attributes = payload.model_dump(exclude={"client_key"})
+    attributes = payload.model_dump(exclude={"client_key", "photo"})
+    photo = private_photo.prepare(payload.photo)
     moment = to_utc_naive(payload.started_at)
     attributes["started_at"] = moment.replace(microsecond=moment.microsecond // 1000 * 1000)
     row = Checkin(customer_id=customer_id, client_key=payload.client_key, **attributes)
     session.add(row)
     try:
+        if photo is not None:
+            session.flush()
+            private_photo.replace(session, CheckinPhoto, row.id, photo)
         session.commit()
     except IntegrityError:
         session.rollback()
@@ -76,10 +83,11 @@ def create_checkin(session: Session, customer_id: str, payload: CheckinIn) -> di
         ))
         if existing is None:
             raise
-        if any(getattr(existing, key) != value for key, value in attributes.items()):
+        digest = private_photo.digest_for(session, CheckinPhoto, existing.id)
+        if any(getattr(existing, key) != value for key, value in attributes.items()) or digest != (photo.digest if photo else None):
             raise conflict("这次请求已用于另一条打卡")
-        return checkin_out(existing)
-    return checkin_out(row)
+        return checkin_out(existing, digest is not None)
+    return checkin_out(row, photo is not None)
 
 
 def member_checkin(session: Session, customer_id: str, checkin_id: int, *, lock: bool = False) -> Checkin:
