@@ -1,0 +1,32 @@
+name: herlog-contest
+services:
+  mysql:
+    image: mysql:8.0
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci", "--default-authentication-plugin=mysql_native_password"]
+    environment:
+      MYSQL_DATABASE: herlog_contest
+      MYSQL_USER: herlog
+      MYSQL_PASSWORD: ${HERLOG_DB_PASSWORD:?set HERLOG_DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${HERLOG_DB_ROOT_PASSWORD:?set HERLOG_DB_ROOT_PASSWORD}
+    ports:
+      - "127.0.0.1:13306:3306"
+    volumes:
+      - herlog_db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_PASSWORD\" mysql -h 127.0.0.1 -u herlog -D herlog_contest -e 'SELECT 1'"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "127.0.0.1:16379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+volumes:
+  herlog_db:
+
