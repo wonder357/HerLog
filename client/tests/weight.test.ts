@@ -7,7 +7,8 @@ import {
   formatKg,
   parseKgToGrams,
   suggestion,
-  summarize
+  summarize,
+  trendExample
 } from '../src/shared/weight.ts'
 
 const records = [
@@ -15,6 +16,17 @@ const records = [
   { id: 2, grams: 57000, measuredAt: '2026-11-16T13:00:00Z' }, // 11-16 21:00
   { id: 3, grams: 56600, measuredAt: '2026-11-18T00:00:00Z' } // 11-18 08:00
 ]
+
+test('示例趋势跨年对齐所选范围，近一周与长范围共用同一组测量', () => {
+  const short = trendExample(7, '2027-01-04')
+  const long = trendExample(30, '2027-01-04')
+  assert.equal(short.length, 7)
+  assert.equal(short[0].day, '2026-12-29')
+  assert.equal(short.at(-1)?.day, '2027-01-04')
+  assert.equal(long.length, 27)
+  assert.equal(long[0].day, '2026-12-06')
+  assert.deepEqual(long.slice(-7), short)
+})
 
 test('kg 输入最多三位小数并转正整数克', () => {
   assert.equal(parseKgToGrams('56.8'), 56800)
