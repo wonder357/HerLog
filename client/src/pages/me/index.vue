@@ -1,10 +1,15 @@
 <template>
   <view class="hr-page hr-tab-page profile-page">
-    <HerlogHeading title="我的" />
+    <HerlogHeading title="我的" description="给自己留一方小天地。" />
     <section class="card identity">
       <span class="identity-icon">
         <img v-if="avatarUrl" :src="avatarUrl" alt="个人头像" />
-        <HerlogIcon v-else name="me" />
+        <svg v-else viewBox="0 0 56 56" aria-hidden="true">
+          <rect width="56" height="56" rx="17" :fill="avatar.paper" />
+          <path d="M28 46c0-8 1-14 0-22m0 17c-7 0-11-4-12-9 6 0 10 3 12 7m0 4c2-6 6-9 12-10-1 6-5 10-12 10" fill="#99786e" stroke="#99786e" stroke-width="1.4" stroke-linecap="round" />
+          <path :d="avatar.petals" :fill="avatar.ink" />
+          <circle cx="28" cy="23" r="2.8" fill="#fff0b8" />
+        </svg>
       </span>
       <div class="identity-copy"><strong>{{ auth.username || '个人账号' }}</strong><span>个人资料</span></div>
       <H5Button class="hr-action" @click="openProfile">编辑资料 ›</H5Button>
@@ -171,6 +176,16 @@ import { fertilityNotice } from '../../shared/fertility'
 
 type PreferencePanel = 'reminders' | 'recording'
 const auth = useAuthStore()
+const avatars = [
+  { paper: '#f9e5eb', ink: '#b8607a', petals: 'M28 23C13 28 14 15 23 17C19 7 35 7 33 17C43 15 43 29 28 23Z' },
+  { paper: '#eee8f6', ink: '#8c74ae', petals: 'M28 27C14 27 15 13 20 14L25 18C24 9 33 9 32 18L37 14C42 17 40 27 28 27Z' },
+  { paper: '#f9ebdc', ink: '#be7949', petals: 'M28 26C20 30 16 25 20 21C14 16 20 12 25 16C23 8 33 8 32 16C38 12 42 18 37 21C42 26 36 30 28 26Z' },
+  { paper: '#f3eae7', ink: '#896156', petals: 'M28 28C18 26 18 21 22 20C17 15 22 11 26 15C26 6 34 9 32 16C38 13 41 18 36 22C39 26 34 29 28 28Z' },
+]
+const avatar = computed(() => {
+  const digit = auth.member?.customer_id.slice(-1) ?? ''
+  return avatars[(Number.parseInt(digit, 16) || 0) % avatars.length]
+})
 const cyclePreference = useCyclePreference()
 const today = ref(todayString())
 const summary = ref<HealthSummary | null>(null)
@@ -447,9 +462,9 @@ onShow(() => {
 
 <style scoped>
 .identity { display:flex; align-items:center; gap:11px; }
-.identity-icon { flex:0 0 44px; height:44px; display:grid; place-items:center; color:var(--hr-rose-deep); background:var(--hr-rose-soft); border-radius:14px; }
-.identity-icon svg { width:23px; height:23px; }
-.identity-icon img { width:44px; height:44px; object-fit:cover; border-radius:inherit; }
+.identity-icon { display:block; flex:0 0 56px; width:56px; height:56px; border-radius:17px; }
+.identity-icon svg,.identity-icon img { display:block; width:100%; height:100%; }
+.identity-icon img { object-fit:cover; border-radius:inherit; }
 .identity-copy { min-width:0; flex:1; overflow-wrap:anywhere; }
 .identity-copy strong,.identity-copy span { display:block; }
 .identity-copy span { color:var(--hr-ink-2); font-size:13px; }

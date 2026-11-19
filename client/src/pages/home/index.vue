@@ -6,6 +6,7 @@
         <div class="welcome-text">
           <p>{{ dateLabel }}</p>
           <h1>{{ auth.username ? '你好，' + auth.username : '你好' }}</h1>
+          <img class="welcome-art" src="/static/home-cosmos.png" alt="" />
         </div>
         <H5Button class="cycle-status" @click="go('period')">
           <span class="phase-ring" :class="{ known: statusBasis === '已记录', estimated: statusBasis === '日期估算' }" aria-hidden="true">
@@ -332,7 +333,8 @@ onShow(() => {
 <style scoped>
 .home-page { min-width:0; }
 .welcome { display:flex; justify-content:space-between; gap:8px; align-items:center; margin:4px 0 16px; }
-.welcome-text { min-width:0; }
+.welcome-text { min-width:0; position:relative; padding-inline-end:52px; }
+.welcome-art { position:absolute; inset-inline-end:0; top:0; width:48px; height:48px; object-fit:contain; }
 .welcome p { margin:0 0 4px; color:var(--hr-ink-2); font-size:13px; }
 .welcome h1 { margin:0; color:var(--hr-ink); font-size:clamp(23px,6vw,32px); line-height:1.2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .cycle-status { flex-shrink:0; min-height:49px; display:flex; align-items:center; gap:7px; text-align:left; border:0; background:transparent; padding:2px 0; color:var(--hr-ink); }

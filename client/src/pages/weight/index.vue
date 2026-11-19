@@ -1,6 +1,6 @@
 <template>
   <view class="hr-page hr-tab-page weight-page">
-    <HerlogHeading title="体重">
+    <HerlogHeading title="体重" description="看长一点，不急着下结论。">
       <template #actions>
         <H5Button v-if="section === 'overview'" class="hr-action" @click="openDetail">记录明细</H5Button>
       </template>
@@ -248,7 +248,7 @@ onHide(() => { formVisible.value = false; pageVisible.value = false; shareRefere
   border: 1px solid var(--hr-line); border-radius: var(--hr-radius); background: linear-gradient(150deg, #fff7f6, var(--hr-rose-soft)); box-shadow: var(--hr-shadow);
 }
 .weight-eyebrow { color: var(--hr-ink-2); font-size: 14px; }
-.weight-value { font: 44px/46px var(--hr-serif); font-variant-numeric: tabular-nums; color: var(--hr-ink); }
+.weight-value { font: 44px/46px var(--hr-font); font-variant-numeric: tabular-nums; color: var(--hr-ink); }
 .weight-value text { font: 16px var(--hr-font); color: var(--hr-ink-2); }
 .weight-value.empty { font: 650 22px/1.35 var(--hr-font); }
 .weight-muted { color: var(--hr-ink-2); font-size: 13px; line-height: 1.6; }
@@ -272,7 +272,7 @@ onHide(() => { formVisible.value = false; pageVisible.value = false; shareRefere
 .weight-stats > view,.weight-stats > uni-view { background: var(--hr-paper); border-radius: 10px; padding: 8px 6px; text-align: center; }
 .weight-stats strong,.weight-stats text,.weight-stats uni-text { display: block; }
 .weight-stats text,.weight-stats uni-text { font-size: 12px; color: var(--hr-ink-2); }
-.weight-stats strong { color: var(--hr-rose-deep); font: 20px var(--hr-serif); overflow-wrap: anywhere; }
+.weight-stats strong { color: var(--hr-rose-deep); font: 20px var(--hr-font); overflow-wrap: anywhere; }
 .compare-columns > view,.compare-columns > uni-view { padding: 9px; border-radius: 10px; background: var(--hr-paper); font-size: 13px; }
 .cycle-row { display: flex; gap: 4px; width: max-content; }
 .cycle-day { min-width: 44px; min-height: 44px; padding: 7px 10px; }

@@ -1,6 +1,6 @@
 <template>
   <view class="studio">
-    <HerlogHeading title="皮肤">
+    <HerlogHeading title="皮肤" description="今天的皮肤，有什么小变化？">
       <template #actions><SkinButton class="hr-action" @click="emit('history', false)">照片历史</SkinButton></template>
     </HerlogHeading>
     <view class="studio-tabs" aria-label="皮肤模块">
@@ -10,19 +10,20 @@
 
     <template v-if="tab === 'today'">
       <view class="today-hero">
+        <img class="photo-examples" src="/static/skin-photo-guide.png" alt="拍照示例：正面自然表情与微笑侧倾" />
         <view class="hero-copy">
           <view class="date-line">{{ formatDayLabel(today) }}</view>
           <view class="hero-title">今天，皮肤感觉怎样？</view>
           <view class="hero-actions">
-            <SkinButton class="studio-primary" @click="openEditor(today)">{{ todayEntry ? '更新今日记录' : '记今日状态' }}</SkinButton>
-            <SkinButton class="studio-secondary" @click="emit('capture')">拍照观察</SkinButton>
+            <SkinButton class="primary hero-button" @click="emit('capture')"><HerlogIcon name="camera" />拍照记录</SkinButton>
+            <SkinButton class="ghost hero-button" @click="openEditor(today)">{{ todayEntry ? '编辑自评' : '记录感受' }}</SkinButton>
           </view>
         </view>
       </view>
 
       <view v-if="loadError" class="studio-alert" role="alert">{{ loadError }} <SkinButton class="studio-text" @click="loadToday">重试</SkinButton></view>
       <view class="mini-grid">
-        <SkinButton class="mini-panel" @click="openEditor(today, true)">
+        <SkinButton class="mini-panel" @click="openEditor(today)">
           <view class="mini-label">肤质自评</view><view class="mini-value">{{ typeTitle(todayEntry?.skin_type ?? latestEntry?.skin_type ?? null) }}</view>
         </SkinButton>
         <SkinButton class="mini-panel" @click="openEditor(today)">
@@ -33,12 +34,12 @@
         </SkinButton>
       </view>
 
-      <view class="studio-panel featured">
+      <view class="studio-panel featured care-preview">
         <view class="featured-main">
           <view class="panel-kicker">护理参考</view>
-          <view class="panel-title">{{ suggested.title }}</view>
-          <view class="studio-muted">{{ suggested.body }}</view>
-          <SkinButton class="studio-text" @click="switchTab('care')">查看护理参考 ↗</SkinButton>
+          <h2 class="panel-title">{{ suggested.title }}</h2>
+          <p class="care-preview-copy">{{ suggested.body }}</p>
+          <SkinButton class="studio-text care-preview-link" @click="switchTab('care')">查看指南详情 ›</SkinButton>
         </view>
         <HerlogIcon name="skin" class="feature-symbol" />
       </view>
@@ -51,7 +52,7 @@
         <view v-if="latest" class="latest-record">
           <PrivateSkinImage :id="latest.id" :label="latest.site + '的最近照片'" />
           <view class="record-copy">
-            <view>{{ latest.site }} · {{ formatMoment(latest.captured_at) }}</view>
+            <view class="record-meta"><strong>{{ latest.site }}</strong><text>{{ formatMoment(latest.captured_at) }}</text></view>
             <ObservationCopy :observation="latest" summary />
           </view>
         </view>
@@ -94,7 +95,11 @@
           <SkinButton class="studio-secondary" @click="chooseDay(selectedEntry)">{{ comparedDays.some(item => item.day === dateSelected) ? '取消选择这天' : '选作日期对比' }}</SkinButton>
         </view>
         <view v-else class="studio-muted">{{ calendarLoading ? '正在读取日历…' : calendarError ? '日期记录暂不可用' : '这天还没有护理日记。' }}</view>
-        <SkinButton v-if="photoDays.has(dateSelected)" class="studio-text" @click="emit('history', false, dateSelected)">查看当天照片 ↗</SkinButton>
+        <view v-for="photo in selectedPhotos" :key="photo.id" class="day-photo">
+          <PrivateSkinImage :id="photo.id" :label="photo.site + '的照片'" />
+          <view><strong>{{ photo.site }} · {{ formatMoment(photo.captured_at) }}</strong><ObservationCopy :observation="photo" summary /></view>
+        </view>
+        <view v-if="!calendarLoading && !calendarError && !selectedPhotos.length" class="studio-muted">这天没有照片观察。</view>
       </view>
       <view v-if="comparedDays.length" class="studio-panel">
         <view class="panel-header"><view class="panel-title">两天的肤质与状态</view><SkinButton class="studio-text" @click="comparedDays = []">清空</SkinButton></view>
@@ -112,57 +117,99 @@
     </template>
 
     <template v-else-if="tab === 'care'">
-      <view class="studio-panel care-head">
-        <view class="panel-kicker">按自己的感受选择</view>
-        <view class="panel-title">护理与日光防护</view>
-        <view class="studio-muted">把有用的护理习惯留在日记里，按日期回看。</view>
-      </view>
       <view class="studio-panel featured">
         <view class="featured-main">
           <view class="panel-kicker">{{ typeTitle(latestEntry?.skin_type ?? null) }}</view>
           <view class="panel-title">{{ suggested.title }}</view>
           <view class="studio-muted">{{ suggested.body }}</view>
           <view v-if="stateTip" class="sensation-tip">{{ stateTip }}</view>
-          <SkinButton class="studio-text" @click="openEditor(today, true)">去做肤质自评 ↗</SkinButton>
+          <SkinButton class="studio-text" @click="openEditor(today)">去做肤质自评 ↗</SkinButton>
         </view>
         <HerlogIcon name="skin" class="feature-symbol" />
       </view>
       <view class="studio-panel">
-        <view class="panel-title">肤色回看与防晒</view>
-        <view class="studio-muted">户外可结合阴凉处、防晒衣帽和广谱 SPF 30+ 防晒。用相近光线、角度拍照，方便回看同一部位。</view>
+        <h2 class="panel-title">日常三步</h2>
+        <ol class="guide-steps">
+          <li><strong>清洁：</strong>温和清洗，不用力搓。</li>
+          <li><strong>保湿：</strong>干燥时选更滋润的面霜；偏油时选清爽乳液。</li>
+          <li><strong>防晒：</strong>外出用广谱 SPF 30+ 防晒，搭配帽子和遮阴。</li>
+        </ol>
+        <SkinButton class="studio-secondary" @click="guideDetail = 1">查看护理方法详情 ›</SkinButton>
         <view class="studio-control-row">
-          <SkinButton class="studio-primary" @click="openEditor(today, false, true)">记防晒</SkinButton>
+          <SkinButton class="studio-primary" @click="openEditor(today, true)">记防晒</SkinButton>
           <SkinButton class="studio-secondary" @click="emit('history', true)">看同部位照片</SkinButton>
         </view>
-        <a class="studio-source" href="https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-select-sunscreen" target="_blank" rel="noopener noreferrer">护理参考来源 · 美国皮肤科学会</a>
       </view>
+      <section class="studio-panel guide-reference">
+        <h2 class="panel-title" id="guide-skin-types">肤质对照</h2>
+        <table class="guide-table" aria-labelledby="guide-skin-types">
+          <thead><tr><th scope="col">肤质</th><th scope="col">常见感受</th><th scope="col">护理重点</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">中性</th><td>不太油，也不紧绷</td><td>维持基础保湿</td></tr>
+            <tr><th scope="row">干性</th><td>容易紧绷、起屑</td><td>温和清洁，加强保湿</td></tr>
+            <tr><th scope="row">油性</th><td>容易泛油光</td><td>用清爽保湿，别过度清洁</td></tr>
+          </tbody>
+        </table>
+        <SkinButton class="studio-secondary" @click="guideDetail = 0">查看肤质分类详情 ›</SkinButton>
+      </section>
+      <section class="studio-panel guide-reference">
+        <h2 class="panel-title">遇到这些情况</h2>
+        <ul class="guide-steps">
+          <li><strong>容易刺痒、泛红：</strong>简化护肤，优先选无香料的保湿产品。</li>
+          <li><strong>容易晒红或在意色沉：</strong>做好防晒，避免刻意日晒测试。</li>
+          <li><strong>不适持续或加重：</strong>请皮肤科评估，不凭照片自行诊断。</li>
+        </ul>
+      </section>
+      <footer class="guide-sources">
+        肤质与护理要点摘编自何黎、李利《中国人面部皮肤分类与护肤指南》，《皮肤病与性病》2009 年第 31 卷第 4 期，14–15 页。2009 年资料仅供参考，不代表最新临床指南。防晒参考：<a href="https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-select-sunscreen" target="_blank" rel="noopener noreferrer">美国皮肤科学会（AAD）</a>。
+      </footer>
     </template>
+
+    <HerlogSheet v-if="guideDetail !== null" :title="guideDetail === 0 ? '肤质分类详情' : '护理方法详情'" @close="guideDetail = null">
+      <article class="guide-full">
+        <p>以下为 2009 年指南内容，仅供参考。请勿自行尝试原文中的刺激试验或日晒测试。</p>
+        <template v-for="(block, index) in guideSections[guideDetail]" :key="index">
+          <h3 v-if="block.kind === 'heading'">{{ block.text }}</h3>
+          <component v-else-if="block.kind === 'list'" :is="block.ordered ? 'ol' : 'ul'" class="guide-steps">
+            <li v-for="item in block.items" :key="item">{{ item }}</li>
+          </component>
+          <div v-else-if="block.kind === 'table'" class="guide-table-scroll" tabindex="0" role="region" aria-label="不同肤质护理步骤对照表">
+            <table class="guide-table guide-full-table">
+              <thead><tr><th v-for="column in block.columns" :key="column" scope="col">{{ column }}</th></tr></thead>
+              <tbody><tr v-for="row in block.rows" :key="row[0]">
+                <th scope="row">{{ row[0] }}</th><td v-for="(cell, cellIndex) in row.slice(1)" :key="cellIndex">{{ cell }}</td>
+              </tr></tbody>
+            </table>
+          </div>
+          <p v-else>{{ block.text }}</p>
+        </template>
+        <footer class="guide-sources">来源：何黎、李利《中国人面部皮肤分类与护肤指南》，《皮肤病与性病》2009 年第 31 卷第 4 期，14–15 页。</footer>
+      </article>
+    </HerlogSheet>
 
     <HerlogSheet v-if="editor" title="护理日记" :context="formatDayLabel(editDay)" :busy="saving" @close="closeEditor">
         <view class="field-block">
           <view class="field-title">肤质自评</view>
-          <view v-if="questionnaire" class="quiz">
+          <view class="quiz">
             <view class="studio-muted">回想近一周，哪些部位比较容易泛油光？</view>
             <view class="chips">
-              <SkinButton v-for="item in shineOptions" :key="item.code" :class="{ selected: shine === item.code }" @click="shine = item.code">{{ item.label }}</SkinButton>
+              <SkinButton v-for="item in shineOptions" :key="item.code" class="journal-choice" :class="{ selected: shine === item.code }" :aria-pressed="shine === item.code" @click="shine = item.code">{{ item.label }}</SkinButton>
             </view>
             <view class="studio-muted">洁面后常觉得紧绷吗？</view>
             <view class="chips">
-              <SkinButton :class="{ selected: tight === 'often' }" @click="tight = 'often'">经常</SkinButton>
-              <SkinButton :class="{ selected: tight === 'rarely' }" @click="tight = 'rarely'">很少</SkinButton>
+              <SkinButton class="journal-choice" :class="{ selected: tight === 'often' }" :aria-pressed="tight === 'often'" @click="tight = 'often'">经常</SkinButton>
+              <SkinButton class="journal-choice" :class="{ selected: tight === 'rarely' }" :aria-pressed="tight === 'rarely'" @click="tight = 'rarely'">很少</SkinButton>
               <SkinButton class="studio-text" :disabled="!shine || !tight" @click="applyQuiz">使用自评结果</SkinButton>
             </view>
           </view>
-          <view v-else class="chips"><SkinButton @click="questionnaire = true">回答两个问题</SkinButton></view>
           <view class="chips">
-            <SkinButton v-for="(title, code) in typeNames" :key="code" :class="{ selected: edit.skin_type === code }" @click="edit.skin_type = edit.skin_type === code ? null : code">{{ title }}</SkinButton>
+            <SkinButton v-for="(title, code) in typeNames" :key="code" class="journal-choice" :class="{ selected: edit.skin_type === code }" :aria-pressed="edit.skin_type === code" @click="edit.skin_type = edit.skin_type === code ? null : code">{{ title }}</SkinButton>
           </view>
         </view>
         <view class="field-block">
-          <view class="field-title">今天的舒适度 · 自评</view>
-          <view class="studio-muted">按你的真实感受选择，选填。</view>
+          <view class="field-title">舒适度</view>
           <view class="score-row">
-            <SkinButton v-for="value in 5" :key="value" :aria-label="comfortNames[value]" :aria-pressed="edit.comfort === value"
+            <SkinButton v-for="value in 5" :key="value" class="journal-score" :aria-label="comfortNames[value]" :aria-pressed="edit.comfort === value"
               :class="{ selected: edit.comfort === value }" @click="edit.comfort = edit.comfort === value ? null : value">
               <strong>{{ value }}</strong><small>{{ comfortNames[value] }}</small>
             </SkinButton>
@@ -171,20 +218,20 @@
         <view class="field-block">
           <view class="field-title">今天的感受</view>
           <view class="chips">
-            <SkinButton v-for="(label, code) in sensationNames" :key="code" :class="{ selected: edit.sensations.includes(code) }" @click="toggleSensation(code)">{{ label }}</SkinButton>
+            <SkinButton v-for="(label, code) in sensationNames" :key="code" class="journal-choice" :class="{ selected: edit.sensations.includes(code) }" :aria-pressed="edit.sensations.includes(code)" @click="toggleSensation(code)">{{ label }}</SkinButton>
           </view>
         </view>
         <view class="field-block">
           <view class="field-title">做过的护理</view>
           <view class="chips">
-            <SkinButton v-for="(label, code) in routineNames" :key="code" :class="{ selected: edit.routine.includes(code) }" @click="toggleRoutine(code)">{{ label }}</SkinButton>
+            <SkinButton v-for="(label, code) in routineNames" :key="code" class="journal-choice" :class="{ selected: edit.routine.includes(code) }" :aria-pressed="edit.routine.includes(code)" @click="toggleRoutine(code)">{{ label }}</SkinButton>
           </view>
           <textarea v-model="editNote" aria-label="仅自己可见的备注" class="journal-note" placeholder="备注 · 仅自己可见" maxlength="400" />
         </view>
         <view v-if="editorError" class="studio-alert" role="alert">{{ editorError }}</view>
         <template #actions>
           <SkinButton v-if="editingExisting" class="studio-text" :disabled="saving" @click="removeEntry">删除</SkinButton>
-          <SkinButton class="studio-primary" :disabled="saving" @click="submit">{{ saving ? '保存中…' : '保存日记' }}</SkinButton>
+          <SkinButton class="primary" :disabled="saving" @click="submit">{{ saving ? '保存中…' : '保存日记' }}</SkinButton>
         </template>
     </HerlogSheet>
   </view>
@@ -196,9 +243,10 @@ import SkinButton from '../../components/H5Button'
 import HerlogHeading from '../../components/HerlogHeading.vue'
 import HerlogIcon from '../../components/HerlogIcon.vue'
 import HerlogSheet from '../../components/HerlogSheet.vue'
+import guideSource from './skin-care-guide.md?raw'
 import ObservationCopy from './ObservationCopy.vue'
 import PrivateSkinImage from './PrivateSkinImage.vue'
-import { formatDayLabel, formatMoment, formatMonthLabel, monthGrid, shiftMonth, startOfMonth, todayString } from '../../shared/dates'
+import { formatDayLabel, formatMoment, formatMonthLabel, monthGrid, shanghaiDayKey, shiftMonth, startOfMonth, todayString } from '../../shared/dates'
 import { groupSkinDays, selfAssessedSkinType, skinMonthRange } from '../../shared/skin'
 import { listObservations } from '../../services/skinService'
 import { deleteJournal, latestJournal, listJournal, saveJournal } from '../../services/wellnessService'
@@ -206,11 +254,26 @@ import { currentEpoch } from '../../services/httpClient'
 import type { SkinSummaryItem } from '../../services/types'
 import type { JournalDay, JournalInput, SkinRoutine, SkinSensation, SkinType } from '../../services/wellnessService'
 
-defineProps<{ latest: SkinSummaryItem | null; photoLoading: boolean; photoError: boolean }>()
+const props = defineProps<{ latest: SkinSummaryItem | null; photoLoading: boolean; photoError: boolean }>()
 const emit = defineEmits<{ capture: []; history: [compare: boolean, day?: string]; 'refresh-photo': [] }>()
 const tabs = [{ key: 'today', label: '今日' }, { key: 'calendar', label: '日历' }, { key: 'care', label: '护理指南' }] as const
 type Tab = typeof tabs[number]['key']
 const tab = ref<Tab>('today')
+const guideDetail = ref<0 | 1 | null>(null)
+const guideSections = guideSource.split(/^## [12] .+$/m).slice(1).map(section =>
+  section.trim().split(/\r?\n\s*\r?\n/).map(block => {
+    const lines = block.replace(/\*\*|`/g, '').split(/\r?\n/)
+    if (lines[0].startsWith('|')) {
+      const [columns, , ...rows] = lines.map(line => line.trim().split('|').slice(1, -1).map(cell => cell.trim()))
+      return { kind: 'table' as const, columns, rows }
+    }
+    if (lines.every(line => /^(?:- |\d+\. )/.test(line))) {
+      return { kind: 'list' as const, ordered: !lines[0].startsWith('- '), items: lines.map(line => line.replace(/^(?:- |\d+\. )/, '')) }
+    }
+    if (lines[0].startsWith('###')) return { kind: 'heading' as const, text: lines[0].replace(/^#+ /, '') }
+    return { kind: 'paragraph' as const, text: lines.join('\n') }
+  })
+)
 const today = todayString()
 const month = ref(startOfMonth(today))
 const dateSelected = ref(today)
@@ -237,6 +300,7 @@ const calendarLoading = ref(false)
 const calendarError = ref(false)
 const grid = computed(() => monthGrid(month.value))
 const selectedEntry = computed(() => journalDays.value.get(dateSelected.value))
+const selectedPhotos = computed(() => calendarLoading.value || calendarError.value ? [] : photoDays.value.get(dateSelected.value) ?? [])
 const sortedDays = computed(() => [...comparedDays.value].sort((a,b) => a.day.localeCompare(b.day)))
 const sunLogged = computed(() => todayEntry.value?.routine.some(code => ['sunscreen', 'shade', 'cover', 'reapply'].includes(code)))
 const suggested = computed(() => advice[todayEntry.value?.skin_type ?? latestEntry.value?.skin_type ?? 'unsure'])
@@ -253,7 +317,6 @@ const edit = ref<JournalInput>(blank())
 const editNote = ref('')
 const editorError = ref('')
 const editingExisting = ref(false)
-const questionnaire = ref(false)
 const shine = ref<typeof shineOptions[number]['code'] | null>(null)
 const tight = ref<'often' | 'rarely' | null>(null)
 const saving = ref(false)
@@ -297,7 +360,12 @@ async function loadMonth() {
 }
 function switchTab(value: Tab) {
   tab.value = value
-  if (value === 'calendar') void loadMonth()
+  if (value === 'calendar') {
+    const latestPhotoDay = props.latest ? shanghaiDayKey(props.latest.captured_at) : ''
+    dateSelected.value = [latestEntry.value?.day ?? '', latestPhotoDay].sort().at(-1) || today
+    month.value = startOfMonth(dateSelected.value)
+    void loadMonth()
+  }
 }
 function moveMonth(delta: number) {
   month.value = shiftMonth(month.value, delta)
@@ -311,7 +379,7 @@ function chooseDay(entry: JournalDay) {
     comparedDays.value = [...comparedDays.value, entry]
   } else uni.showToast({ title: '请先取消一天，再选新日期', icon: 'none' })
 }
-function openEditor(day: string, quiz = false, prefillSun = false) {
+function openEditor(day: string, prefillSun = false) {
   if (tab.value === 'calendar' && (calendarLoading.value || calendarError.value)) return
   const entry = day === today ? todayEntry.value ?? journalDays.value.get(day) : journalDays.value.get(day)
   editDay.value = day
@@ -322,7 +390,6 @@ function openEditor(day: string, quiz = false, prefillSun = false) {
   editNote.value = entry?.note ?? ''
   editingExisting.value = Boolean(entry)
   editorError.value = ''
-  questionnaire.value = quiz
   shine.value = null
   tight.value = null
   editor.value = true
@@ -336,7 +403,6 @@ function toggleRoutine(code: SkinRoutine) {
 }
 function applyQuiz() {
   edit.value.skin_type = selfAssessedSkinType(shine.value, tight.value)
-  questionnaire.value = false
 }
 async function submit() {
   if (saving.value) return

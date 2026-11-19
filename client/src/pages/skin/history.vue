@@ -21,8 +21,7 @@
     <template v-else>
       <HerlogHeading title="照片历史" back-to="/pages/skin/index" back-label="皮肤">
         <template #actions>
-          <SkinButton v-if="!comparing" class="hr-action" @click="startCompare()">对比记录</SkinButton>
-          <SkinButton v-else class="hr-action" @click="stopCompare">退出对比</SkinButton>
+          <SkinButton v-if="comparing" class="hr-action" @click="stopCompare">退出对比</SkinButton>
         </template>
       </HerlogHeading>
 
@@ -36,7 +35,7 @@
         <SkinButton v-if="selected.length === 2" class="skin-button skin-primary skin-wide" @click="openPair">查看对比</SkinButton>
       </view>
 
-      <scroll-view scroll-x class="site-scroll skin-block">
+      <scroll-view v-if="comparing" scroll-x class="site-scroll skin-block">
         <view class="site-filters">
           <SkinButton
             v-for="item in sites" :key="item"
@@ -45,7 +44,7 @@
           >{{ item || '全部部位' }}</SkinButton>
         </view>
       </scroll-view>
-      <view class="skin-actions skin-block">
+      <view v-if="comparing" class="skin-actions skin-block">
         <SkinButton class="skin-button" :class="{ 'skin-selected': mode === 'list' }" :aria-pressed="mode === 'list'" @click="mode = 'list'">列表</SkinButton>
         <SkinButton class="skin-button" :class="{ 'skin-selected': mode === 'calendar' }" :aria-pressed="mode === 'calendar'" @click="mode = 'calendar'">日历</SkinButton>
       </view>
@@ -88,7 +87,11 @@
         {{ selectedDay ? '这一天还没有记录' : '这个月还没有符合条件的记录' }}
       </view>
       <view v-for="row in visibleRows" v-else :key="row.id" class="record-row">
-        <SkinButton class="record-link" @click="openDetail(row.id)">
+        <figure v-if="!comparing" class="photo-history-item">
+          <PrivateSkinImage :id="row.id" :label="skinMoment(row.captured_at) + '的照片'" />
+          <figcaption>{{ skinMoment(row.captured_at) }}</figcaption>
+        </figure>
+        <SkinButton v-else class="record-link" @click="openDetail(row.id)">
           <view>{{ row.site }} <text class="skin-date">{{ skinMoment(row.captured_at) }}</text></view>
           <ObservationCopy :observation="row" summary />
         </SkinButton>
@@ -123,6 +126,7 @@ import type { SkinObservation, SkinSummaryItem } from '../../services/types'
 import { useAuthStore } from '../../stores/auth'
 import HistoryObservation from './HistoryObservation.vue'
 import ObservationCopy from './ObservationCopy.vue'
+import PrivateSkinImage from './PrivateSkinImage.vue'
 import './skin.css'
 
 const auth = useAuthStore()
@@ -348,9 +352,12 @@ onUnload(() => {
 </script>
 
 <style scoped>
+.photo-history-item { width: 100%; margin: 0; }
+.photo-history-item :deep(.skin-photo) { max-height: 240px; }
+.photo-history-item figcaption { margin-top: 6px; font-size: 13px; color: var(--hr-ink-2); }
 .site-filters { display: flex; width: max-content; gap: 6px; }
 .month-toolbar { display: flex; justify-content: space-between; align-items: center; }
-.month-label { font-family: var(--hr-serif, Georgia, "Songti SC", serif); font-size: 16px; }
+.month-label { font-family: var(--hr-font); font-size: 16px; }
 .calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 8px 0; }
 .weekday { text-align: center; color: var(--skin-muted); font-size: 13px; }
 .day-cell {
@@ -363,7 +370,7 @@ onUnload(() => {
 .day-core {
   position: relative; display: grid; place-items: center; width: 34px; height: 34px;
   border: 1px solid transparent; border-radius: 12px;
-  font: 15px var(--hr-serif, Georgia, "Songti SC", serif);
+  font: 15px var(--hr-font);
 }
 .day-current .day-core { border-color: var(--skin-ink); background: var(--skin-rose-soft); }
 .day-dot, .key-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--skin-rose); }

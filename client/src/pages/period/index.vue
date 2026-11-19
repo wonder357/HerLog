@@ -1,6 +1,6 @@
 <template>
   <view class="hr-page hr-tab-page cycle-page">
-    <HerlogHeading title="经期">
+    <HerlogHeading title="经期" description="按自己的节奏来。">
       <template #actions>
         <H5Button class="hr-action mode-entry" @click="modeSheetVisible = true">
           {{ isFertility ? '模式 · 备孕' : '周期模式' }}
@@ -9,7 +9,7 @@
       </template>
     </HerlogHeading>
 
-    <view v-if="!cyclePreference.preference && cyclePreference.loading" class="card muted" role="status">正在读取周期模式…</view>
+    <view v-if="!cyclePreference.preference && !cyclePreference.unavailable" class="card muted" role="status">正在读取周期模式…</view>
     <FertilityJournal v-else-if="isFertility && pageVisible" :selected="selected" :today="today"
       :overview="overview" :predicted-day="predictedDay" :selected-feeling="selectedFeeling"
       :feelings-loading="feelingsLoading" :feeling-error="feelingError" :period-action="periodAction"

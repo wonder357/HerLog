@@ -1,7 +1,7 @@
 <template>
   <section class="card agent-entry" aria-labelledby="agent-title">
     <header class="entry-header">
-      <span class="agent-mark"><HerlogIcon name="chat" /></span>
+      <span class="agent-mark"><HerlogIcon name="message" /></span>
       <div class="entry-copy">
         <h2 id="agent-title">她记智能体</h2>
         <p>查经期、体重和皮肤记录</p>
