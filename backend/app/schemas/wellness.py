@@ -9,7 +9,7 @@ from app.schemas.private_photo import PrivatePhotoIn
 
 Topic = Literal["exercise", "skin"]
 GroupKey = Literal["general", "menstrual", "follicular", "ovulatory", "luteal"]
-ActivityCode = Literal["walk", "mobility", "strength", "cycle", "rest"]
+ActivityCode = Literal["walk", "mobility", "strength", "cycle", "rest", "yoga", "jog", "swim", "dance"]
 SkinType = Literal["dry", "oily", "combination", "balanced", "unsure"]
 SkinSensation = Literal["tight", "shine", "sensitive", "rough", "redness"]
 SkinRoutine = Literal["cleanse", "moisturize", "sunscreen", "shade", "cover", "reapply"]
@@ -20,8 +20,7 @@ class StrictInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class CheckinIn(StrictInput):
-    client_key: str = Field(min_length=8, max_length=36)
+class CheckinUpdate(StrictInput):
     activity_code: ActivityCode
     started_at: datetime
     duration_minutes: int | None = Field(default=None, ge=1, le=1440, strict=True)
@@ -39,8 +38,12 @@ class CheckinIn(StrictInput):
     @model_validator(mode="after")
     def validate_rest(self):
         if self.activity_code == "rest" and (self.duration_minutes is not None or self.effort is not None):
-            raise ValueError("休息记录只需选择时间")
+            raise ValueError("休息记录无需填写时长和运动强度")
         return self
+
+
+class CheckinIn(CheckinUpdate):
+    client_key: str = Field(min_length=8, max_length=36)
 
 
 class SkinJournalIn(StrictInput):

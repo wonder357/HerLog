@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy import select
@@ -17,7 +17,7 @@ from app.models.private_photo import CheckinPhoto
 from app.schemas.common import ApiResponse
 from app.schemas.private_photo import PrivatePhotoChange
 from app.schemas.wellness import (
-    CheckinIn, GroupKey, JoinGroupIn, ModerationIn, ReplyIn, ReportIn, ShareIn,
+    ActivityCode, CheckinIn, CheckinUpdate, GroupKey, JoinGroupIn, ModerationIn, ReplyIn, ReportIn, ShareIn,
     SkinJournalIn, SkinJournalOut, Topic,
 )
 from app.services import private_photo, wellness
@@ -48,6 +48,24 @@ def exercise_list(db: Db, user: User, before_id: int | None = Query(default=None
 @router.post("/exercise/checkins", response_model=ApiResponse[dict])
 def exercise_create(payload: CheckinIn, db: Db, user: User):
     return ApiResponse(data=wellness.create_checkin(db, user.customer_id, payload))
+
+
+@router.get("/exercise/journal", response_model=ApiResponse[dict])
+def exercise_journal(
+    db: Db, user: User, window: Literal["7", "30", "all"] = "30",
+    activity_code: ActivityCode | None = None, page: int = Query(default=1, ge=1, le=10000),
+):
+    return ApiResponse(data=wellness.exercise_journal(db, user.customer_id, window, activity_code, page))
+
+
+@router.get("/exercise/week", response_model=ApiResponse[dict])
+def exercise_week(db: Db, user: User):
+    return ApiResponse(data=wellness.exercise_week(db, user.customer_id))
+
+
+@router.put("/exercise/checkins/{checkin_id}", response_model=ApiResponse[dict])
+def exercise_update(checkin_id: int, payload: CheckinUpdate, db: Db, user: User):
+    return ApiResponse(data=wellness.update_checkin(db, user.customer_id, checkin_id, payload))
 
 
 @router.delete("/exercise/checkins/{checkin_id}", response_model=ApiResponse[None])

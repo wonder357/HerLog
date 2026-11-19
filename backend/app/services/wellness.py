@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from secrets import compare_digest
 from uuid import uuid4
 
@@ -8,21 +8,26 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.clock import local_today, to_utc_naive, utc_now
+from app.core.clock import local_day_end_utc, local_day_start_utc, local_today, to_local, to_utc_naive, utc_now
 from app.core.config import settings
 from app.core.errors import conflict, invalid, not_found
 from app.models.wellness import Checkin, GroupMembership, GroupReply, GroupShare, ShareReport, SkinJournal
 from app.models.private_photo import CheckinPhoto
-from app.schemas.wellness import CheckinIn, ShareIn, SkinJournalIn, SkinJournalOut
+from app.schemas.wellness import CheckinIn, CheckinUpdate, ShareIn, SkinJournalIn, SkinJournalOut
 from app.services.cycle_context import current_phase
 from app.services import private_photo
 
 ACTIVITIES = {
-    "walk": ("散步", "选择熟悉的路线，以自己舒服的节奏活动。"),
-    "mobility": ("舒缓活动", "在舒服的范围内慢慢活动肩、背和髋部，随时可以停下。"),
-    "strength": ("基础力量", "选一个已经熟悉的动作，按自己舒服的强度完成。"),
-    "cycle": ("轻松骑行", "选熟悉的路线或在室内活动，时长由你决定。"),
-    "rest": ("休息", "今天可以休息，也可以只记下当下的感受。"),
+    # 前两项沿用讨论模块的标题和提示，第三项为活动筛选类别。
+    "yoga": ("瑜伽", "从熟悉的姿势开始，动作幅度由当下的感受决定。", "gentle"),
+    "jog": ("慢跑", "选择熟悉的路线，跑走交替也可以。", "cardio"),
+    "swim": ("游泳", "选择熟悉的泳姿，想停下来休息时就停。", "cardio"),
+    "dance": ("舞动", "跟着喜欢的音乐，选择自己熟悉的动作。", "cardio"),
+    "walk": ("散步", "选择熟悉的路线，以自己舒服的节奏活动。", "gentle"),
+    "mobility": ("舒缓活动", "在舒服的范围内慢慢活动肩、背和髋部，随时可以停下。", "gentle"),
+    "strength": ("基础力量", "选一个已经熟悉的动作，按自己舒服的强度完成。", "strength"),
+    "cycle": ("轻松骑行", "选熟悉的路线或在室内活动，时长由你决定。", "cardio"),
+    "rest": ("休息", "今天可以休息，也可以只记下当下的感受。", "rest"),
 }
 PHASE_ORDER = {
     "menstrual": ("mobility", "rest", "walk", "strength", "cycle"),
@@ -64,11 +69,16 @@ def checkin_out(row: Checkin, has_photo: bool = False) -> dict:
     }
 
 
-def create_checkin(session: Session, customer_id: str, payload: CheckinIn) -> dict:
+def _checkin_attributes(payload: CheckinUpdate) -> dict:
     attributes = payload.model_dump(exclude={"client_key", "photo"})
-    photo = private_photo.prepare(payload.photo)
     moment = to_utc_naive(payload.started_at)
     attributes["started_at"] = moment.replace(microsecond=moment.microsecond // 1000 * 1000)
+    return attributes
+
+
+def create_checkin(session: Session, customer_id: str, payload: CheckinIn) -> dict:
+    attributes = _checkin_attributes(payload)
+    photo = private_photo.prepare(payload.photo)
     row = Checkin(customer_id=customer_id, client_key=payload.client_key, **attributes)
     session.add(row)
     try:
@@ -96,6 +106,68 @@ def member_checkin(session: Session, customer_id: str, checkin_id: int, *, lock:
     if row is None:
         raise not_found()
     return row
+
+
+def update_checkin(session: Session, customer_id: str, checkin_id: int, payload: CheckinUpdate) -> dict:
+    row = member_checkin(session, customer_id, checkin_id, lock=True)
+    for name, value in _checkin_attributes(payload).items():
+        setattr(row, name, value)
+    if "photo" in payload.model_fields_set:
+        private_photo.replace(session, CheckinPhoto, row.id, private_photo.prepare(payload.photo))
+    session.commit()
+    has_photo = private_photo.digest_for(session, CheckinPhoto, row.id) is not None
+    return checkin_out(row, has_photo)
+
+
+def exercise_journal(
+    session: Session, customer_id: str, window: str, activity_code: str | None, page: int,
+) -> dict:
+    today = local_today()
+    filters = [Checkin.customer_id == customer_id]
+    if window != "all":
+        first = today - timedelta(days=int(window) - 1)
+        filters.extend([Checkin.started_at >= local_day_start_utc(first), Checkin.started_at < local_day_end_utc(today)])
+    if activity_code is not None:
+        filters.append(Checkin.activity_code == activity_code)
+
+    page_size = 10
+    total = session.scalar(select(func.count()).select_from(Checkin).where(*filters)) or 0
+    rows = session.scalars(select(Checkin).where(*filters)
+        .order_by(Checkin.started_at.desc(), Checkin.id.desc())
+        .offset((page - 1) * page_size).limit(page_size)).all()
+    photo_ids = private_photo.visible_ids(session, CheckinPhoto, [row.id for row in rows])
+    return {
+        "items": [checkin_out(row, row.id in photo_ids) for row in rows],
+        "total": total,
+        "next_page": page + 1 if page * page_size < total else None,
+    }
+
+
+def exercise_week(session: Session, customer_id: str) -> dict:
+    today = local_today()
+    first = today - timedelta(days=6)
+    days = {
+        first + timedelta(days=offset): {"day": first + timedelta(days=offset), "activities": 0, "rests": 0}
+        for offset in range(7)
+    }
+    minutes = 0
+    rows = session.execute(select(Checkin.started_at, Checkin.activity_code, Checkin.duration_minutes).where(
+        Checkin.customer_id == customer_id,
+        Checkin.started_at >= local_day_start_utc(first), Checkin.started_at < local_day_end_utc(today),
+    ))
+    for started_at, activity_code, duration in rows:
+        day = days[to_local(started_at).date()]
+        if activity_code == "rest":
+            day["rests"] += 1
+        else:
+            day["activities"] += 1
+            minutes += duration or 0
+    return {
+        "days": list(days.values()),
+        "activity_count": sum(day["activities"] for day in days.values()),
+        "rest_days": sum(day["rests"] > 0 for day in days.values()),
+        "recorded_minutes": minutes,
+    }
 
 
 def withdraw_reference(session: Session, customer_id: str, topic: str, reference_key: str) -> None:
@@ -321,6 +393,9 @@ def recommendations(session: Session, customer_id: str, day: date, include_cycle
     order = PHASE_ORDER[phase.phase if phase else "unknown"]
     return {
         "phase": phase,
-        "cards": [{"activity_code": key, "title": ACTIVITIES[key][0], "instructions": ACTIVITIES[key][1]}
-                  for key in order],
+        "cards": [
+            {"activity_code": key, "title": ACTIVITIES[key][0], "instructions": ACTIVITIES[key][1],
+             "category": ACTIVITIES[key][2]}
+            for key in dict.fromkeys((*order, *ACTIVITIES))
+        ],
     }

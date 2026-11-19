@@ -1,10 +1,9 @@
 import { request } from './httpClient'
-import { checkinPhotoPath } from './privatePhotoService'
 import type { PrivatePhotoPayload } from './privatePhotoService'
 
 export type Topic = 'exercise' | 'skin'
 export type Phase = 'menstrual' | 'follicular' | 'ovulatory' | 'luteal' | 'unknown'
-export type Activity = 'walk' | 'mobility' | 'strength' | 'cycle' | 'rest'
+export type Activity = 'walk' | 'mobility' | 'strength' | 'cycle' | 'rest' | 'yoga' | 'jog' | 'swim' | 'dance'
 export type Feeling = 'bloating' | 'puffy' | 'tired' | 'comfortable'
 export type SkinType = 'dry' | 'oily' | 'combination' | 'balanced' | 'unsure'
 export type SkinSensation = 'tight' | 'shine' | 'sensitive' | 'rough' | 'redness'
@@ -26,15 +25,25 @@ export interface JournalInput {
 }
 
 export interface JournalDay extends JournalInput { day: string }
-export interface ExerciseCard { activity_code: Activity; title: string; instructions: string }
+export type ExerciseCategory = 'gentle' | 'cardio' | 'strength' | 'rest'
+export type ExerciseWindow = '7' | '30' | 'all'
+export interface ExerciseCard { activity_code: Activity; title: string; instructions: string; category: ExerciseCategory }
 export interface CheckinInput {
   activity_code: Activity
   started_at: string
   duration_minutes: number | null
   effort: 'easy' | 'moderate' | 'hard' | null
-  photo?: PrivatePhotoPayload
+  feeling_code: 'comfortable' | 'energetic' | 'tired' | null
+  photo?: PrivatePhotoPayload | null
 }
 export interface Checkin extends Omit<CheckinInput, 'photo'> { id: number; has_photo: boolean }
+export interface ExerciseJournal { items: Checkin[]; total: number; next_page: number | null }
+export interface ExerciseWeek {
+  days: { day: string; activities: number; rests: number }[]
+  activity_count: number
+  rest_days: number
+  recorded_minutes: number
+}
 
 export interface Group { group_key: string; title: string; joined: boolean }
 export interface ShareReference { day?: string; checkin_id?: number; activity?: string; duration?: number | null }
@@ -54,8 +63,11 @@ export const phaseNames: Record<Phase, string> = {
 }
 
 export const activities: Record<Activity, string> = {
-  walk: '散步', mobility: '舒缓活动', strength: '基础力量', cycle: '轻松骑行', rest: '休息'
+  walk: '散步', mobility: '舒缓活动', yoga: '瑜伽', strength: '基础力量',
+  jog: '慢跑', cycle: '轻松骑行', swim: '游泳', dance: '舞动', rest: '休息'
 }
+export const effortNames = { easy: '轻松', moderate: '适中', hard: '比较吃力' }
+export const exerciseFeelings = { comfortable: '舒适', energetic: '有活力', tired: '疲惫' }
 
 export const captions = {
   skin: [
@@ -83,13 +95,17 @@ export const exerciseCards = (includeCycle: boolean) =>
   request<{ phase: CycleDay | null; cards: ExerciseCard[] }>(root + '/exercise/recommendations', {
     data: { include_cycle: includeCycle }
   })
-export const exerciseHistory = () => request<Checkin[]>(root + '/exercise/checkins')
+export const exerciseJournal = (window: ExerciseWindow, activity: Activity | '', page: number) =>
+  request<ExerciseJournal>(root + '/exercise/journal', {
+    data: { window, page, ...(activity ? { activity_code: activity } : {}) }
+  })
+export const exerciseWeek = () => request<ExerciseWeek>(root + '/exercise/week')
 export const saveCheckin = (payload: CheckinInput, client_key: string) =>
   request<Checkin>(root + '/exercise/checkins', { method: 'POST', data: { ...payload, client_key } })
+export const updateCheckin = (id: number, payload: CheckinInput) =>
+  request<Checkin>(root + '/exercise/checkins/' + id, { method: 'PUT', data: { ...payload } })
 export const deleteCheckin = (id: number) =>
   request<null>(root + '/exercise/checkins/' + id, { method: 'DELETE' })
-export const updateCheckinPhoto = (id: number, photo: PrivatePhotoPayload | null) =>
-  request<Checkin>(checkinPhotoPath(id), { method: 'PUT', data: { photo } })
 
 const groupPath = (topic: Topic, key: string) => root + '/' + topic + '/groups/' + key
 const sharePath = (topic: Topic) => root + '/' + topic + '/shares'
