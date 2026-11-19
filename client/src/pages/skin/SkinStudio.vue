@@ -23,7 +23,7 @@
 
       <view v-if="loadError" class="studio-alert" role="alert">{{ loadError }} <SkinButton class="studio-text" @click="loadToday">重试</SkinButton></view>
       <view class="mini-grid">
-        <SkinButton class="mini-panel" @click="openEditor(today, true)">
+        <SkinButton class="mini-panel" @click="openEditor(today)">
           <view class="mini-label">肤质自评</view><view class="mini-value">{{ typeTitle(todayEntry?.skin_type ?? latestEntry?.skin_type ?? null) }}</view>
         </SkinButton>
         <SkinButton class="mini-panel" @click="openEditor(today)">
@@ -34,14 +34,12 @@
         </SkinButton>
       </view>
 
-      <view class="studio-panel featured">
+      <view class="studio-panel featured care-preview">
         <view class="featured-main">
           <view class="panel-kicker">护理参考</view>
-          <view class="panel-title">{{ suggested.title }}</view>
-          <view v-if="latest" class="studio-muted">{{ latest.site }} · {{ formatMoment(latest.captured_at) }}</view>
-          <ObservationCopy v-if="latest" :observation="latest" summary />
-          <view class="studio-muted">{{ photoCareHint }}</view>
-          <SkinButton class="studio-text" @click="switchTab('care')">查看指南详情 ›</SkinButton>
+          <h2 class="panel-title">{{ suggested.title }}</h2>
+          <p class="care-preview-copy">{{ suggested.body }}</p>
+          <SkinButton class="studio-text care-preview-link" @click="switchTab('care')">查看指南详情 ›</SkinButton>
         </view>
         <HerlogIcon name="skin" class="feature-symbol" />
       </view>
@@ -54,7 +52,7 @@
         <view v-if="latest" class="latest-record">
           <PrivateSkinImage :id="latest.id" :label="latest.site + '的最近照片'" />
           <view class="record-copy">
-            <view>{{ latest.site }} · {{ formatMoment(latest.captured_at) }}</view>
+            <view class="record-meta"><strong>{{ latest.site }}</strong><text>{{ formatMoment(latest.captured_at) }}</text></view>
             <ObservationCopy :observation="latest" summary />
           </view>
         </view>
@@ -125,7 +123,7 @@
           <view class="panel-title">{{ suggested.title }}</view>
           <view class="studio-muted">{{ suggested.body }}</view>
           <view v-if="stateTip" class="sensation-tip">{{ stateTip }}</view>
-          <SkinButton class="studio-text" @click="openEditor(today, true)">去做肤质自评 ↗</SkinButton>
+          <SkinButton class="studio-text" @click="openEditor(today)">去做肤质自评 ↗</SkinButton>
         </view>
         <HerlogIcon name="skin" class="feature-symbol" />
       </view>
@@ -138,7 +136,7 @@
         </ol>
         <SkinButton class="studio-secondary" @click="guideDetail = 1">查看护理方法详情 ›</SkinButton>
         <view class="studio-control-row">
-          <SkinButton class="studio-primary" @click="openEditor(today, false, true)">记防晒</SkinButton>
+          <SkinButton class="studio-primary" @click="openEditor(today, true)">记防晒</SkinButton>
           <SkinButton class="studio-secondary" @click="emit('history', true)">看同部位照片</SkinButton>
         </view>
       </view>
@@ -192,7 +190,7 @@
     <HerlogSheet v-if="editor" title="护理日记" :context="formatDayLabel(editDay)" :busy="saving" @close="closeEditor">
         <view class="field-block">
           <view class="field-title">肤质自评</view>
-          <view v-if="questionnaire" class="quiz">
+          <view class="quiz">
             <view class="studio-muted">回想近一周，哪些部位比较容易泛油光？</view>
             <view class="chips">
               <SkinButton v-for="item in shineOptions" :key="item.code" class="journal-choice" :class="{ selected: shine === item.code }" :aria-pressed="shine === item.code" @click="shine = item.code">{{ item.label }}</SkinButton>
@@ -204,7 +202,6 @@
               <SkinButton class="studio-text" :disabled="!shine || !tight" @click="applyQuiz">使用自评结果</SkinButton>
             </view>
           </view>
-          <view v-else class="chips"><SkinButton class="journal-choice" @click="questionnaire = true">回答两个问题</SkinButton></view>
           <view class="chips">
             <SkinButton v-for="(title, code) in typeNames" :key="code" class="journal-choice" :class="{ selected: edit.skin_type === code }" :aria-pressed="edit.skin_type === code" @click="edit.skin_type = edit.skin_type === code ? null : code">{{ title }}</SkinButton>
           </view>
@@ -258,12 +255,6 @@ import type { SkinSummaryItem } from '../../services/types'
 import type { JournalDay, JournalInput, SkinRoutine, SkinSensation, SkinType } from '../../services/wellnessService'
 
 const props = defineProps<{ latest: SkinSummaryItem | null; photoLoading: boolean; photoError: boolean }>()
-const photoCareHint = computed(() => {
-  if (props.photoLoading) return '正在读取最近一次照片…'
-  if (props.photoError) return '暂时无法读取照片，可先查看基础护理。'
-  if (!props.latest) return '还没有照片观察，可先查看基础护理。'
-  return `${props.latest.site}可在相近光线下复拍。清洁、保湿与防晒建议请结合自评选择。`
-})
 const emit = defineEmits<{ capture: []; history: [compare: boolean, day?: string]; 'refresh-photo': [] }>()
 const tabs = [{ key: 'today', label: '今日' }, { key: 'calendar', label: '日历' }, { key: 'care', label: '护理指南' }] as const
 type Tab = typeof tabs[number]['key']
@@ -326,7 +317,6 @@ const edit = ref<JournalInput>(blank())
 const editNote = ref('')
 const editorError = ref('')
 const editingExisting = ref(false)
-const questionnaire = ref(false)
 const shine = ref<typeof shineOptions[number]['code'] | null>(null)
 const tight = ref<'often' | 'rarely' | null>(null)
 const saving = ref(false)
@@ -389,7 +379,7 @@ function chooseDay(entry: JournalDay) {
     comparedDays.value = [...comparedDays.value, entry]
   } else uni.showToast({ title: '请先取消一天，再选新日期', icon: 'none' })
 }
-function openEditor(day: string, quiz = false, prefillSun = false) {
+function openEditor(day: string, prefillSun = false) {
   if (tab.value === 'calendar' && (calendarLoading.value || calendarError.value)) return
   const entry = day === today ? todayEntry.value ?? journalDays.value.get(day) : journalDays.value.get(day)
   editDay.value = day
@@ -400,7 +390,6 @@ function openEditor(day: string, quiz = false, prefillSun = false) {
   editNote.value = entry?.note ?? ''
   editingExisting.value = Boolean(entry)
   editorError.value = ''
-  questionnaire.value = quiz
   shine.value = null
   tight.value = null
   editor.value = true
@@ -414,7 +403,6 @@ function toggleRoutine(code: SkinRoutine) {
 }
 function applyQuiz() {
   edit.value.skin_type = selfAssessedSkinType(shine.value, tight.value)
-  questionnaire.value = false
 }
 async function submit() {
   if (saving.value) return

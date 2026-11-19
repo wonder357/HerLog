@@ -9,7 +9,7 @@
       </template>
     </HerlogHeading>
 
-    <view v-if="!cyclePreference.preference && cyclePreference.loading" class="card muted" role="status">正在读取周期模式…</view>
+    <view v-if="!cyclePreference.preference && !cyclePreference.unavailable" class="card muted" role="status">正在读取周期模式…</view>
     <FertilityJournal v-else-if="isFertility && pageVisible" :selected="selected" :today="today"
       :overview="overview" :overview-error="overviewError" :selected-feeling="selectedFeeling"
       :feelings-loading="feelingsLoading" :feeling-error="feelingError" :period-action="periodAction"
