@@ -18,6 +18,7 @@ client/src/uni-pages.d.ts
 # editors / os
 .vscode/
 .idea/
+.workbuddy/
 Thumbs.db
 desktop.ini
 
