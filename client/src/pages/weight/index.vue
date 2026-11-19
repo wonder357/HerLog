@@ -1,6 +1,6 @@
 <template>
   <view class="hr-page hr-tab-page weight-page">
-    <HerlogHeading title="体重" description="看长一点，不急着下结论。">
+    <HerlogHeading title="体重">
       <template #actions>
         <H5Button v-if="section === 'overview'" class="hr-action" @click="openDetail">记录明细</H5Button>
       </template>

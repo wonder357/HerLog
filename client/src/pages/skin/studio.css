@@ -13,7 +13,7 @@
 .panel-header,.studio-month,.studio-control-row {
   display: flex; justify-content: space-between; align-items: center; gap: 9px;
 }
-.studio :deep(.hr-page-heading) { margin-bottom: 3px; }
+.studio :deep(.hr-page-heading) { margin-bottom: 2px; }
 .panel-kicker,.date-line {
   color: var(--hr-rose-deep);
   font-size: 12px;

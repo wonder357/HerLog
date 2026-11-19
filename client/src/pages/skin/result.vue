@@ -1,6 +1,6 @@
 <template>
   <view>
-    <HerlogHeading title="观察结果" :description="analysis.site + ' · ' + formatMoment(analysis.captured_at)" />
+    <HerlogHeading title="观察结果" variant="detail" :description="analysis.site + ' · ' + formatMoment(analysis.captured_at)" />
 
     <view v-if="error" class="skin-alert skin-alert-error" role="alert">{{ error }}</view>
     <template v-if="expired">

@@ -1,11 +1,10 @@
 <template>
   <view class="hr-page auth-page">
     <view class="auth-shell">
-      <header class="auth-heading">
+      <div class="auth-heading">
         <image class="brand-mark" src="/static/herlog-icon.svg" aria-hidden="true" />
-        <view class="brand-name">她记 HerLog</view>
-        <h1>{{ mode === 'login' ? '欢迎回来' : '创建账号' }}</h1>
-      </header>
+        <HerlogHeading variant="auth" :title="mode === 'login' ? '欢迎回来' : '创建账号'" eyebrow="她记 HerLog" />
+      </div>
 
       <H5Form class="card auth-form" novalidate @submit.prevent="submit">
         <H5Label class="hr-field-label" for="auth-username">用户名</H5Label>
@@ -47,6 +46,7 @@ import { nextTick, ref } from 'vue'
 import H5Button from '../../components/H5Button'
 import H5Form, { H5Label } from '../../components/H5Form'
 import H5Input from '../../components/H5Input'
+import HerlogHeading from '../../components/HerlogHeading.vue'
 import { useAuthStore } from '../../stores/auth'
 import { ApiRequestError } from '../../services/httpClient'
 
@@ -123,8 +123,6 @@ async function submit() {
   display: block; width: 58px; height: 58px; margin: 0 auto 11px; border-radius: 14px;
   box-shadow: 0 10px 21px -13px #7f3652cc;
 }
-.brand-name { font-size: 14px; font-weight: 650; color: var(--hr-rose-deep); }
-h1 { margin: 4px 0 3px; font-size: 30px; line-height: 1.25; }
 .auth-form { padding: 16px; margin: 0; }
 .auth-form .primary { margin-top: 10px; }
 .password-control { position: relative; }

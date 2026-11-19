@@ -1,6 +1,6 @@
 <template>
   <view class="hr-page hr-tab-page profile-page">
-    <HerlogHeading title="我的" description="给自己留一方小天地。" />
+    <HerlogHeading title="我的" />
     <section class="card identity">
       <span class="identity-icon">
         <img v-if="avatarUrl" :src="avatarUrl" alt="个人头像" />

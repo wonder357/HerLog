@@ -1,6 +1,6 @@
 <template>
   <view class="hr-page hr-tab-page cycle-page">
-    <HerlogHeading title="经期" description="按自己的节奏来。">
+    <HerlogHeading title="经期">
       <template #actions>
         <H5Button class="hr-action mode-entry" @click="modeSheetVisible = true">
           {{ isFertility ? '模式 · 备孕' : '周期模式' }}

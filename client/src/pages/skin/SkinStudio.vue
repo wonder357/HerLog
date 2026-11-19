@@ -1,6 +1,6 @@
 <template>
   <view class="studio">
-    <HerlogHeading title="皮肤" description="今天的皮肤，有什么小变化？">
+    <HerlogHeading title="皮肤">
       <template #actions><SkinButton class="hr-action" @click="emit('history', false)">照片历史</SkinButton></template>
     </HerlogHeading>
     <view class="studio-tabs" aria-label="皮肤模块">

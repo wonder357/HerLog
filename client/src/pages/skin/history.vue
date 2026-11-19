@@ -1,8 +1,7 @@
 <template>
   <view class="hr-page herlog-skin">
     <template v-if="showPair">
-      <SkinButton class="hr-back" @click="backToSelection">返回选择记录</SkinButton>
-      <HerlogHeading title="同部位对比" />
+      <HerlogHeading title="同部位对比" back-label="选择记录" @back="backToSelection" />
       <view class="skin-alert">光线和角度可能影响两张照片的观感。</view>
       <view class="compare-grid">
         <view v-for="row in orderedPair" :key="row.id" class="skin-panel compare-column">

@@ -10,9 +10,7 @@
       @retake="retake"
     />
     <template v-else>
-      <HerlogHeading title="拍照记录">
-        <template #actions><SkinButton class="hr-action" @click="emit('close')">取消</SkinButton></template>
-      </HerlogHeading>
+      <HerlogHeading title="拍照记录" back-label="取消" @back="emit('close')" />
       <view v-if="!draft" class="site-grid" role="group" aria-label="选择拍摄部位">
         <SkinButton v-for="item in SKIN_SITES" :key="item" class="skin-button" :class="{ 'site-selected': site === item }"
           :aria-pressed="site === item" :disabled="picking" @click="selectSite(item)">{{ item }}</SkinButton>
