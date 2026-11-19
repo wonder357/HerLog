@@ -217,7 +217,11 @@ async def chat_stream(
                         event = json.loads(data)
                     except json.JSONDecodeError:
                         continue
+                    if not isinstance(event, dict) or event.get("error"):
+                        raise ApiError(502, "模型流式回答中断，请重试")
                     choice = (event.get("choices") or [{}])[0]
+                    if choice.get("finish_reason") not in (None, "stop"):
+                        raise ApiError(502, "模型流式回答中断，请重试")
                     delta = choice.get("delta") or {}
                     chunk = StreamChunk(
                         text=delta.get("content") or "",

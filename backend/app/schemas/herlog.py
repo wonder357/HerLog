@@ -323,6 +323,16 @@ class AssistantQueryIn(BaseModel):
         return stripped
 
 
+class AssistantExchange(BaseModel):
+    question: str = Field(min_length=1, max_length=500)
+    answer: str = Field(min_length=1, max_length=4000)
+
+
+class AssistantStreamIn(AssistantQueryIn):
+    mode: Literal["general", "records"]
+    history: list[AssistantExchange] = Field(default_factory=list, max_length=3)
+
+
 class RecordRef(BaseModel):
     type: Literal["weight", "period", "feeling", "skin", "profile"]
     id: str
@@ -339,7 +349,7 @@ class AssistantRange(BaseModel):
 
 class AssistantAnswerOut(BaseModel):
     answer: str
-    domain: Literal["weight", "period", "skin", "record_help", "unsupported"]
+    domain: Literal["weight", "period", "skin", "record_help", "unsupported", "general"]
     range: AssistantRange
     record_refs: list[RecordRef] = Field(default_factory=list)
     model_id: str | None = None

@@ -86,6 +86,11 @@ function toLogin(): void {
   })
 }
 
+export function expireSession(): void {
+  clearSession()
+  toLogin()
+}
+
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
   data?: Record<string, unknown> | undefined
@@ -122,8 +127,7 @@ export function request<T>(path: string, options: RequestOptions = {}): Promise<
         const body = response.data as Envelope<T> | Record<string, unknown> | string
         if (status === 401) {
           if (!options.anonymous) {
-            clearSession()
-            toLogin()
+            expireSession()
           }
           const message =
             typeof body === 'object' && body !== null && 'message' in body

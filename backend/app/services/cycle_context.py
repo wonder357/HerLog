@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -37,8 +37,7 @@ def phase_for(day: date, records: list[Period], today: date) -> CycleDayOut:
     if next_start is None or day >= next_start:
         return unknown
 
-    start = next_start - timedelta(days=16)
-    end = next_start - timedelta(days=12)
+    start, end = period_logic.ovulatory_window(next_start)
     if start <= last.end_day:
         return unknown
     if day < start:

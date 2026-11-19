@@ -40,6 +40,7 @@
       @retry="loadOverview" @remind="reminderVisible = true" />
 
     <CycleCalendar :month="month" :selected="selected" :today="today" :predicted-day="predictedDay"
+      :ovulatory-window="ovulatoryWindow"
       :periods="items" :marked-days="markedDays" :mark-label="filter ? filter.label : '有感受'" @select="selectDate">
       <H5Button v-if="filter" class="hr-action" @click="filter = null">清除筛选</H5Button>
     </CycleCalendar>
@@ -52,6 +53,7 @@
       <view v-if="selected === predictedDay && !selectedPeriod" class="muted">
         {{ selected > today ? '这是预计开始日。实际日期可能不同，请在当天或之后补记。' : '今天是预计开始日，实际日期可能不同。' }}
       </view>
+      <view v-else-if="selectedInOvulatoryWindow" class="muted">排卵相关阶段估算 · 根据经期日期推算，仅供记录参考。</view>
       <view v-else-if="selected > today" class="muted">这一天还没到，可以回到今天继续记录。</view>
       <template v-if="selected <= today">
         <view v-if="selectedPeriod" class="day-record">
@@ -79,7 +81,7 @@
           </view>
           <H5Button class="hr-action" @click="removeFeeling(selected)">删除感受</H5Button>
         </view>
-        <view v-else-if="overview && !selectedPeriod && !openPeriod && selected !== predictedDay" class="muted">这一天还没有记录。</view>
+        <view v-else-if="overview && !selectedPeriod && !openPeriod && selected !== predictedDay && !selectedInOvulatoryWindow" class="muted">这一天还没有记录。</view>
         <view class="day-actions">
           <H5Button class="primary" :disabled="!overview" @click="openPeriodForm(selectedPeriod)">
             {{ periodAction }}
@@ -243,6 +245,11 @@ const prediction = computed(() => !overviewError.value && !overviewLoading.value
 const predictedDay = computed(() =>
   prediction.value?.status === 'upcoming' ? prediction.value.expected_start : null
 )
+const ovulatoryWindow = computed(() => prediction.value?.ovulatory_window ?? null)
+const selectedInOvulatoryWindow = computed(() => {
+  const range = ovulatoryWindow.value
+  return range && !selectedPeriod.value && selected.value >= range.start_day && selected.value <= range.end_day
+})
 const predictionProps = computed(() => ({
   prediction: prediction.value,
   day: predictedDay.value,

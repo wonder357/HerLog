@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query, Response
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, pending_store
@@ -11,13 +12,14 @@ from app.schemas.common import ApiResponse
 from app.schemas.herlog import (
     AssistantAnswerOut,
     AssistantQueryIn,
+    AssistantStreamIn,
     SkinAnalysisOut,
     SkinAnalyzeIn,
     SkinObservationOut,
     SkinSaveIn,
     SkinSummaryOut,
 )
-from app.services import assistant_service, skin_service
+from app.services import assistant_service, assistant_stream, skin_service
 from app.services.auth_service import CurrentUser
 from app.services.pending_store import PendingStore
 
@@ -102,4 +104,23 @@ def assistant_query(
 ) -> ApiResponse[AssistantAnswerOut]:
     return ApiResponse(
         data=assistant_service.answer_question(session, user.customer_id, payload.question, payload.follow_up_topic)
+    )
+
+
+@router.post("/assistant/stream", response_class=StreamingResponse)
+def assistant_conversation(
+    payload: AssistantStreamIn,
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+) -> StreamingResponse:
+    record_answer = None
+    if payload.mode == "records":
+        record_answer = assistant_service.answer_question(
+            session, user.customer_id, payload.question, payload.follow_up_topic
+        )
+    session.rollback()
+    return StreamingResponse(
+        assistant_stream.stream_assistant(payload, record_answer),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "private, no-store", "X-Accel-Buffering": "no"},
     )

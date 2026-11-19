@@ -39,6 +39,7 @@ export interface PeriodPrediction {
   cycle_count: number
   starts_used: number
   message: string
+  ovulatory_window?: { start_day: string; end_day: string } | null
 }
 
 export interface PeriodStatus {
@@ -167,7 +168,7 @@ export interface RecordRef {
 
 export interface AssistantAnswer {
   answer: string
-  domain: 'weight' | 'period' | 'skin' | 'record_help' | 'unsupported'
+  domain: 'weight' | 'period' | 'skin' | 'record_help' | 'unsupported' | 'general'
   range: { label: string; date_from: string | null; date_to: string | null; days: number | null }
   record_refs: RecordRef[]
   model_id: string | null

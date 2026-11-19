@@ -72,6 +72,12 @@ def list_periods(session: Session, customer_id: str) -> dict:
     today = local_today()
     starts = [row.start_day for row in rows if row.start_day <= today]
     prediction = period_logic.predict_next_start(starts, today)
+    ovulatory_window = None
+    latest = next((row for row in rows if row.start_day <= today), None)
+    if prediction.status == period_logic.UPCOMING and prediction.expected_start and latest and latest.end_day:
+        start, end = period_logic.ovulatory_window(prediction.expected_start)
+        if start > latest.end_day:
+            ovulatory_window = {"start_day": start, "end_day": end}
     return {
         "items": [_to_out(row, by_id) for row in rows],
         "prediction": {
@@ -80,6 +86,7 @@ def list_periods(session: Session, customer_id: str) -> dict:
             "estimate_days": prediction.estimate_days,
             "cycle_count": prediction.cycle_count,
             "starts_used": prediction.starts_used,
+            "ovulatory_window": ovulatory_window,
             "message": prediction.message,
         },
         "status": _current_status(rows, today, prediction.status == period_logic.OVERDUE),

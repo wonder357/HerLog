@@ -1,13 +1,73 @@
-import { request } from './httpClient'
+import { API_PREFIX, apiUrl } from '../config/runtime'
+import { ApiRequestError, currentEpoch, expireSession, getToken, StaleSessionError } from './httpClient'
 import type { AssistantAnswer } from './types'
 
 export type AssistantTopic = Extract<AssistantAnswer['domain'], 'weight' | 'period' | 'skin'>
+export type AssistantMode = 'general' | 'records'
+export type AssistantSource = 'deepseek' | 'fixture' | 'records'
+export interface AssistantExchange { question: string; answer: string }
 
-/** 只读问答。追问只附上一轮的主题，用户记录由服务端读取。 */
-export function ask(question: string, topic?: AssistantTopic): Promise<AssistantAnswer> {
-  return request<AssistantAnswer>('/herlog/assistant/query', {
+interface QuestionOptions {
+  mode: AssistantMode
+  history?: AssistantExchange[]
+  topic?: AssistantTopic
+  signal: AbortSignal
+  onSource: (source: AssistantSource) => void
+  onDelta: (text: string) => void
+}
+
+type StreamEvent =
+  | { type: 'source'; source: AssistantSource }
+  | { type: 'delta'; text: string }
+  | { type: 'complete'; answer: AssistantAnswer }
+  | { type: 'error'; message: string }
+
+/** H5 用原生 fetch 消费 POST 事件流，uni.request 会等待完整响应。 */
+export async function ask(question: string, options: QuestionOptions): Promise<AssistantAnswer> {
+  const epoch = currentEpoch()
+  const token = getToken()
+  const checkSession = () => {
+    if (currentEpoch() !== epoch) throw new StaleSessionError()
+  }
+  const response = await fetch(apiUrl(API_PREFIX + '/herlog/assistant/stream'), {
     method: 'POST',
-    timeout: 12000,
-    data: { question, ...(topic ? { follow_up_topic: topic } : {}) }
+    headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream', ...(token ? { token } : {}) },
+    signal: options.signal,
+    cache: 'no-store',
+    body: JSON.stringify({
+      question,
+      mode: options.mode,
+      ...(options.mode === 'records' ? { follow_up_topic: options.topic } : { history: options.history })
+    })
   })
+  checkSession()
+  if (response.status === 401) expireSession()
+  if (!response.ok || !response.body || !response.headers.get('content-type')?.includes('text/event-stream')) {
+    throw new ApiRequestError(response.status, '暂时无法开始对话，请重试。')
+  }
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  try {
+    while (true) {
+      const { value, done } = await reader.read()
+      checkSession()
+      buffer += decoder.decode(value, { stream: !done })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() ?? ''
+      for (const line of lines) {
+        if (!line.startsWith('data:')) continue
+        const event = JSON.parse(line.slice(5).trim()) as StreamEvent
+        if (event.type === 'source') options.onSource(event.source)
+        if (event.type === 'delta') options.onDelta(event.text)
+        if (event.type === 'complete') return event.answer
+        if (event.type === 'error') throw new ApiRequestError(502, event.message)
+      }
+      if (done) throw new ApiRequestError(502, '回答连接已断开，请重试。')
+    }
+  } finally {
+    await reader.cancel().catch(() => undefined)
+    reader.releaseLock()
+  }
 }

@@ -16,6 +16,9 @@
         </H5Button>
       </header>
 
+      <AssistantChat ref="assistant" :key="assistantKey" :examples="examples" :show-questions="preferences.show_questions"
+        @reference="openRef" />
+
       <section v-if="data && preferences.show_focus && !focusClosed" class="focus card" aria-labelledby="focus-title">
         <div class="focus-copy">
           <h2 id="focus-title">今日聚焦</h2>
@@ -43,8 +46,6 @@
         </div>
       </section>
 
-      <AssistantChat ref="assistant" :key="assistantKey" :examples="examples" :show-questions="preferences.show_questions"
-        @reference="openRef" />
       <section v-if="preferences.show_summary" class="card summary">
         <H5Button class="summary-toggle" :aria-expanded="summaryOpen" @click="summaryOpen = !summaryOpen">
           <span><strong>本周已记录 {{ data?.week.recorded_days ?? '—' }} 天</strong><small v-if="preferences.weekly_record_days_target">每周记录目标 {{ preferences.weekly_record_days_target }} 天</small></span>

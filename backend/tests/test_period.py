@@ -92,6 +92,17 @@ def test_period_crud_updates_history_and_prediction(client: TestClient, monkeypa
     listing = client.get("/api/v1/c/herlog/periods", headers=headers).json()["data"]
     assert listing["prediction"]["status"] == "upcoming"
     assert listing["prediction"]["estimate_days"] == 29
+    assert listing["prediction"]["ovulatory_window"] is None
+
+    latest = listing["items"][0]
+    edited = client.put(
+        f"/api/v1/c/herlog/periods/{latest['id']}",
+        json={"start_day": "2026-11-30", "end_day": "2026-11-30"},
+        headers=headers,
+    )
+    assert edited.status_code == 200
+    listing = client.get("/api/v1/c/herlog/periods", headers=headers).json()["data"]
+    assert listing["prediction"]["ovulatory_window"] == {"start_day": "2026-12-13", "end_day": "2026-12-17"}
 
 
 def test_overlapping_period_is_rejected_with_the_conflicting_date(client: TestClient) -> None:
