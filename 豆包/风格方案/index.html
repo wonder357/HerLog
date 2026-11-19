@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>她记 HerLog · 渐变主题提案</title>
+<link rel="stylesheet" href="../前端样式/styles.css">
+<style>
+  body { background: #F1EDF2; padding: 34px 40px 52px; }
+  .head { max-width: 1780px; margin: 0 auto 22px; }
+  .head h1 { margin: 0; font-size: 26px; letter-spacing: .5px; }
+  .head p { margin: 8px 0 0; font-size: 13px; color: #655966; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; max-width: 1780px; margin: 0 auto; }
+  .style-card { background: #FFFFFF; border-radius: 18px; padding: 18px 18px 16px; box-shadow: 0 10px 30px rgba(45,36,48,.08); }
+  .style-card .name { font-size: 19px; font-weight: 600; letter-spacing: .5px; }
+  .style-card .en { font-size: 11px; letter-spacing: 1.8px; color: #8B7988; margin-top: 3px; text-transform: uppercase; }
+  .style-card .desc { font-size: 12px; line-height: 19px; color: #655966; margin: 8px 0 12px; min-height: 38px; }
+  .grad { height: 58px; border-radius: 12px; margin-bottom: 12px; border: 1px solid rgba(45,36,48,.06); }
+  .palette { display: flex; gap: 6px; margin-bottom: 14px; }
+  .sw { flex: 1; height: 22px; border-radius: 6px; }
+  iframe { width: 100%; height: 844px; border: 0; border-radius: 14px; background: #FFFFFF; }
+  .go { display: inline-block; margin-top: 12px; font-size: 13px; color: #A82760; text-decoration: none; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>她记 HerLog · 渐变主题提案</h1>
+    <p>四套方案共用同一套结构与文案，只替换颜色、渐变与材质；每套都含完整五页。点开任一套可看全部页面。</p>
+  </div>
+  <div class="grid">
+    <div class="style-card">
+      <div class="name">蜜桃奶油</div>
+      <div class="en">Peach Cream</div>
+      <div class="desc">奶油橘粉渐变，日常温柔，长时间看不刺激。</div>
+      <div class="grad" style="background:radial-gradient(120% 95% at 84% 0%, #FFD8C0 0%, rgba(255,216,192,0) 58%), radial-gradient(85% 70% at 6% 12%, #FFE4EC 0%, rgba(255,228,236,0) 62%), linear-gradient(168deg, #FFE7D2 0%, #F7CDDC 52%, #FDF6F1 100%)"></div>
+      <div class="palette">
+        <div class="sw" style="background:#C0566B"></div>
+        <div class="sw" style="background:#FBE2E6"></div>
+        <div class="sw" style="background:#F2B4BC"></div>
+        <div class="sw" style="background:#FFF9F6"></div>
+        <div class="sw" style="background:#FDF6F1"></div>
+      </div>
+      <iframe src="01-蜜桃奶油/home.html" title="蜜桃奶油"></iframe>
+      <a class="go" href="01-蜜桃奶油/index.html" style="color:#C0566B">查看五页 →</a>
+    </div>
+    <div class="style-card">
+      <div class="name">暮光玫瑰</div>
+      <div class="en">Dusk Rose</div>
+      <div class="desc">深莓到玫瑰的暮色渐变，金色点缀，晚间仪式感强。</div>
+      <div class="grad" style="background:radial-gradient(80% 70% at 16% -8%, rgba(201,160,99,.52) 0%, rgba(201,160,99,0) 62%), radial-gradient(70% 60% at 96% 12%, rgba(255,214,228,.34) 0%, rgba(255,214,228,0) 60%), linear-gradient(152deg, #451730 0%, #752142 40%, #A85C7D 74%, #D0A3B8 100%)"></div>
+      <div class="palette">
+        <div class="sw" style="background:#8E2B52"></div>
+        <div class="sw" style="background:#F6DDE7"></div>
+        <div class="sw" style="background:#DCA7BC"></div>
+        <div class="sw" style="background:#FFFAFD"></div>
+        <div class="sw" style="background:#FBF6F9"></div>
+      </div>
+      <iframe src="02-暮光玫瑰/home.html" title="暮光玫瑰"></iframe>
+      <a class="go" href="02-暮光玫瑰/index.html" style="color:#8E2B52">查看五页 →</a>
+    </div>
+    <div class="style-card">
+      <div class="name">杏桃霞光</div>
+      <div class="en">Apricot Glow</div>
+      <div class="desc">杏橘与珊瑚粉的暖光渐变，日光感强，适合白天记录。</div>
+      <div class="grad" style="background:radial-gradient(110% 90% at 86% 0%, #FFDCAE 0%, rgba(255,220,174,0) 58%), radial-gradient(80% 70% at 4% 10%, #FFE9EC 0%, rgba(255,233,236,0) 60%), linear-gradient(166deg, #FFE4BE 0%, #FFCEC2 55%, #FDF7F0 100%)"></div>
+      <div class="palette">
+        <div class="sw" style="background:#A5583A"></div>
+        <div class="sw" style="background:#FBE5D5"></div>
+        <div class="sw" style="background:#EFBE9C"></div>
+        <div class="sw" style="background:#FFFAF2"></div>
+        <div class="sw" style="background:#FDF7F0"></div>
+      </div>
+      <iframe src="03-杏桃霞光/home.html" title="杏桃霞光"></iframe>
+      <a class="go" href="03-杏桃霞光/index.html" style="color:#A5583A">查看五页 →</a>
+    </div>
+    <div class="style-card">
+      <div class="name">雾紫珍珠</div>
+      <div class="en">Misty Pearl</div>
+      <div class="desc">薰衣草与珍珠粉的冷调渐变，安静精致，偏理性。</div>
+      <div class="grad" style="background:radial-gradient(90% 80% at 18% 0%, #FBE0F1 0%, rgba(251,224,241,0) 60%), radial-gradient(80% 70% at 92% 8%, #E4D6F6 0%, rgba(228,214,246,0) 62%), linear-gradient(166deg, #F4E0FA 0%, #F7DCEA 55%, #FAF7FB 100%)"></div>
+      <div class="palette">
+        <div class="sw" style="background:#6E4B7E"></div>
+        <div class="sw" style="background:#EFE3F3"></div>
+        <div class="sw" style="background:#D6BDE0"></div>
+        <div class="sw" style="background:#FCFAFD"></div>
+        <div class="sw" style="background:#FAF7FB"></div>
+      </div>
+      <iframe src="04-雾紫珍珠/home.html" title="雾紫珍珠"></iframe>
+      <a class="go" href="04-雾紫珍珠/index.html" style="color:#6E4B7E">查看五页 →</a>
+    </div>
+  </div>
+</body>
+</html>

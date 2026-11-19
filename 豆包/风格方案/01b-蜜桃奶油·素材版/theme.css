@@ -1,0 +1,148 @@
+@charset "UTF-8";
+/* ============================================================
+   蜜桃奶油 · 渐变主题皮肤
+   在 ../../前端样式/styles.css 之上叠加：只覆盖视觉，不改结构
+   ============================================================ */
+:root{
+  --page: #FDF6F1;
+  --surface: #FFFFFF;
+  --berry: #C0566B;
+  --berry-deep: #9C3B50;
+  --berry-soft: #FBE2E6;
+  --berry-pink: #F2B4BC;
+  --ink: #3B2A2D;
+  --ink-2: #7B6367;
+  --line: #F4E5E1;
+  --outline: #9C8285;
+  --error: #A32638;
+  --hero-grad: radial-gradient(120% 95% at 84% 0%, #FFD8C0 0%, rgba(255,216,192,0) 58%), radial-gradient(85% 70% at 6% 12%, #FFE4EC 0%, rgba(255,228,236,0) 62%), linear-gradient(168deg, #FFE7D2 0%, #F7CDDC 52%, #FDF6F1 100%);
+  --radius-card: 12px;
+
+  --page-grad: linear-gradient(180deg, #FDF6F1 0%, #FCF2EA 100%);
+  --card-grad: linear-gradient(180deg, #FFFFFF 0%, #FFF9F6 100%);
+  --card-line: #F6E6E2;
+  --card-shadow: 0 12px 28px -14px rgba(192,86,107,.28);
+  --btn-grad: linear-gradient(135deg, #D6788B 0%, #BD5266 100%);
+  --btn-shadow: rgba(192,86,107,.40);
+  --tabon-grad: linear-gradient(135deg, #FDE7EA 0%, #FADDE8 100%);
+  --soft-grad: linear-gradient(135deg, #FBE2E6 0%, #FFF0F2 100%);
+  --soft-2: #FFF0F2;
+  --segbg: #FBEDEA;
+  --ghost-2: #FFF7F8;
+  --ghost-line: #EFD3D8;
+  --chip-2: #FFF8F6;
+  --input-2: #FFFCFA;
+  --readonly: #F8EFEC;
+  --avatar-grad: linear-gradient(140deg,#FCE3E6,#FBE7DC);
+  --photo-grad: radial-gradient(120% 120% at 30% 20%,#F8DED4,#EFCBBF);
+  --glow: rgba(255,236,224,.85);
+  --hair: rgba(192,86,107,.24);
+  --ic-shadow: rgba(192,86,107,.35);
+}
+
+body{background:var(--page);}
+.screen{background:var(--page-grad);}
+
+/* ---------- 页首 ---------- */
+.hero{position:relative;overflow:hidden;background:linear-gradient(180deg, rgba(255,255,255,0) 56%, var(--page) 100%), var(--hero-grad);}
+.hero::before{
+  content:"";position:absolute;right:-80px;top:-110px;width:260px;height:260px;border-radius:50%;
+  background:radial-gradient(circle at 50% 50%, var(--glow) 0%, rgba(255,255,255,0) 70%);
+  pointer-events:none;
+}
+.hero::after{
+  content:"";position:absolute;left:18px;right:18px;bottom:0;height:1px;
+  background:linear-gradient(90deg, rgba(255,255,255,0), color-mix(in srgb, var(--hair) 62%, transparent) 26%, color-mix(in srgb, var(--hair) 62%, transparent) 74%, rgba(255,255,255,0));
+  pointer-events:none;
+}
+.hero > *{position:relative;z-index:1;}
+.hero h1{letter-spacing:1px;}
+
+/* ---------- 卡片 ---------- */
+.card,.quick-item,.rowlink{
+  background:var(--card-grad);
+  border:1px solid var(--card-line);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.90), var(--card-shadow);
+}
+.card.flat{box-shadow:none;}
+
+/* ---------- 按钮 ---------- */
+.btn{
+  background:var(--btn-grad);
+  box-shadow:0 12px 24px -10px var(--btn-shadow), inset 0 1px 0 rgba(255,255,255,.30);
+}
+.btn:active{background:var(--btn-grad);filter:brightness(.94);}
+.btn.ghost{
+  background:linear-gradient(180deg,#FFFFFF 0%, var(--ghost-2) 100%);
+  color:var(--berry);
+  border:1px solid var(--ghost-line);
+  box-shadow:0 6px 16px -12px var(--btn-shadow);
+}
+.btn.soft{
+  background:var(--soft-grad);
+  color:var(--berry-deep);
+  border:1px solid transparent;
+  box-shadow:0 6px 14px -12px var(--btn-shadow);
+}
+
+/* ---------- 标签 / chip ---------- */
+.tag{background:var(--soft-grad);color:var(--berry-deep);}
+.tag.plain{background:var(--soft-grad);color:var(--ink-2);}
+.tag.outline{border-color:var(--berry);color:var(--berry);background:rgba(255,255,255,.55);}
+.chip{background:linear-gradient(180deg,#FFFFFF 0%, var(--chip-2) 100%);border-color:var(--card-line);}
+.chip.on{background:var(--soft-grad);border-color:transparent;color:var(--berry-deep);}
+
+/* ---------- 快捷入口 ---------- */
+.quick-item{position:relative;overflow:hidden;}
+.quick-item::after{
+  content:"";position:absolute;left:0;right:0;top:-30%;height:90%;
+  background:radial-gradient(60% 60% at 50% 50%, var(--glow) 0%, rgba(255,255,255,0) 70%);
+  opacity:.5;pointer-events:none;
+}
+.quick-item > *{position:relative;z-index:1;}
+.quick-item .qi-ic{filter:drop-shadow(0 6px 10px var(--ic-shadow));}
+
+/* ---------- 标题与数字 ---------- */
+.h2{position:relative;padding-left:11px;}
+.h2::before{
+  content:"";position:absolute;left:0;top:5px;width:4px;height:16px;border-radius:2px;
+  background:linear-gradient(180deg, var(--berry) 0%, var(--berry-pink) 100%);
+}
+.status-main,.last-weight .num{
+  background:linear-gradient(120deg, var(--berry-deep) 0%, var(--berry) 52%, var(--berry-pink) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+
+/* ---------- 分段器 ---------- */
+.segmented{background:var(--segbg);border:1px solid var(--card-line);box-shadow:none;}
+.segmented button.on{background:#FFFFFF;color:var(--berry);box-shadow:0 4px 10px -6px var(--btn-shadow);}
+
+/* ---------- iframe 预览：底栏固定在手机视口底部 ---------- */
+.embed .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:9;margin-top:0;}
+
+/* ---------- 日历 ---------- */
+.day.period{background:var(--berry-soft);}
+.day.selected{box-shadow:inset 0 0 0 1.5px var(--berry);}
+
+/* ---------- 对话 ---------- */
+.bubble.me{background:linear-gradient(135deg, var(--berry-soft) 0%, var(--soft-2) 100%);}
+
+/* ---------- 底栏 ---------- */
+.tabbar{
+  background:rgba(255,255,255,.84);
+  -webkit-backdrop-filter:blur(16px) saturate(1.6);
+  backdrop-filter:blur(16px) saturate(1.6);
+  border-top:1px solid var(--line);
+  box-shadow:0 -12px 30px -18px var(--btn-shadow);
+}
+.tab.on .tab-ic{background:var(--tabon-grad);box-shadow:0 8px 16px -8px var(--btn-shadow);}
+
+/* ---------- 表单 ---------- */
+.field .control{background:linear-gradient(180deg,#FFFFFF 0%, var(--input-2) 100%);border-color:var(--card-line);}
+.field .control.readonly{background:var(--readonly);border-color:transparent;color:var(--ink-2);}
+
+/* ---------- 其他 ---------- */
+.advice .ad-ic{background:var(--soft-grad);}
+.legend .sw.period{background:var(--soft-grad);}
+.avatar{background:var(--avatar-grad);color:var(--berry-deep);}
+.photo{background:var(--photo-grad);}

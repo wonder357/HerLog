@@ -2,53 +2,67 @@
   <view v-if="visible">
     <view class="sheet-mask" @tap="cancel" />
     <view class="sheet">
-      <view class="sheet-title">记录感受 · {{ formatDayLabel(day) }}</view>
-
-      <view class="label">经量</view>
-      <view class="chips">
-        <view
-          v-for="item in flows"
-          :key="item"
-          class="chip"
-          :class="{ active: flow === item }"
-          @tap="toggleSingle(item)"
-        >
-          {{ item }}
+      <view class="grab" />
+      <view class="sheet-head">
+        <view>
+          <view class="sheet-title">记录感受</view>
+          <view class="sheet-sub">{{ formatDayLabel(day) }} · 只记录当天的身体感受</view>
         </view>
+        <view class="sheet-x" @tap="cancel">×</view>
       </view>
 
-      <view class="label">症状（可多选）</view>
-      <view class="chips">
-        <view
-          v-for="item in symptoms"
-          :key="item"
-          class="chip"
-          :class="{ active: selectedSymptoms.includes(item) }"
-          @tap="toggleSymptom(item)"
-        >
-          {{ item }}
+      <view class="sheet-body">
+        <view class="label">经量</view>
+        <view class="chips">
+          <view
+            v-for="item in flows"
+            :key="item"
+            class="chip"
+            :class="{ on: flow === item }"
+            @tap="toggleSingle(item)"
+          >
+            {{ item }}
+          </view>
         </view>
+
+        <view class="label">症状（可多选）</view>
+        <view class="chips">
+          <view
+            v-for="item in symptoms"
+            :key="item"
+            class="chip"
+            :class="{ on: selectedSymptoms.includes(item) }"
+            @tap="toggleSymptom(item)"
+          >
+            {{ item }}
+          </view>
+        </view>
+
+        <view class="label">生活影响</view>
+        <view class="chips">
+          <view
+            v-for="item in impacts"
+            :key="item"
+            class="chip"
+            :class="{ on: impact === item }"
+            @tap="toggleImpact(item)"
+          >
+            {{ item }}
+          </view>
+        </view>
+
+        <view class="label">备注</view>
+        <input v-model="note" class="control" placeholder="选填，例如当时的状态" placeholder-class="ph" />
+
+        <text v-if="error" class="error">{{ error }}</text>
       </view>
 
-      <view class="label">生活影响</view>
-      <view class="chips">
-        <view
-          v-for="item in impacts"
-          :key="item"
-          class="chip"
-          :class="{ active: impact === item }"
-          @tap="toggleImpact(item)"
-        >
-          {{ item }}
-        </view>
+      <view class="sheet-foot">
+        <button class="btn block" :disabled="saving" @tap="submit">
+          {{ saving ? '保存中…' : '保存' }}
+        </button>
+        <view class="btn ghost block cancel" @tap="cancel">取消</view>
       </view>
-
-      <input v-model="note" class="field" placeholder="备注（选填）" />
-      <text v-if="error" class="error">{{ error }}</text>
-      <button class="primary" :disabled="saving" @tap="submit">
-        {{ saving ? '保存中…' : '保存' }}
-      </button>
-      <view class="ghost cancel" @tap="cancel">取消</view>
     </view>
   </view>
 </template>
@@ -137,35 +151,22 @@ async function submit() {
 </script>
 
 <style scoped>
-.sheet-title {
-  font-size: 17px;
-  font-weight: 600;
-  margin-bottom: 12px;
-}
 .label {
-  font-size: 13px;
-  color: #8a7f7a;
-  margin: 8px 0 6px;
+  margin: 16px 0 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--ink-2);
+  letter-spacing: 0.5px;
+}
+.label:first-child {
+  margin-top: 4px;
 }
 .chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-.chip {
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid #e4d8d3;
-  font-size: 13px;
-  color: #6f635e;
-}
-.chip.active {
-  border-color: #b4544a;
-  color: #b4544a;
-  background: #fdf2ef;
+  margin-top: 8px;
 }
 .cancel {
   margin-top: 10px;
+  height: 44px;
+  font-size: 14px;
 }
 </style>

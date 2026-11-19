@@ -1,56 +1,68 @@
 <template>
-  <view class="page">
-    <view v-if="!analysis" class="card empty">
-      <view>没有可显示的分析结果。</view>
-      <view class="muted">请回到皮肤页重新选择部位拍照。</view>
-      <view class="ghost back" @tap="backToSkin">返回皮肤页</view>
+  <view class="page plain-bottom">
+    <SubHeader
+      :title="analysis ? '观察结果' : '没有结果'"
+      kicker="皮肤 / RESULT"
+      :sub="analysis ? `${analysis.site} · ${formatMoment(analysis.captured_at)}` : '请回到皮肤页重新拍照'"
+      fallback="/pages/skin/index"
+    />
+
+    <view class="main">
+      <view v-if="!analysis" class="card empty">
+        <view class="empty-title">没有可显示的分析结果</view>
+        <view class="muted">请回到皮肤页重新选择部位拍照。</view>
+        <button class="btn block" @tap="backToSkin">返回皮肤页</button>
+      </view>
+
+      <template v-else>
+        <view class="card">
+          <view class="photo-wrap">
+            <image v-if="skinDraft.previewUrl" :src="skinDraft.previewUrl" class="preview" mode="aspectFill" />
+            <view v-else class="preview placeholder">照片预览</view>
+            <view class="photo-time">{{ formatMoment(analysis.captured_at) }}</view>
+            <view class="photo-site">{{ analysis.site }}</view>
+          </view>
+
+          <view v-if="analysis.demo_sample" class="tag demo">演示样例（未接入真实推理服务）</view>
+          <view class="quality" :class="analysis.quality.level">
+            {{ analysis.quality.message }}
+          </view>
+        </view>
+
+        <view class="card">
+          <view class="obs-block">
+            <view class="k">照片中可见</view>
+            <view class="v">{{ analysis.visible }}</view>
+          </view>
+          <view class="obs-block gap">
+            <view class="k">看不清的地方</view>
+            <view class="v">{{ analysis.unclear }}</view>
+          </view>
+          <view class="obs-block gap">
+            <view class="k">下次可留意</view>
+            <view class="v">{{ analysis.attention }}</view>
+          </view>
+          <view class="note result-note">
+            AI 观察 · 模型 {{ analysis.model_id }} · 提示版本 {{ analysis.prompt_version }}。结果不构成诊断，也不提供改善百分比。
+          </view>
+        </view>
+
+        <text v-if="error" class="error">{{ error }}</text>
+        <button class="btn block" :disabled="saving" @tap="save">
+          {{ saving ? '保存中…' : '保存到历史' }}
+        </button>
+        <view class="actions">
+          <view class="btn ghost action" @tap="discard">不保存</view>
+          <view class="btn ghost action" @tap="retake">重拍</view>
+        </view>
+      </template>
     </view>
-
-    <block v-else>
-      <view class="card">
-        <image v-if="skinDraft.previewUrl" :src="skinDraft.previewUrl" class="preview" mode="aspectFill" />
-        <view class="meta">
-          <text>{{ analysis.site }}</text>
-          <text class="muted">{{ formatMoment(analysis.captured_at) }}</text>
-        </view>
-        <view v-if="analysis.demo_sample" class="demo">演示样例（未接入真实推理服务）</view>
-        <view class="quality" :class="analysis.quality.level">
-          {{ analysis.quality.message }}
-        </view>
-      </view>
-
-      <view class="card section">
-        <view class="section-title">可见外观</view>
-        <view class="section-text">{{ analysis.visible }}</view>
-      </view>
-      <view class="card section">
-        <view class="section-title">看不清之处</view>
-        <view class="section-text">{{ analysis.unclear }}</view>
-      </view>
-      <view class="card section">
-        <view class="section-title">值得留意</view>
-        <view class="section-text">{{ analysis.attention }}</view>
-      </view>
-
-      <view class="card footnote">
-        <view class="muted">AI 观察 · 模型 {{ analysis.model_id }} · 提示版本 {{ analysis.prompt_version }}</view>
-        <view class="muted">结果不构成诊断，也不提供改善百分比。</view>
-      </view>
-
-      <text v-if="error" class="error">{{ error }}</text>
-      <button class="primary" :disabled="saving" @tap="save">
-        {{ saving ? '保存中…' : '保存到历史' }}
-      </button>
-      <view class="actions">
-        <view class="ghost action" @tap="discard">不保存</view>
-        <view class="ghost action" @tap="retake">重拍</view>
-      </view>
-    </block>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import SubHeader from '../../components/SubHeader.vue'
 import { formatMoment } from '../../shared/dates'
 import { clearSkinDraft, skinDraft } from '../../utils/skinDraft'
 import { ApiRequestError } from '../../services/httpClient'
@@ -110,54 +122,68 @@ function retake() {
 </script>
 
 <style scoped>
-.page {
-  min-height: 100vh;
-  padding: 12px 16px 32px;
-  box-sizing: border-box;
+.photo-wrap {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--photo-grad);
 }
 .preview {
   width: 100%;
-  height: 220px;
-  border-radius: 14px;
-  background: #f2ece9;
+  height: 224px;
+  display: block;
 }
-.meta {
+.preview.placeholder {
   display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-  font-size: 14px;
+  align-items: center;
+  justify-content: center;
+  color: rgba(122, 78, 88, 0.6);
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+.photo-time {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  font-size: 11px;
+  line-height: 16px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  color: #7a4a55;
+  background: rgba(255, 255, 255, 0.82);
+}
+.photo-site {
+  position: absolute;
+  left: 8px;
+  bottom: 6px;
+  font-size: 11px;
+  line-height: 16px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: rgba(84, 52, 44, 0.85);
+  background: rgba(255, 255, 255, 0.74);
 }
 .demo {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #b4544a;
-  background: #fdf2ef;
-  border-radius: 8px;
-  padding: 6px 10px;
+  margin-top: 10px;
 }
 .quality {
   margin-top: 8px;
-  font-size: 13px;
   padding: 8px 10px;
   border-radius: 10px;
-  background: #f5f1ef;
-  color: #6f635e;
+  font-size: 13px;
+  line-height: 20px;
+  background: var(--soft-grad);
+  color: #7a4a55;
 }
 .quality.limited {
-  background: #fdf2ef;
-  color: #a3543f;
+  background: linear-gradient(135deg, #fbe2e6, #fff0f2);
+  color: var(--error);
 }
-.section-title {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 6px;
+.obs-block.gap {
+  margin-top: 14px;
 }
-.section-text {
-  font-size: 14px;
-  line-height: 1.7;
-}
-.footnote {
-  line-height: 1.7;
+.result-note {
+  margin-top: 14px;
 }
 .actions {
   display: flex;
@@ -166,14 +192,21 @@ function retake() {
 }
 .action {
   flex: 1;
+  height: 44px;
   font-size: 14px;
-}
-.back {
-  margin-top: 14px;
+  letter-spacing: 0;
 }
 .empty {
   text-align: center;
-  padding: 40px 16px;
-  line-height: 1.8;
+  padding: 34px 16px 24px;
+}
+.empty-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.empty .btn {
+  margin-top: 16px;
 }
 </style>

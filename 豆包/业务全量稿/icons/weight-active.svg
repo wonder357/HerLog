@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C0566B" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round" role="img" aria-labelledby="weightActiveTitle">
+  <title id="weightActiveTitle">体重（选中）</title>
+  <path d="M3.6 16.6 9.4 11.2 13.4 14.8 20.2 7.4"/>
+  <circle cx="20.2" cy="7.4" r="2.1" fill="#C0566B" stroke="none"/>
+</svg>

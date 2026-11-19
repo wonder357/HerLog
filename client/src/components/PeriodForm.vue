@@ -2,32 +2,44 @@
   <view v-if="visible">
     <view class="sheet-mask" @tap="cancel" />
     <view class="sheet">
-      <view class="sheet-title">记录经期</view>
-      <view class="muted">选中日期：{{ formatDayLabel(day) }}</view>
-      <view class="modes">
-        <view
-          class="mode"
-          :class="{ active: mode === 'start' }"
-          @tap="mode = 'start'"
-        >
-          经期开始
+      <view class="grab" />
+      <view class="sheet-head">
+        <view>
+          <view class="sheet-title">记录经期</view>
+          <view class="sheet-sub">选中日期：{{ formatDayLabel(day) }}</view>
         </view>
-        <view class="mode" :class="{ active: mode === 'end' }" @tap="mode = 'end'">
-          经期最后一天
+        <view class="sheet-x" @tap="cancel">×</view>
+      </view>
+
+      <view class="sheet-body">
+        <view class="modes">
+          <view class="mode" :class="{ on: mode === 'start' }" @tap="mode = 'start'">
+            <view class="mode-t">经期开始</view>
+            <view class="mode-s">把这一天记为一段经期的第一天</view>
+          </view>
+          <view class="mode" :class="{ on: mode === 'end' }" @tap="mode = 'end'">
+            <view class="mode-t">经期最后一天</view>
+            <view class="mode-s">给进行中的经期补记结束日</view>
+          </view>
         </view>
+
+        <view v-if="mode === 'end'" class="hintbox">
+          {{
+            openPeriod
+              ? `将 ${formatDayLabel(day)} 记为 ${formatDayLabel(openPeriod.startDay)} 这段经期的最后一天`
+              : '这一天之前没有未记录结束的经期，请先补记开始日'
+          }}
+        </view>
+
+        <text v-if="error" class="error">{{ error }}</text>
       </view>
-      <view v-if="mode === 'end'" class="muted hint">
-        {{
-          openPeriod
-            ? `将 ${formatDayLabel(day)} 记为 ${formatDayLabel(openPeriod.startDay)} 这段经期的最后一天`
-            : '这一天之前没有未记录结束的经期，请先补记开始日'
-        }}
+
+      <view class="sheet-foot">
+        <button class="btn block" :disabled="saving" @tap="submit">
+          {{ saving ? '保存中…' : '保存' }}
+        </button>
+        <view class="btn ghost block cancel" @tap="cancel">取消</view>
       </view>
-      <text v-if="error" class="error">{{ error }}</text>
-      <button class="primary" :disabled="saving" @tap="submit">
-        {{ saving ? '保存中…' : '保存' }}
-      </button>
-      <view class="ghost cancel" @tap="cancel">取消</view>
     </view>
   </view>
 </template>
@@ -105,35 +117,42 @@ async function submit() {
 </script>
 
 <style scoped>
-.sheet-title {
-  font-size: 17px;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
 .modes {
   display: flex;
   gap: 10px;
-  margin: 12px 0;
+  margin-top: 4px;
 }
 .mode {
   flex: 1;
-  height: 42px;
-  line-height: 40px;
-  text-align: center;
+  padding: 12px 10px;
   border-radius: 12px;
-  border: 1px solid #e4d8d3;
-  color: #6f635e;
+  border: 1px solid var(--card-line);
+  background: linear-gradient(180deg, #ffffff 0%, var(--chip-2) 100%);
+  box-sizing: border-box;
+}
+.mode.on {
+  background: var(--soft-grad);
+  border-color: transparent;
+  box-shadow: 0 8px 18px -14px var(--btn-shadow);
+}
+.mode-t {
   font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--ink);
 }
-.mode.active {
-  border-color: #b4544a;
-  color: #b4544a;
-  background: #fdf2ef;
+.mode.on .mode-t {
+  color: var(--berry-deep);
 }
-.hint {
-  margin-bottom: 10px;
+.mode-s {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--ink-2);
 }
 .cancel {
   margin-top: 10px;
+  height: 44px;
+  font-size: 14px;
 }
 </style>

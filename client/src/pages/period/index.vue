@@ -1,93 +1,143 @@
 <template>
   <view class="page">
-    <view class="card status-card">
-      <view class="status-title">{{ overview?.status.message || '加载中…' }}</view>
-      <view v-if="predictionHint" class="muted">{{ predictionHint }}</view>
+    <view class="hero">
+      <view class="h-title">经期</view>
+      <view class="h-status">
+        <text class="status-main grad-text">{{ overview?.status.message || '经期记录' }}</text>
+        <view v-if="overview?.status.start_day" class="tag outline">
+          {{ formatDayLabel(overview.status.start_day) }} 开始
+        </view>
+      </view>
+      <view class="h-sub">
+        <text>{{ predictionLine }}</text>
+        <text v-if="showHowItWorks" class="link inline" @tap="explainPrediction">怎么算的 ›</text>
+      </view>
       <view v-if="overview?.prediction.status === 'overdue'" class="link" @tap="openPeriodForm">
         补记经期开始 ›
       </view>
     </view>
 
-    <view class="card">
-      <view class="month-row">
-        <view class="month-nav" @tap="shift(-1)">‹</view>
-        <view class="month-label">{{ formatMonthLabel(month) }}</view>
-        <view class="month-nav" @tap="shift(1)">›</view>
-      </view>
-      <view class="weekdays">
-        <text v-for="name in weekdays" :key="name" class="weekday">{{ name }}</text>
-      </view>
-      <view class="grid">
-        <view v-for="blank in grid.leading" :key="`b-${blank}`" class="cell" />
-        <view
-          v-for="day in grid.days"
-          :key="day"
-          class="cell"
-          :class="cellClass(day)"
-          @tap="selected = day"
-        >
-          <text class="day-number">{{ Number(day.slice(-2)) }}</text>
-          <text v-if="feelingDays.has(day)" class="dot" />
+    <view class="main">
+      <view class="card">
+        <view class="monthbar">
+          <view class="month-nav" @tap="shift(-1)">‹</view>
+          <view class="month-label">{{ formatMonthLabel(month) }}</view>
+          <view class="month-nav" @tap="shift(1)">›</view>
         </view>
-      </view>
-      <view class="legend">
-        <view class="legend-item"><text class="swatch actual" />实际经期</view>
-        <view class="legend-item"><text class="swatch feeling" />有感受</view>
-        <view class="legend-item"><text class="swatch predicted" />预计开始</view>
-      </view>
-    </view>
 
-    <view class="card">
-      <view class="section-title">{{ formatDayLabel(selected) }}</view>
-      <view v-if="selectedPeriod" class="record">
-        <view class="record-main">
-          {{ formatDayLabel(selectedPeriod.start_day) }} 开始
-          <text v-if="selectedPeriod.end_day">
-            · {{ formatDayLabel(selectedPeriod.end_day) }} 结束
-          </text>
-          <text v-else>· 未记录结束</text>
+        <view class="weekdays">
+          <text v-for="name in weekdays" :key="name" class="weekday">{{ name }}</text>
         </view>
-        <view class="record-actions">
-          <text class="danger" @tap="removePeriod(selectedPeriod)">删除</text>
-        </view>
-      </view>
-      <view v-if="selectedFeeling" class="record">
-        <view class="record-main">
-          <text v-if="selectedFeeling.flow">经量：{{ selectedFeeling.flow }}　</text>
-          <text v-if="selectedFeeling.symptoms.length">症状：{{ selectedFeeling.symptoms.join('、') }}　</text>
-          <text v-if="selectedFeeling.impact">影响：{{ selectedFeeling.impact }}</text>
-          <view v-if="selectedFeeling.note" class="muted">{{ selectedFeeling.note }}</view>
-        </view>
-        <view class="record-actions">
-          <text class="danger" @tap="removeFeeling(selected)">删除</text>
-        </view>
-      </view>
-      <view v-if="!selectedPeriod && !selectedFeeling" class="muted">这一天还没有记录。</view>
-      <view class="day-actions">
-        <view class="ghost action" @tap="openPeriodForm">记录经期</view>
-        <view class="ghost action" @tap="openFeelingForm">记录感受</view>
-      </view>
-    </view>
 
-    <view class="card">
-      <view class="section-title">历史周期</view>
-      <view v-if="items.length === 0" class="muted">还没有经期记录。</view>
-      <view v-for="item in items" :key="item.id" class="history-row" @tap="selected = item.start_day">
-        <view>
-          <view>{{ formatDayLabel(item.start_day) }} 开始</view>
-          <view class="muted">
-            {{ item.duration_days ? `持续 ${item.duration_days} 天` : '未记录结束' }}
-            <text v-if="item.cycle_days"> · 距上次 {{ item.cycle_days }} 天</text>
+        <view class="grid">
+          <view v-for="blank in grid.leading" :key="`b-${blank}`" class="cell" />
+          <view
+            v-for="day in grid.days"
+            :key="day"
+            class="cell"
+            :class="cellClass(day)"
+            @tap="selected = day"
+          >
+            <text class="day-number">{{ Number(day.slice(-2)) }}</text>
+            <text v-if="day === today" class="day-sub">今天</text>
+            <text v-if="feelingDays.has(day)" class="dot" />
           </view>
         </view>
-        <text class="danger" @tap.stop="removePeriod(item)">删除</text>
-      </view>
-    </view>
 
-    <view v-if="openPeriod" class="card">
-      <view class="section-title">进行中的记录</view>
-      <view class="muted">
-        {{ formatDayLabel(openPeriod.start_day) }} 开始，还没有结束日。选中最后一天后点「记录经期」即可补记。
+        <view class="legend">
+          <view class="legend-item"><text class="sw sw-period" />实际经期</view>
+          <view class="legend-item"><text class="sw sw-expected" />预计开始</view>
+          <view class="legend-item"><text class="sw sw-feel" />有感受记录</view>
+        </view>
+      </view>
+
+      <view class="card">
+        <view class="record-head">
+          <view>
+            <view class="record-date">{{ formatDayLabel(selected) }} · 星期{{ weekdayOf(selected) }}</view>
+            <view v-if="selectedSummary" class="record-sub">{{ selectedSummary }}</view>
+          </view>
+          <view v-if="selectedPeriod || selectedFeeling" class="tag">已记录</view>
+        </view>
+
+        <view v-if="selectedPeriod" class="record-row">
+          <view class="record-main">
+            {{ formatDayLabel(selectedPeriod.start_day) }} 开始
+            <text v-if="selectedPeriod.end_day"> · {{ formatDayLabel(selectedPeriod.end_day) }} 结束</text>
+            <text v-else> · 未记录结束</text>
+          </view>
+          <text class="danger-link" @tap="removePeriod(selectedPeriod)">删除这段</text>
+        </view>
+
+        <view v-if="selectedFeeling" class="record-row">
+          <view class="record-main">
+            <view v-if="selectedFeeling.flow" class="record-tags">
+              <text class="chip on">经量 {{ selectedFeeling.flow }}</text>
+              <text
+                v-for="symptom in selectedFeeling.symptoms"
+                :key="symptom"
+                class="chip on"
+              >
+                {{ symptom }}
+              </text>
+              <text v-if="selectedFeeling.impact" class="chip on">{{ selectedFeeling.impact }}</text>
+            </view>
+            <view v-if="selectedFeeling.note" class="meta">{{ selectedFeeling.note }}</view>
+          </view>
+          <text class="danger-link" @tap="removeFeeling(selected)">删除感受</text>
+        </view>
+
+        <view v-if="!selectedPeriod && !selectedFeeling" class="muted empty-line">
+          这一天还没有记录，可以先记经期，或者只记录当时的感受。
+        </view>
+
+        <view class="record-actions">
+          <view class="btn soft action" @tap="openPeriodForm">记录经期</view>
+          <view class="btn ghost action" @tap="openFeelingForm">记录感受</view>
+        </view>
+
+        <view class="note record-note">
+          感受与经期日期分开保存，单独记录感受不会新建一段经期。
+        </view>
+      </view>
+
+      <view class="section">
+        <view class="section-head">
+          <view class="h2">历史回顾</view>
+          <view class="link" @tap="selected = items[0]?.start_day || selected">
+            共 {{ items.length }} 段 ›
+          </view>
+        </view>
+
+        <view class="card">
+          <view v-if="items.length === 0" class="muted">还没有经期记录。</view>
+          <view
+            v-for="item in items"
+            :key="item.id"
+            class="cycle"
+            @tap="selected = item.start_day"
+          >
+            <view class="cycle-date">
+              <view class="dd">{{ formatDayLabel(item.start_day) }}</view>
+              <view class="dm">{{ item.end_day ? `${formatDayLabel(item.end_day)} 结束` : '未记录结束' }}</view>
+            </view>
+            <view class="cycle-right">
+              <view class="cr-main">
+                {{ item.duration_days ? `持续 ${item.duration_days} 天${item.end_day ? '' : '（至今）'}` : '未记录结束' }}
+              </view>
+              <view class="cr-sub">
+                {{ item.cycle_days ? `距上次开始 ${item.cycle_days} 天` : '首次记录' }}
+              </view>
+            </view>
+          </view>
+        </view>
+        <view class="note footnote">
+          预计日期根据历史记录估算，实际日期可能不同，不作为避孕依据。
+        </view>
+      </view>
+
+      <view v-if="openPeriod" class="hintbox">
+        进行中的记录：{{ formatDayLabel(openPeriod.start_day) }} 开始，还没有结束日。选中最后一天后点「记录经期」即可补记。
       </view>
     </view>
 
@@ -134,6 +184,7 @@ import {
 import type { FeelingItem, PeriodItem, PeriodOverview } from '../../services/types'
 
 const weekdays = ['一', '二', '三', '四', '五', '六', '日']
+const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
 
 const today = todayString()
 const month = ref(startOfMonth(today))
@@ -170,19 +221,19 @@ const predictedDay = computed(() => {
   return prediction.expected_start
 })
 
-const predictionHint = computed(() => {
+const predictionLine = computed(() => {
   const prediction = overview.value?.prediction
   if (!prediction) {
-    return ''
+    return '记下开始和结束，就能估算下次时间。'
   }
-  if (prediction.status === 'overdue') {
-    return `${prediction.message}。预计日期不会自动顺延。`
+  if (prediction.status === 'upcoming' && prediction.expected_start) {
+    const sample = prediction.starts_used || prediction.cycle_count
+    return `预计下次开始：${formatDayLabel(prediction.expected_start)} · 按近 ${sample} 次记录估算`
   }
-  if (prediction.status === 'insufficient' || prediction.status === 'irregular') {
-    return prediction.message
-  }
-  return `${prediction.message}（按约 ${prediction.estimate_days} 天周期估算，实际日期可能不同，不作为避孕依据）`
+  return prediction.message
 })
+
+const showHowItWorks = computed(() => overview.value?.prediction.status === 'upcoming')
 
 const selectedPeriod = computed<PeriodItem | null>(() => {
   const day = selected.value
@@ -199,6 +250,31 @@ const selectedFeeling = computed<FeelingItem | null>(
   () => feelings.value.find((item) => item.day === selected.value) ?? null
 )
 
+// 当天的一句话摘要：只写已记录了什么，不做健康判断。
+const selectedSummary = computed(() => {
+  const parts: string[] = []
+  if (selectedPeriod.value) {
+    const index = selectedPeriod.value.start_day
+    const span = Math.round(
+      (new Date(`${selected.value}T00:00:00Z`).getTime() -
+        new Date(`${index}T00:00:00Z`).getTime()) /
+        86400000
+    )
+    parts.push(`经期第 ${span + 1} 天`)
+  }
+  if (selectedFeeling.value) {
+    const names: string[] = []
+    if (selectedFeeling.value.flow) {
+      names.push('经量')
+    }
+    if (selectedFeeling.value.symptoms.length) {
+      names.push(...selectedFeeling.value.symptoms.slice(0, 2))
+    }
+    parts.push(`已记录${names.join('、')}`)
+  }
+  return parts.join(' · ')
+})
+
 const openPeriod = computed<PeriodItem | null>(() => {
   const candidate = items.value.find((item) => item.end_day === null && item.start_day <= selected.value)
   return candidate ?? null
@@ -211,8 +287,14 @@ function cellClass(day: string): Record<string, boolean> {
     today: day === today,
     actual: Boolean(mark),
     start: mark === 'start',
-    'predicted-day': day === predictedDay.value
+    end: mark === 'end',
+    predicted: day === predictedDay.value
   }
+}
+
+function weekdayOf(day: string): string {
+  const [year, monthValue, date] = day.split('-').map(Number)
+  return WEEKDAYS[new Date(Date.UTC(year, monthValue - 1, date)).getUTCDay()]
 }
 
 function shift(delta: number) {
@@ -226,6 +308,18 @@ function openPeriodForm() {
 
 function openFeelingForm() {
   feelingFormVisible.value = true
+}
+
+function explainPrediction() {
+  const prediction = overview.value?.prediction
+  const sample = prediction?.starts_used || prediction?.cycle_count || 0
+  const estimate = prediction?.estimate_days
+  uni.showModal({
+    title: '预计日期怎么算',
+    content: `取最近 ${sample} 次经期开始的间隔${estimate ? `，平均约 ${estimate} 天` : ''}，从最近一次开始日往后推算。样本不足或间隔波动大时，只提示不可估算。估算仅作参考，实际日期可能不同，不作为避孕依据。`,
+    showCancel: false,
+    confirmText: '知道了'
+  })
 }
 
 async function loadFeelings() {
@@ -311,167 +405,261 @@ onShow(load)
 </script>
 
 <style scoped>
-.page {
-  min-height: 100vh;
-  padding: 12px 16px 76px;
-  box-sizing: border-box;
-}
-.status-card {
-  background: #fdf2ef;
-}
-.status-title {
-  font-size: 17px;
+.status-main {
+  font-size: 18px;
+  line-height: 26px;
   font-weight: 600;
-  margin-bottom: 4px;
 }
-.link {
-  margin-top: 8px;
-  color: #b4544a;
-  font-size: 13px;
+.link.inline {
+  margin-left: 6px;
 }
-.month-row {
+.monthbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  padding: 0 4px;
+  margin-bottom: 6px;
 }
 .month-nav {
-  width: 32px;
-  text-align: center;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 20px;
-  color: #8a7f7a;
+  color: var(--ink-2);
 }
 .month-label {
   font-size: 15px;
   font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--ink);
 }
 .weekdays {
   display: flex;
-  margin-bottom: 4px;
+  margin: 6px 0 2px;
 }
 .weekday {
   flex: 1;
   text-align: center;
-  font-size: 11px;
-  color: #a89d98;
+  font-size: 12px;
+  color: var(--ink-2);
+  padding: 6px 0;
 }
 .grid {
   display: flex;
   flex-wrap: wrap;
+  row-gap: 4px;
 }
 .cell {
+  position: relative;
   width: 14.28%;
-  height: 44px;
+  height: 46px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  position: relative;
-  font-size: 13px;
+  gap: 2px;
+  border-radius: 8px;
+  box-sizing: border-box;
 }
 .day-number {
-  line-height: 1;
+  font-size: 15px;
+  line-height: 19px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.day-sub {
+  font-size: 9px;
+  line-height: 11px;
+  color: var(--berry-deep);
 }
 .cell.actual {
-  background: #f6ded9;
-  border-radius: 10px;
-  color: #8c3f37;
+  background: var(--berry-soft);
+  border-radius: 0;
+}
+.cell.actual .day-number {
+  color: var(--berry-deep);
 }
 .cell.start {
-  background: #b4544a;
-  color: #ffffff;
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
 }
-.cell.predicted-day .day-number {
-  border: 1px dashed #b4544a;
-  border-radius: 8px;
-  padding: 2px 5px;
-  color: #b4544a;
+.cell.end {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+.cell.predicted {
+  border: 1.5px dashed var(--berry);
+  background: transparent;
 }
 .cell.selected {
-  outline: 2px solid #b4544a;
-  outline-offset: -2px;
-  border-radius: 10px;
+  box-shadow: inset 0 0 0 1.5px var(--berry);
+  border-radius: 8px;
 }
 .cell.today .day-number {
-  font-weight: 700;
+  font-weight: 600;
 }
 .dot {
   position: absolute;
   bottom: 5px;
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
-  background: #8a7f7a;
+  background: var(--berry-pink);
+}
+.cell.actual .dot {
+  background: var(--berry);
 }
 .legend {
   display: flex;
-  gap: 12px;
-  margin-top: 10px;
-  font-size: 11px;
-  color: #8a7f7a;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 12px;
 }
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-2);
 }
-.swatch {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
+.sw {
   display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
 }
-.swatch.actual {
-  background: #f6ded9;
+.sw-period {
+  background: var(--berry-soft);
 }
-.swatch.feeling {
-  width: 5px;
-  height: 5px;
+.sw-expected {
+  border: 1.5px dashed var(--berry);
+}
+.sw-feel {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: #8a7f7a;
+  background: var(--berry-pink);
+  margin: 0 4px;
 }
-.swatch.predicted {
-  border: 1px dashed #b4544a;
+.record-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
 }
-.section-title {
+.record-date {
   font-size: 15px;
   font-weight: 600;
-  margin-bottom: 8px;
+  color: var(--ink);
 }
-.record {
+.record-sub {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-2);
+}
+.record-row {
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
-  padding: 10px 0;
-  border-bottom: 1px solid #f4ebe7;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--card-line);
 }
 .record-main {
+  flex: 1;
+  min-width: 0;
   font-size: 14px;
-  line-height: 1.6;
+  line-height: 22px;
+  color: var(--ink);
+}
+.record-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.record-tags .chip {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+.danger-link {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--error);
+  padding-top: 2px;
+}
+.empty-line {
+  margin-top: 12px;
 }
 .record-actions {
   display: flex;
-  gap: 12px;
-}
-.danger {
-  color: #c0392b;
-  font-size: 13px;
-}
-.day-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 8px;
+  margin-top: 16px;
 }
 .action {
   flex: 1;
+  height: 44px;
   font-size: 14px;
+  letter-spacing: 0;
 }
-.history-row {
+.record-note {
+  margin-top: 12px;
+}
+.section {
+  margin-top: 24px;
+}
+.cycle {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid #f4ebe7;
-  font-size: 14px;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--card-line);
+}
+.cycle:first-child {
+  padding-top: 2px;
+}
+.cycle:last-child {
+  padding-bottom: 2px;
+  border-bottom: 0;
+}
+.cycle-date {
+  width: 88px;
+  flex: 0 0 auto;
+}
+.dd {
+  font-size: 19px;
+  line-height: 24px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.dm {
+  margin-top: 2px;
+  font-size: 10.5px;
+  line-height: 16px;
+  color: var(--ink-2);
+}
+.cycle-right {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+}
+.cr-main {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-2);
+}
+.cr-sub {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--ink-2);
+}
+.footnote {
+  margin-top: 10px;
 }
 </style>

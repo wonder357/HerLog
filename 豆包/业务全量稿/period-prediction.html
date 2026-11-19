@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>她记 · 预测说明</title>
+<link rel="stylesheet" href="../前端样式/styles.css">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="business.css">
+<script>if(self!==top){document.documentElement.className+=' embed';}</script>
+</head>
+<body class="subpage ">
+<div class="screen">
+  <header class="hero sub-hero">
+    <div class="sub-bar">
+      <a class="back" href="period.html" aria-label="返回"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 4 5.6 9l5 5"/></svg></a>
+      <span class="sub-kicker">经期 / PREDICTION</span>
+    </div>
+    <h1 class="sub-title">预测说明</h1>
+    <div class="sub-sub">预计下次开始 12 月 12 日 · 按近 3 次记录估算</div>
+  </header>
+  <main class="main sub-main">
+
+    <section class="section" style="margin-top:8px">
+      <div class="card">
+        <div class="meta">预计下次开始</div>
+        <div class="pred">12 月 12 日</div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <span class="tag">按最近 3 次记录估算</span>
+          <span class="tag plain">估算周期 25 天</span>
+        </div>
+        <div class="note" style="margin-top:10px">
+          根据历史记录估算，实际日期可能不同，不作为避孕依据。
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><h2 class="h2">怎么算的</h2><span class="meta">最近 3 次开始</span></div>
+      <div class="card">
+        <div class="drow"><span class="lab">9 月 29 日 → 10 月 23 日</span><span class="val">24 天</span></div>
+        <div class="drow"><span class="lab">10 月 23 日 → 11 月 17 日</span><span class="val">25 天</span></div>
+        <div class="drow"><span class="lab">两个周期取平均（24.5）</span><span class="val">25 天</span></div>
+        <div class="drow"><span class="lab">11 月 17 日 + 25 天</span><span class="val">12 月 12 日</span></div>
+      </div>
+      <div class="note" style="margin-top:10px">
+        当前只有 2 个完整周期，按平均值四舍五入；若有 3 个周期，则取中间值。
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><h2 class="h2">预测规则</h2></div>
+      <div class="card">
+        <div class="rule"><span class="n">1</span><div><b>至少 3 次开始记录</b>才显示预计日期；不足时不猜。</div></div>
+        <div class="rule"><span class="n">2</span><div>取最近最多 <b>4 次</b>开始记录，计算 2–3 个周期。</div></div>
+        <div class="rule"><span class="n">3</span><div>最长与最短周期相差 <b>超过 7 天</b>时不显示预测。</div></div>
+        <div class="rule"><span class="n">4</span><div>只有<b>开始日期变化</b>才重新计算；补记结束日不影响预测。</div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><h2 class="h2">其他状态</h2></div>
+      <div class="card">
+        <div class="lrow"><div><div class="t">记录不足</div><div class="s">开始记录少于 3 次</div></div><span class="tag plain">不显示日期</span></div>
+        <div class="lrow"><div><div class="t">波动过大</div><div class="s">最长与最短相差超过 7 天</div></div><span class="tag plain">不显示日期</span></div>
+        <div class="lrow"><div><div class="t">已过预计日</div><div class="s">今天已超过预计开始日</div></div><span class="tag">提示已过</span></div>
+      </div>
+      <div class="note" style="margin-top:10px">预计日不会被视作实际经期，日历上只画虚线描边。</div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>

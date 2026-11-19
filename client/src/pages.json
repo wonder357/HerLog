@@ -31,17 +31,22 @@
     {
       "path": "pages/skin/history",
       "style": { "navigationBarTitleText": "皮肤历史" }
+    },
+    {
+      "path": "pages/skin/result",
+      "style": { "navigationBarTitleText": "观察结果" }
     }
   ],
   "globalStyle": {
+    "navigationStyle": "custom",
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "她记",
-    "navigationBarBackgroundColor": "#FDF8F6",
-    "backgroundColor": "#FDF8F6"
+    "navigationBarBackgroundColor": "#FFE7D2",
+    "backgroundColor": "#FDF6F1"
   },
   "tabBar": {
-    "color": "#8A7F7A",
-    "selectedColor": "#B4544A",
+    "color": "#9C8285",
+    "selectedColor": "#C0566B",
     "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [

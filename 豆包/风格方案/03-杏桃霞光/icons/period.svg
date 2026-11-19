@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C8376" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" role="img" aria-labelledby="periodTitle">
+  <title id="periodTitle">经期</title>
+  <rect x="3.3" y="5.6" width="17.4" height="15.1" rx="3"/>
+  <path d="M3.3 10.4h17.4"/>
+  <path d="M8.3 3.3v3.6M15.7 3.3v3.6"/>
+  <path fill="#9C8376" stroke="none" d="M12 11.9C13.55 14.2 14.5 15.5 14.5 16.6A2.5 2.5 0 0 1 9.5 16.6C9.5 15.5 10.45 14.2 12 11.9Z"/>
+</svg>

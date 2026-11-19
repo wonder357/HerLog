@@ -1,50 +1,90 @@
 <template>
-  <view class="page">
-    <view class="card filters">
-      <picker mode="date" :value="from" :end="to" @change="onFromChange">
-        <view class="filter-field">起始：{{ from || '不限' }}</view>
-      </picker>
-      <picker mode="date" :value="to" :end="today" @change="onToChange">
-        <view class="filter-field">结束：{{ to || '不限' }}</view>
-      </picker>
-      <input v-model="tag" class="filter-field" placeholder="标签筛选（选填）" @confirm="load" />
-      <view class="filter-actions">
-        <view class="ghost small" @tap="resetFilters">重置</view>
-        <view class="primary small" @tap="load">筛选</view>
+  <view class="page plain-bottom">
+    <SubHeader
+      title="记录明细"
+      kicker="体重 / DETAIL"
+      :sub="`共 ${total} 笔 · 同日多笔全部保留`"
+      fallback="/pages/weight/index"
+    />
+
+    <view class="main">
+      <view class="card filters">
+        <view class="filter-row">
+          <view class="filter-cell">
+            <picker mode="date" :value="from" :end="to" @change="onFromChange">
+              <view class="control filter-control">起始 {{ from || '不限' }}</view>
+            </picker>
+          </view>
+          <view class="filter-cell">
+            <picker mode="date" :value="to" :end="today" @change="onToChange">
+              <view class="control filter-control">结束 {{ to || '不限' }}</view>
+            </picker>
+          </view>
+        </view>
+        <input v-model="tag" class="control filter-control tag-input" placeholder="标签筛选（选填）" placeholder-class="ph" @confirm="load" />
+        <view class="filter-actions">
+          <view class="btn ghost sm filter-btn" @tap="resetFilters">重置</view>
+          <view class="btn sm filter-btn" @tap="load">筛选</view>
+        </view>
+      </view>
+
+      <view class="card list">
+        <view v-if="items.length === 0" class="empty">还没有符合条件的记录。</view>
+        <view v-for="item in items" :key="item.id" class="row" @tap="startEdit(item)">
+          <view class="row-main">
+            <view class="row-value">{{ item.kg }}<text class="row-unit"> kg</text></view>
+            <view class="row-meta">
+              {{ formatMoment(item.measured_at) }}<text v-if="item.tag"> · {{ item.tag }}</text>
+            </view>
+            <view v-if="item.note" class="row-meta">{{ item.note }}</view>
+          </view>
+          <view class="row-actions">
+            <text class="act">编辑</text>
+            <text class="act danger" @tap.stop="remove(item)">删除</text>
+          </view>
+        </view>
+      </view>
+
+      <view v-if="total > items.length" class="more" @tap="loadMore">
+        加载更多（{{ items.length }}/{{ total }}）
+      </view>
+
+      <view class="note list-note">只展示已加载的 {{ items.length }} 笔，共 {{ total }} 笔。</view>
+
+      <view class="hintbox">
+        编辑会改动这一笔的数值、时间与标签；删除只移除当前一笔。趋势与统计按「每天最后一次测量」重新计算。
       </view>
     </view>
 
-    <view v-if="items.length === 0" class="card empty">还没有符合条件的记录。</view>
-
-    <view v-for="item in items" :key="item.id" class="card record" @tap="startEdit(item)">
-      <view class="record-main">
-        <view class="record-value">{{ item.kg }} <text class="unit">kg</text></view>
-        <view class="muted">{{ formatMoment(item.measured_at) }}<text v-if="item.tag"> · {{ item.tag }}</text></view>
-        <view v-if="item.note" class="muted">{{ item.note }}</view>
+    <view v-if="editVisible" class="sheet-mask" @tap="editVisible = false" />
+    <view v-if="editVisible" class="sheet">
+      <view class="grab" />
+      <view class="sheet-head">
+        <view>
+          <view class="sheet-title">修改这笔体重</view>
+          <view class="sheet-sub">{{ editing ? formatMoment(editing.measured_at) : '' }}</view>
+        </view>
+        <view class="sheet-x" @tap="editVisible = false">×</view>
       </view>
-      <text class="danger" @tap.stop="remove(item)">删除</text>
-    </view>
 
-    <view v-if="total > items.length" class="more" @tap="loadMore">加载更多（{{ items.length }}/{{ total }}）</view>
-
-    <view v-if="editVisible">
-      <view class="sheet-mask" @tap="editVisible = false" />
-      <view class="sheet">
-        <view class="sheet-title">修改这笔体重</view>
-        <input v-model="editKg" class="field" type="digit" placeholder="体重 kg" />
+      <view class="sheet-body">
+        <input v-model="editKg" class="control" type="digit" placeholder="体重 kg" placeholder-class="ph" />
         <picker mode="date" :value="editDay" :end="today" @change="onEditDay">
-          <view class="field">日期：{{ editDay }}</view>
+          <view class="control picker-line">日期 {{ editDay }}</view>
         </picker>
         <picker mode="time" :value="editTime" @change="onEditTime">
-          <view class="field">时间：{{ editTime }}</view>
+          <view class="control picker-line">时间 {{ editTime }}</view>
         </picker>
-        <input v-model="editTag" class="field" placeholder="标签（选填）" />
-        <input v-model="editNote" class="field" placeholder="备注（选填）" />
+        <input v-model="editTag" class="control" placeholder="标签（选填，如晨起）" placeholder-class="ph" />
+        <input v-model="editNote" class="control" placeholder="备注（选填）" placeholder-class="ph" />
         <text v-if="editError" class="error">{{ editError }}</text>
-        <button class="primary" :disabled="saving" @tap="saveEdit">
+      </view>
+
+      <view class="sheet-foot">
+        <button class="btn block" :disabled="saving" @tap="saveEdit">
           {{ saving ? '保存中…' : '保存修改' }}
         </button>
-        <view class="ghost cancel" @tap="editVisible = false">取消</view>
+        <view class="btn ghost block cancel" @tap="editVisible = false">取消</view>
       </view>
     </view>
   </view>
@@ -53,6 +93,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import SubHeader from '../../components/SubHeader.vue'
 import { formatMoment, shanghaiDayKey, toZonedIso, todayString } from '../../shared/dates'
 import { parseKgToGrams } from '../../shared/weight'
 import { ApiRequestError, StaleSessionError } from '../../services/httpClient'
@@ -202,69 +243,114 @@ onShow(() => {
 </script>
 
 <style scoped>
-.page {
-  min-height: 100vh;
-  padding: 12px 16px 24px;
-  box-sizing: border-box;
-}
 .filters {
-  padding: 12px;
+  margin-top: 4px;
+  padding: 14px 16px 16px;
 }
-.filter-field {
-  border: 1px solid #e4d8d3;
-  border-radius: 10px;
-  height: 38px;
-  line-height: 38px;
-  padding: 0 10px;
-  margin-bottom: 8px;
-  font-size: 13px;
-  color: #4b413d;
-}
-.filter-actions {
+.filter-row {
   display: flex;
   gap: 10px;
 }
-.small {
+.filter-cell {
   flex: 1;
-  height: 36px;
-  line-height: 36px;
+  min-width: 0;
+}
+.filter-control {
+  height: 40px;
+  font-size: 13px;
+  color: var(--ink);
+  border-radius: 10px;
+}
+.tag-input {
+  margin-top: 10px;
+}
+.filter-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.filter-btn {
+  flex: 1;
+  height: 38px;
   font-size: 13px;
 }
-.record {
+.list {
+  padding: 4px 16px 6px;
+}
+.row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--card-line);
 }
-.record-value {
-  font-size: 20px;
+.row:last-child {
+  border-bottom: 0;
+  padding-bottom: 6px;
+}
+.row-main {
+  flex: 1;
+  min-width: 0;
+}
+.row-value {
+  font-size: 19px;
+  line-height: 25px;
   font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
-.unit {
+.row-unit {
   font-size: 13px;
   font-weight: 400;
+  color: var(--ink-2);
 }
-.danger {
-  color: #c0392b;
+.row-meta {
+  margin-top: 2px;
   font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-2);
+}
+.row-actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 12px;
+}
+.act {
+  font-size: 13px;
+  color: var(--berry);
+}
+.act.danger {
+  color: var(--ink-2);
 }
 .empty {
+  padding: 26px 0;
   text-align: center;
-  color: #a89d98;
+  color: var(--ink-2);
   font-size: 13px;
-  padding: 28px 0;
 }
 .more {
   text-align: center;
-  color: #b4544a;
+  color: var(--berry);
   font-size: 13px;
   padding: 10px 0;
 }
-.sheet-title {
-  font-size: 17px;
-  font-weight: 600;
-  margin-bottom: 14px;
+.list-note {
+  margin-top: 10px;
+}
+.picker-line {
+  margin-top: 10px;
+  font-size: 14px;
+}
+.control {
+  margin-top: 10px;
+}
+.sheet-body .control:first-child {
+  margin-top: 4px;
 }
 .cancel {
   margin-top: 10px;
+  height: 44px;
+  font-size: 14px;
 }
 </style>

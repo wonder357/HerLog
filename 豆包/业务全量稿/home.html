@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>她记 · 首页</title>
+<link rel="stylesheet" href="../前端样式/styles.css">
+<link rel="stylesheet" href="theme.css">
+<script>if(self!==top){document.documentElement.className+=' embed';}</script><link rel="stylesheet" href="assets.css">
+<link rel="stylesheet" href="business.css">
+</head>
+<body class="p-home">
+<div class="screen">
+
+  <header class="hero"><div class="hero-art"></div>
+    <div class="hero-date">2026 年 11 月 19 日 · 星期四</div>
+    <h1>今天</h1>
+    <div class="hero-sub">经期第 3 天 · 最近体重 58.2 kg</div>
+
+    <div class="quick">
+      <a class="qlink" href="period-record.html"><div class="quick-item">
+        <img class="qi-ic" src="icons/period-berry.svg" alt="">
+        <span class="qi-label">记经期</span>
+      </div></a>
+      <a class="qlink" href="weight-record.html"><div class="quick-item">
+        <img class="qi-ic" src="icons/weight-berry.svg" alt="">
+        <span class="qi-label">记体重</span>
+      </div></a>
+      <a class="qlink" href="skin-capture.html"><div class="quick-item">
+        <img class="qi-ic" src="icons/skin-berry.svg" alt="">
+        <span class="qi-label">拍照分析</span>
+      </div></a>
+    </div>
+  </header>
+
+  <div class="chat">
+    <div class="msg">
+      <div style="max-width:306px">
+        <div class="bubble ai">
+          我是她记。可以问我最近体重有什么变化、上次经期什么时候开始，回答只使用你已保存的记录。
+        </div>
+        <div class="example">
+          <span class="chip">最近体重有什么变化？</span>
+          <span class="chip">上次经期什么时候开始？</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="msg user">
+      <div class="bubble me">最近体重有什么变化？</div>
+    </div>
+
+    <div class="msg">
+      <div class="bubble ai">
+        近 30 天共记录了 8 次，从 58.6 kg 到 58.2 kg，首尾变化 <strong>−0.4 kg</strong>。
+        <div class="bubble-meta">10 月 21 日–11 月 19 日 · 每天取最后一次测量</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="composer">
+    <div class="box">问问她记：这周体重有什么变化？</div>
+    <button class="send" aria-label="发送">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 14.5V4"/><path d="M4.6 8.2 9 3.8l4.4 4.4"/>
+      </svg>
+    </button>
+  </div>
+
+  <nav class="tabbar">
+    <a class="tab on" href="home.html">
+      <span class="tab-ic"><img src="icons/home-active.svg" alt=""></span>
+      <span class="tab-label">首页</span>
+    </a>
+    <a class="tab" href="period.html">
+      <span class="tab-ic"><img src="icons/period.svg" alt=""></span>
+      <span class="tab-label">经期</span>
+    </a>
+    <a class="tab" href="weight.html">
+      <span class="tab-ic"><img src="icons/weight.svg" alt=""></span>
+      <span class="tab-label">体重</span>
+    </a>
+    <a class="tab" href="skin.html">
+      <span class="tab-ic"><img src="icons/skin.svg" alt=""></span>
+      <span class="tab-label">皮肤</span>
+    </a>
+    <a class="tab" href="me.html">
+      <span class="tab-ic"><img src="icons/me.svg" alt=""></span>
+      <span class="tab-label">我的</span>
+    </a>
+  </nav>
+
+</div>
+</body>
+</html>

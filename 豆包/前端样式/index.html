@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>她记 HerLog · 五个页面前端样式</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  body { background: #EFEBF0; padding: 32px 36px 56px; }
+  .g-head { max-width: 1200px; margin: 0 auto 22px; }
+  .g-head h1 { margin: 0; font-size: 24px; letter-spacing: .5px; }
+  .g-head p { margin: 6px 0 0; font-size: 13px; color: var(--ink-2); }
+  .gallery { display: flex; flex-wrap: wrap; gap: 26px; justify-content: center; max-width: 1400px; margin: 0 auto; }
+  .frame { display: flex; flex-direction: column; gap: 10px; }
+  .frame .cap { font-size: 12px; color: var(--ink-2); padding-left: 4px; }
+  .frame .cap b { color: var(--ink); font-weight: 600; }
+  iframe {
+    width: 390px; height: 844px;
+    border: 0; border-radius: 18px;
+    background: #FAF7FA;
+    box-shadow: 0 6px 24px rgba(45, 36, 48, .10);
+  }
+</style>
+</head>
+<body>
+  <div class="g-head">
+    <h1>她记 HerLog · 五个页面前端样式</h1>
+    <p>390 × 844 设计基准｜页面背景 #FAF7FA｜莓色 #A82760｜卡片圆角 8｜按钮高 48｜底栏 27 pt 图标</p>
+  </div>
+
+  <div class="gallery">
+    <div class="frame">
+      <iframe src="pages/home.html" title="首页"></iframe>
+      <div class="cap"><b>首页</b>　快捷入口 + 只读问答</div>
+    </div>
+    <div class="frame">
+      <iframe src="pages/period.html" title="经期"></iframe>
+      <div class="cap"><b>经期</b>　状态 → 月历 → 当天记录 → 历史</div>
+    </div>
+    <div class="frame">
+      <iframe src="pages/weight.html" title="体重"></iframe>
+      <div class="cap"><b>体重</b>　最近体重 + 趋势 + 一条建议</div>
+    </div>
+    <div class="frame">
+      <iframe src="pages/skin.html" title="皮肤"></iframe>
+      <div class="cap"><b>皮肤</b>　拍照分析 + 最近观察</div>
+    </div>
+    <div class="frame">
+      <iframe src="pages/me.html" title="我的"></iframe>
+      <div class="cap"><b>我的</b>　资料表单 + 退出登录</div>
+    </div>
+  </div>
+</body>
+</html>

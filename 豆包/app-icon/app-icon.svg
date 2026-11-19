@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="appiconTitle">
+  <title id="appiconTitle">她记 HerLog 应用图标（主版）</title>
+  <defs>
+    <linearGradient id="bg" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#BC3569"/>
+      <stop offset="0.5" stop-color="#A82760"/>
+      <stop offset="1" stop-color="#781946"/>
+    </linearGradient>
+    <linearGradient id="cream" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#FFF8FB"/>
+      <stop offset="1" stop-color="#F7DDE9"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.25" cy="0.1" r="0.85">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="114" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="114" fill="url(#glow)"/>
+  <circle cx="256" cy="262" r="148" fill="none" stroke="url(#cream)" stroke-width="44" stroke-linecap="round"/>
+  <path d="M256 180C285 220 306 246 306 276C306 302 284 322 256 322C228 322 206 302 206 276C206 246 227 220 256 180Z" fill="url(#cream)"/>
+</svg>

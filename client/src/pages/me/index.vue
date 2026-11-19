@@ -1,38 +1,45 @@
 <template>
   <view class="page">
-    <view class="card">
-      <view class="row">
-        <view class="label">用户名</view>
-        <view class="readonly">{{ auth.username }}</view>
+    <view class="hero me-hero">
+      <view class="h-title">我的</view>
+      <view class="profile">
+        <view class="avatar">{{ avatarText }}</view>
+        <view class="profile-info">
+          <view class="name">{{ displayName }}</view>
+          <view class="user">@{{ auth.username }}</view>
+        </view>
       </view>
-      <view class="muted">用户名来自注册时的会员身份，第一版不支持修改。</view>
     </view>
 
-    <view class="card">
-      <view class="row">
-        <view class="label">生日</view>
+    <view class="main">
+      <view class="card">
+        <view class="field-label">用户名</view>
+        <view class="control readonly">{{ auth.username }}</view>
+        <view class="hint-line">注册后不可修改，用于登录。</view>
+
+        <view class="field-label">生日<text class="optional">（选填）</text></view>
         <picker mode="date" :value="birthday || today" :end="today" @change="onBirthday">
-          <view class="value">{{ birthday || '选填' }}</view>
+          <view class="control">{{ birthday || '选择生日' }}</view>
         </picker>
-      </view>
-      <view class="row">
-        <view class="label">身高</view>
-        <input v-model="heightCm" class="value input" type="digit" placeholder="选填，单位 cm" />
-      </view>
-      <view class="row">
-        <view class="label">电话</view>
-        <input v-model="contactPhone" class="value input" maxlength="32" placeholder="选填，仅作资料" />
-      </view>
-      <text v-if="error" class="error">{{ error }}</text>
-      <button class="primary" :disabled="saving" @tap="save">
-        {{ saving ? '保存中…' : '保存资料' }}
-      </button>
-      <view v-if="saved" class="ok">资料已更新</view>
-    </view>
 
-    <view class="card">
-      <view class="ghost" @tap="logout">退出登录</view>
-      <view class="muted logout-note">退出后本机不再保留登录会话，重新登录仍可回看该账号的记录。</view>
+        <view class="field-label">身高<text class="optional">（选填）</text></view>
+        <input v-model="heightCm" class="control" type="digit" placeholder="例如 165" placeholder-class="ph" />
+
+        <view class="field-label">电话<text class="optional">（选填）</text></view>
+        <input v-model="contactPhone" class="control" maxlength="32" placeholder="例如 138****6021" placeholder-class="ph" />
+        <view class="hint-line">仅作为个人资料保存，不用于登录，也不会发送验证码。</view>
+
+        <text v-if="error" class="error">{{ error }}</text>
+        <button class="btn block save" :disabled="saving" @tap="save">
+          {{ saving ? '保存中…' : '保存资料' }}
+        </button>
+        <view v-if="saved" class="ok">资料已更新</view>
+      </view>
+
+      <view class="section">
+        <button class="btn ghost block logout" @tap="logout">退出登录</button>
+        <view class="note logout-note">退出后账号与健康记录仍保留，重新登录即可查看。</view>
+      </view>
     </view>
 
     <TabBar current="/pages/me/index" />
@@ -40,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import TabBar from '../../components/TabBar.vue'
 import { todayString } from '../../shared/dates'
@@ -56,6 +63,9 @@ const contactPhone = ref('')
 const error = ref('')
 const saved = ref(false)
 const saving = ref(false)
+
+const displayName = computed(() => auth.member?.name || auth.username || '她')
+const avatarText = computed(() => (auth.username || '她').slice(0, 1).toUpperCase())
 
 async function load() {
   try {
@@ -123,45 +133,66 @@ onShow(load)
 </script>
 
 <style scoped>
-.page {
-  min-height: 100vh;
-  padding: 12px 16px 76px;
-  box-sizing: border-box;
+.me-hero {
+  padding-bottom: 20px;
 }
-.row {
+.profile {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  min-height: 44px;
-  border-bottom: 1px solid #f4ebe7;
-}
-.label {
-  font-size: 14px;
-  color: #4b413d;
-}
-.readonly {
-  color: #8a7f7a;
-  font-size: 14px;
-}
-.value {
-  font-size: 14px;
-  color: #4b413d;
-  text-align: right;
-}
-.input {
-  width: 60%;
-  height: 40px;
-}
-.primary {
+  gap: 14px;
   margin-top: 14px;
+}
+.avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--avatar-grad);
+  color: var(--berry-deep);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 22px -10px rgba(156, 59, 80, 0.5);
+}
+.profile-info {
+  flex: 1;
+  min-width: 0;
+}
+.name {
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.user {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.optional {
+  color: var(--ink-2);
+  font-size: 12px;
+}
+.save {
+  margin-top: 18px;
 }
 .ok {
   margin-top: 8px;
   font-size: 12px;
-  color: #3f7d52;
+  color: var(--berry);
+  text-align: center;
+}
+.section {
+  margin-top: 4px;
+}
+.logout {
+  height: 46px;
 }
 .logout-note {
-  margin-top: 8px;
-  line-height: 1.6;
+  margin-top: 10px;
+  text-align: center;
 }
 </style>

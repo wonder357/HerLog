@@ -2,21 +2,53 @@
   <view v-if="visible">
     <view class="sheet-mask" @tap="cancel" />
     <view class="sheet">
-      <view class="sheet-title">记体重</view>
-      <input v-model="kg" class="field" type="digit" placeholder="体重 kg，例如 56.8" />
-      <picker mode="date" :value="day" :end="today" @change="onDayChange">
-        <view class="field">日期：{{ day }}</view>
-      </picker>
-      <picker mode="time" :value="time" @change="onTimeChange">
-        <view class="field">时间：{{ time }}</view>
-      </picker>
-      <input v-model="tag" class="field" placeholder="标签（选填，如晨起）" />
-      <input v-model="note" class="field" placeholder="备注（选填）" />
-      <text v-if="error" class="error">{{ error }}</text>
-      <button class="primary" :disabled="saving" @tap="submit">
-        {{ saving ? '保存中…' : '保存' }}
-      </button>
-      <view class="ghost cancel" @tap="cancel">取消</view>
+      <view class="grab" />
+      <view class="sheet-head">
+        <view>
+          <view class="sheet-title">记体重</view>
+          <view class="sheet-sub">尽量在相近的时间与条件下称重</view>
+        </view>
+        <view class="sheet-x" @tap="cancel">×</view>
+      </view>
+
+      <view class="sheet-body">
+        <view class="wval">
+          <input
+            v-model="kg"
+            class="winput"
+            type="digit"
+            placeholder="00.0"
+            placeholder-class="wph"
+            :adjust-position="true"
+          />
+          <text class="wunit">kg</text>
+        </view>
+
+        <picker mode="date" :value="day" :end="today" @change="onDayChange">
+          <view class="form-row">
+            <text class="row-k">日期</text>
+            <text class="row-v">{{ day }}</text>
+          </view>
+        </picker>
+        <picker mode="time" :value="time" @change="onTimeChange">
+          <view class="form-row">
+            <text class="row-k">时间</text>
+            <text class="row-v">{{ time }}</text>
+          </view>
+        </picker>
+
+        <input v-model="tag" class="control row-input" placeholder="标签（选填，如晨起）" placeholder-class="ph" />
+        <input v-model="note" class="control row-input" placeholder="备注（选填）" placeholder-class="ph" />
+
+        <text v-if="error" class="error">{{ error }}</text>
+      </view>
+
+      <view class="sheet-foot">
+        <button class="btn block" :disabled="saving" @tap="submit">
+          {{ saving ? '保存中…' : '保存' }}
+        </button>
+        <view class="btn ghost block cancel" @tap="cancel">取消</view>
+      </view>
     </view>
   </view>
 </template>
@@ -109,12 +141,59 @@ async function submit() {
 </script>
 
 <style scoped>
-.sheet-title {
-  font-size: 17px;
+.wval {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 0 12px;
+}
+.winput {
+  width: 170px;
+  height: 52px;
+  font-size: 40px;
+  line-height: 52px;
   font-weight: 600;
-  margin-bottom: 14px;
+  letter-spacing: -0.5px;
+  text-align: center;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.wunit {
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ink-2);
+  padding-bottom: 8px;
+}
+.form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 46px;
+  padding: 0 12px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--card-line);
+  background: linear-gradient(180deg, #ffffff 0%, var(--input-2) 100%);
+  box-sizing: border-box;
+}
+.row-k {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.row-v {
+  font-size: 15px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.row-input {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 14px;
 }
 .cancel {
   margin-top: 10px;
+  height: 44px;
+  font-size: 14px;
 }
 </style>

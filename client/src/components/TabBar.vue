@@ -4,13 +4,13 @@
       v-for="item in items"
       :key="item.path"
       class="tab"
-      :class="{ active: item.path === current }"
+      :class="{ on: item.path === current }"
       @tap="go(item)"
     >
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-        <path :d="item.icon" stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-      <text class="label">{{ item.label }}</text>
+      <view class="tab-ic" :class="{ on: item.path === current }">
+        <image class="tab-img" :src="iconSrc(item)" mode="aspectFit" />
+      </view>
+      <text class="tab-label">{{ item.label }}</text>
     </view>
   </view>
 </template>
@@ -25,13 +25,19 @@ interface TabItem {
 const props = defineProps<{ current: string }>()
 
 // 五个一级页共用一份配置，路径变化只改这里。
+// 图标取自「图标套-豆包改版/icons」：未选中线性 / 选中实心，同一套 27×27。
 const items: TabItem[] = [
-  { path: '/pages/home/index', label: '首页', icon: 'M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z' },
-  { path: '/pages/period/index', label: '经期', icon: 'M5 6h14v14H5zM8 3v4M16 3v4M5 10h14' },
-  { path: '/pages/weight/index', label: '体重', icon: 'M12 4a2 2 0 0 1 1.7 3l5 12H5.3l5-12A2 2 0 0 1 12 4zM9 14h6' },
-  { path: '/pages/skin/index', label: '皮肤', icon: 'M12 3c3 4 6 6.5 6 10a6 6 0 0 1-12 0c0-3.5 3-6 6-10zM9.5 13.5a2.5 2.5 0 0 0 5 0' },
-  { path: '/pages/me/index', label: '我的', icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c0-4 3.6-6 8-6s8 2 8 6' }
+  { path: '/pages/home/index', label: '首页', icon: 'home' },
+  { path: '/pages/period/index', label: '经期', icon: 'period' },
+  { path: '/pages/weight/index', label: '体重', icon: 'weight' },
+  { path: '/pages/skin/index', label: '皮肤', icon: 'skin' },
+  { path: '/pages/me/index', label: '我的', icon: 'me' }
 ]
+
+function iconSrc(item: TabItem): string {
+  const state = item.path === props.current ? '-active' : ''
+  return `/static/icons/${item.icon}${state}.svg`
+}
 
 function go(item: TabItem) {
   if (item.path === props.current) {
@@ -49,28 +55,46 @@ function go(item: TabItem) {
   bottom: 0;
   z-index: 10;
   display: flex;
-  height: 58px;
-  padding-bottom: env(safe-area-inset-bottom);
-  background: #ffffff;
-  border-top: 1px solid #f0e6e2;
+  padding: 8px 0 18px;
+  padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.86);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  backdrop-filter: blur(16px) saturate(1.6);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -12px 30px -18px rgba(192, 86, 107, 0.4);
 }
 .tab {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 2px;
+}
+.tab-ic {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  color: #8a7f7a;
 }
-.tab.active {
-  color: #b4544a;
+.tab-ic.on {
+  background: var(--tabon-grad);
+  box-shadow: 0 8px 16px -8px rgba(192, 86, 107, 0.4);
 }
-.icon {
-  width: 22px;
-  height: 22px;
-  margin-bottom: 2px;
+.tab-img {
+  width: 27px;
+  height: 27px;
+  display: block;
 }
-.label {
+.tab-label {
   font-size: 11px;
+  line-height: 16px;
+  color: var(--outline);
+  letter-spacing: 0.5px;
+}
+.tab.on .tab-label {
+  color: var(--berry);
+  font-weight: 600;
 }
 </style>

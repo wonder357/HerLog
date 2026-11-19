@@ -1,54 +1,68 @@
 <template>
   <view class="page">
-    <view class="card latest">
-      <view v-if="summary && summary.latest_grams !== null">
-        <view class="latest-value">{{ formatKg(summary.latest_grams) }} <text class="unit">kg</text></view>
-        <view class="muted">最近一次：{{ summary.latest_measured_at ? formatMoment(summary.latest_measured_at) : '—' }}</view>
-      </view>
-      <view v-else class="latest-empty">
-        <view class="latest-value placeholder">还没有记录</view>
-        <view class="muted">先记录第一次体重，不用设目标。</view>
-      </view>
-      <button class="primary record-button" :disabled="loading" @tap="formVisible = true">
-        {{ summary && summary.latest_grams === null ? '记录第一次体重' : '记体重' }}
-      </button>
+    <view class="hero">
+      <view class="h-title">体重</view>
+      <view class="h-sub">记录变化，不对单次涨跌做判断</view>
     </view>
 
-    <view class="card">
-      <view class="row-between">
-        <view class="tabs">
-          <view class="tab" :class="{ active: days === 30 }" @tap="switchDays(30)">近 30 天</view>
-          <view class="tab" :class="{ active: days === 7 }" @tap="switchDays(7)">近 7 天</view>
-        </view>
-        <view class="link" @tap="openDetail">记录明细 ›</view>
-      </view>
-
-      <TrendChart :points="chartPoints" />
-
-      <view class="stats">
-        <view class="stat">
-          <view class="stat-value">{{ summary?.count ?? 0 }}</view>
-          <view class="muted">记录次数</view>
-        </view>
-        <view class="stat">
-          <view class="stat-value">
-            {{ summary && summary.delta_grams !== null ? formatDelta(summary.delta_grams) : '—' }}
+    <view class="main">
+      <view class="card">
+        <view v-if="hasLatest">
+          <view class="card-label">最近一次测量</view>
+          <view class="last-weight">
+            <text class="num grad-text">{{ formatKg(summary?.latest_grams ?? null) }}</text>
+            <text class="unit">kg</text>
           </view>
-          <view class="muted">首尾变化</view>
+          <view class="last-meta">{{ latestMoment }}</view>
         </view>
-        <view class="stat">
-          <view class="stat-value">{{ summary?.points.length ?? 0 }}</view>
-          <view class="muted">数据点</view>
+        <view v-else>
+          <view class="card-label">最近一次测量</view>
+          <view class="last-empty">还没有记录</view>
+          <view class="last-meta">先记录第一次体重，不用设目标。</view>
         </view>
-      </view>
-      <view v-if="summary && summary.delta_grams === null && summary.points.length === 1" class="muted">
-        目前只有一个数据点，再记录几天就能看变化。
-      </view>
-    </view>
 
-    <view v-if="advice" class="card advice">
-      <view class="advice-title">一条建议</view>
-      <view class="muted">{{ advice }}</view>
+        <button class="btn block record-btn" :disabled="loading" @tap="formVisible = true">
+          {{ hasLatest ? '记体重' : '记录第一次体重' }}
+        </button>
+      </view>
+
+      <view class="section">
+        <view class="section-head">
+          <view class="h2">趋势</view>
+          <view class="segmented">
+            <view class="seg" :class="{ on: days === 7 }" @tap="switchDays(7)">近 7 天</view>
+            <view class="seg" :class="{ on: days === 30 }" @tap="switchDays(30)">近 30 天</view>
+          </view>
+        </view>
+
+        <view class="card chart-card">
+          <TrendChart :points="chartPoints" />
+          <view class="chart-foot">
+            <view class="chart-note">
+              记录 {{ summary?.count ?? 0 }} 次
+              <text v-if="summary && summary.delta_grams !== null" class="delta">
+                · 首尾变化 {{ formatDelta(summary.delta_grams) }}
+              </text>
+            </view>
+            <view class="chart-note">每天取最后一次测量</view>
+          </view>
+          <view v-if="singlePoint" class="chart-note single">
+            目前只有一个数据点，再记录几天就能看变化。
+          </view>
+        </view>
+      </view>
+
+      <view class="section">
+        <view class="rowlink" @tap="openDetail">
+          <text class="t">记录明细</text>
+          <view class="r">全部 {{ summary?.count ?? 0 }} 笔<text class="chev">›</text></view>
+        </view>
+      </view>
+
+      <view v-if="advice" class="hintbox advice">
+        <view class="ad-ic">i</view>
+        <text class="ad-text">{{ advice }}</text>
+      </view>
     </view>
 
     <WeightForm :visible="formVisible" @close="formVisible = false" @saved="onSaved" />
@@ -72,6 +86,12 @@ const days = ref<7 | 30>(30)
 const summary = ref<WeightSummary | null>(null)
 const loading = ref(false)
 const formVisible = ref(false)
+
+const hasLatest = computed(() => Boolean(summary.value && summary.value.latest_grams !== null))
+const latestMoment = computed(() =>
+  summary.value?.latest_measured_at ? formatMoment(summary.value.latest_measured_at) : '—'
+)
+const singlePoint = computed(() => (summary.value?.points.length ?? 0) === 1)
 
 const chartPoints = computed(() =>
   (summary.value?.points ?? []).map((point) => ({ day: point.day, kg: point.kg }))
@@ -116,71 +136,118 @@ onShow(load)
 </script>
 
 <style scoped>
-.page {
-  min-height: 100vh;
-  padding: 12px 16px 76px;
-  box-sizing: border-box;
+.card-label {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-2);
 }
-.latest-value {
-  font-size: 32px;
-  font-weight: 700;
-  color: #b4544a;
+.last-weight {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  margin-top: 2px;
 }
-.latest-value.placeholder {
-  font-size: 20px;
-  color: #8a7f7a;
+.num {
+  font-size: 44px;
+  line-height: 48px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
 }
 .unit {
-  font-size: 15px;
-  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--ink-2);
+  padding-bottom: 6px;
 }
-.record-button {
-  margin-top: 14px;
-}
-.row-between {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-.tabs {
-  display: flex;
-  gap: 8px;
-}
-.tab {
-  padding: 5px 12px;
-  border-radius: 999px;
-  border: 1px solid #e4d8d3;
-  font-size: 13px;
-  color: #6f635e;
-}
-.tab.active {
-  background: #b4544a;
-  border-color: #b4544a;
-  color: #ffffff;
-}
-.link {
-  font-size: 13px;
-  color: #b4544a;
-}
-.stats {
-  display: flex;
-  margin-top: 10px;
-}
-.stat {
-  flex: 1;
-  text-align: center;
-}
-.stat-value {
-  font-size: 17px;
+.last-empty {
+  margin-top: 4px;
+  font-size: 20px;
+  line-height: 28px;
   font-weight: 600;
+  color: var(--ink-2);
+}
+.last-meta {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-2);
+}
+.record-btn {
+  margin-top: 14px;
+  height: 48px;
+}
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--segbg);
+  border: 1px solid var(--card-line);
+}
+.seg {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.seg.on {
+  background: #ffffff;
+  color: var(--berry);
+  font-weight: 600;
+  box-shadow: 0 4px 10px -6px var(--btn-shadow);
+}
+.chart-card {
+  padding-bottom: 14px;
+}
+.chart-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}
+.chart-note {
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--ink-2);
+}
+.chart-note.single {
+  margin-top: 8px;
+  font-size: 12px;
+}
+.delta {
+  color: var(--berry);
+  font-weight: 600;
+}
+.chev {
+  color: var(--ink-2);
 }
 .advice {
-  background: #fdf2ef;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
 }
-.advice-title {
-  font-size: 14px;
+.ad-ic {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--soft-grad);
+  color: var(--berry);
+  font-size: 12px;
   font-weight: 600;
-  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+.ad-text {
+  flex: 1;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--ink);
 }
 </style>

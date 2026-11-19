@@ -1,23 +1,56 @@
 <template>
-  <view class="page">
-    <view class="brand">
-      <view class="name">她记</view>
-      <view class="sub">女性健康记录助手</view>
+  <view class="page auth plain-bottom">
+    <view class="auth-hero">
+      <view class="logo">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="8.6" />
+          <path d="M12 7.4c1.9 2.6 3 4 3 5.2a3 3 0 0 1-6 0c0-1.2 1.1-2.6 3-5.2z" />
+        </svg>
+      </view>
+      <view class="auth-title">{{ mode === 'login' ? '欢迎回来' : '建立账号' }}</view>
+      <view class="auth-sub">
+        {{ mode === 'login' ? '用账号继续记录今天' : '用户名加密码，不需要手机号' }}
+      </view>
     </view>
 
-    <view class="form">
-      <input v-model="username" class="field" placeholder="用户名" maxlength="32" />
-      <input v-model="password" class="field" password placeholder="密码（至少 8 位）" maxlength="72" />
+    <view class="auth-card">
+      <view class="field-label">用户名</view>
+      <input
+        v-model="username"
+        class="control"
+        placeholder="2–32 个字符"
+        placeholder-class="ph"
+        maxlength="32"
+      />
+
+      <view class="field-label">密码</view>
+      <input
+        v-model="password"
+        class="control"
+        password
+        :placeholder="mode === 'register' ? '至少 8 位' : '登录密码'"
+        placeholder-class="ph"
+        maxlength="72"
+      />
+
       <text v-if="fieldError" class="error">{{ fieldError }}</text>
       <text v-if="formError" class="error">{{ formError }}</text>
-      <button class="primary" :disabled="submitting" @tap="submit">
+
+      <button class="btn block submit" :disabled="submitting" @tap="submit">
         {{ submitting ? '请稍候…' : mode === 'login' ? '登录' : '注册' }}
       </button>
-      <view class="switch" @tap="switchMode">
-        {{ mode === 'login' ? '还没有账号？注册' : '已有账号？去登录' }}
+
+      <view class="auth-note">
+        {{ mode === 'login' ? '登录后才能查看你的记录；退出登录不会删除数据。' : '注册成功后回到登录页，用同一组账号登录。' }}
       </view>
-      <view class="hint">比赛版使用模拟账号：用户名 + 密码，不需要手机号。</view>
     </view>
+
+    <view class="auth-foot" @tap="switchMode">
+      <text>{{ mode === 'login' ? '还没有账号？' : '已有账号？' }}</text>
+      <text class="auth-foot-link">{{ mode === 'login' ? '注册' : '去登录' }}</text>
+    </view>
+
+    <view class="auth-glow" />
   </view>
 </template>
 
@@ -91,40 +124,89 @@ async function submit() {
 </script>
 
 <style scoped>
-.page {
-  min-height: 100vh;
-  padding: 64px 24px 32px;
-  box-sizing: border-box;
+.auth {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 40%, var(--page) 100%),
+    var(--hero-grad);
 }
-.brand {
-  margin-bottom: 36px;
-}
-.name {
-  font-size: 34px;
-  font-weight: 700;
-  letter-spacing: 4px;
-  color: #b4544a;
-}
-.sub {
-  margin-top: 8px;
-  color: #8a7f7a;
-  font-size: 14px;
-}
-.form {
-  background: #ffffff;
-  border-radius: 20px;
-  padding: 20px 16px;
-}
-.switch {
-  margin-top: 16px;
+.auth-hero {
+  position: relative;
+  z-index: 1;
+  padding: calc(56px + var(--status-bar-height, 0px)) 16px 26px;
   text-align: center;
-  color: #b4544a;
-  font-size: 14px;
 }
-.hint {
+.logo {
+  width: 66px;
+  height: 66px;
+  margin: 0 auto 14px;
+  border-radius: 19px;
+  background: linear-gradient(150deg, #d6788b 0%, #a82760 52%, #9c3b50 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 18px 34px -16px rgba(156, 59, 80, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.auth-title {
+  font-size: 26px;
+  line-height: 34px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--ink);
+}
+.auth-sub {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-2);
+}
+.auth-card {
+  position: relative;
+  z-index: 1;
+  margin: 0 16px;
+  padding: 6px 16px 18px;
+  border-radius: 12px;
+  background: var(--card-grad);
+  border: 1px solid var(--card-line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), var(--card-shadow);
+}
+.submit {
   margin-top: 18px;
+}
+.auth-note {
+  margin-top: 12px;
   font-size: 12px;
-  color: #a89d98;
-  line-height: 1.6;
+  line-height: 18px;
+  color: var(--ink-2);
+  text-align: center;
+}
+.auth-foot {
+  position: relative;
+  z-index: 1;
+  width: fit-content;
+  margin: 18px auto 0;
+  padding: 7px 14px;
+  border-radius: 16px;
+  background: rgba(255, 252, 250, 0.92);
+  box-shadow: 0 10px 24px -18px rgba(156, 59, 80, 0.5);
+  font-size: 13px;
+  color: var(--ink-2);
+  text-align: center;
+}
+.auth-foot-link {
+  margin-left: 4px;
+  color: var(--berry);
+  font-weight: 600;
+}
+.auth-glow {
+  position: absolute;
+  left: 50%;
+  bottom: -140px;
+  width: 300px;
+  height: 300px;
+  margin-left: -150px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, rgba(242, 180, 188, 0.5) 0%, rgba(242, 180, 188, 0) 70%);
+  pointer-events: none;
 }
 </style>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>她记 · 体重</title>
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<div class="screen">
+
+  <header class="hero">
+    <h1>体重</h1>
+    <div class="hero-sub">记录变化，不对单次涨跌做判断</div>
+  </header>
+
+  <main class="main">
+
+    <section class="section" style="margin-top:6px">
+      <div class="card last-card">
+        <div class="meta">最近一次测量</div>
+        <div class="last-weight">
+          <span class="num">58.2</span>
+          <span class="unit">kg</span>
+        </div>
+        <div class="last-meta">11 月 19 日 07:20 · 晨起空腹</div>
+        <button class="btn block">记体重</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2 class="h2">趋势</h2>
+        <div class="segmented">
+          <button>近 7 天</button>
+          <button class="on">近 30 天</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="chart">
+          <svg viewBox="0 0 326 132" role="img" aria-label="近 30 天体重趋势">
+            <defs>
+              <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#F7DFEA" stop-opacity="0.9"/>
+                <stop offset="1" stop-color="#F7DFEA" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+
+            <line x1="0" y1="8" x2="326" y2="8" stroke="#F2EAF1" stroke-width="1"/>
+            <line x1="0" y1="56" x2="326" y2="56" stroke="#F2EAF1" stroke-width="1"/>
+            <line x1="0" y1="104" x2="326" y2="104" stroke="#F2EAF1" stroke-width="1"/>
+
+            <path d="M20 46.4 L50.8 56 L91.6 36.8 L142.6 65.6 L193.6 75.2 L234.4 56 L285.4 75.2 L316 84.8 L316 132 L20 132 Z"
+                  fill="url(#area)"/>
+            <path d="M20 46.4 L50.8 56 L91.6 36.8 L142.6 65.6 L193.6 75.2 L234.4 56 L285.4 75.2 L316 84.8"
+                  fill="none" stroke="#A82760" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+            <circle cx="20" cy="46.4" r="3" fill="#FFFFFF" stroke="#A82760" stroke-width="1.6"/>
+            <circle cx="50.8" cy="56" r="3" fill="#FFFFFF" stroke="#A82760" stroke-width="1.6"/>
+            <circle cx="91.6" cy="36.8" r="3" fill="#FFFFFF" stroke="#A82760" stroke-width="1.6"/>
+            <circle cx="142.6" cy="65.6" r="3" fill="#FFFFFF" stroke="#A82760" stroke-width="1.6"/>
+            <circle cx="193.6" cy="75.2" r="3" fill="#FFFFFF" stroke="#A82760" stroke-width="1.6"/>
+            <circle cx="234.4" cy="56" r="3" fill="#FFFFFF" stroke="#A82760" stroke-width="1.6"/>
+            <circle cx="285.4" cy="75.2" r="3" fill="#FFFFFF" stroke="#A82760" stroke-width="1.6"/>
+            <circle cx="316" cy="84.8" r="4" fill="#A82760"/>
+          </svg>
+          <div class="axis">
+            <span>10/21</span><span>10/28</span><span>11/4</span><span>11/11</span><span>11/19</span>
+          </div>
+        </div>
+
+        <div class="chart-foot">
+          <span class="chart-note">记录 8 次 · 首尾变化 <strong style="color:#A82760">−0.4 kg</strong></span>
+          <span class="chart-note">每天取最后一次测量</span>
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <a class="rowlink" href="#">
+          <span>记录明细</span>
+          <span style="display:flex;align-items:center;gap:6px;color:#655966;font-size:13px">
+            全部 8 笔
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#655966" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5"/></svg>
+          </span>
+        </a>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="card advice">
+        <span class="ad-ic">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#A82760" stroke-width="1.7" stroke-linecap="round">
+            <circle cx="8" cy="8" r="6.2"/><path d="M8 7.2v4"/><circle cx="8" cy="4.9" r="0.8" fill="#A82760" stroke="none"/>
+          </svg>
+        </span>
+        <p>如果想比较长期变化，尽量在相近的时间和条件下称重；单次波动不代表趋势。</p>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="tabbar">
+    <a class="tab" href="home.html">
+      <span class="tab-ic"><img src="../assets/icons/home.svg" alt=""></span>
+      <span class="tab-label">首页</span>
+    </a>
+    <a class="tab" href="period.html">
+      <span class="tab-ic"><img src="../assets/icons/period.svg" alt=""></span>
+      <span class="tab-label">经期</span>
+    </a>
+    <a class="tab on" href="weight.html">
+      <span class="tab-ic"><img src="../assets/icons/weight-active.svg" alt=""></span>
+      <span class="tab-label">体重</span>
+    </a>
+    <a class="tab" href="skin.html">
+      <span class="tab-ic"><img src="../assets/icons/skin.svg" alt=""></span>
+      <span class="tab-label">皮肤</span>
+    </a>
+    <a class="tab" href="me.html">
+      <span class="tab-ic"><img src="../assets/icons/me.svg" alt=""></span>
+      <span class="tab-label">我的</span>
+    </a>
+  </nav>
+
+</div>
+</body>
+</html>
