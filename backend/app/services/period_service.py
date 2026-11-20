@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -72,17 +72,25 @@ def list_periods(session: Session, customer_id: str) -> dict:
     today = local_today()
     starts = [row.start_day for row in rows if row.start_day <= today]
     prediction = period_logic.predict_next_start(starts, today)
+    expected = prediction.expected_start
+    expected_end = None
     ovulatory_window = None
     latest = next((row for row in rows if row.start_day <= today), None)
-    if prediction.status == period_logic.UPCOMING and prediction.expected_start and latest and latest.end_day:
-        start, end = period_logic.ovulatory_window(prediction.expected_start)
+    if expected:
+        expected_end = period_logic.estimate_period_end(expected, (
+            item["duration_days"] for item in history
+            if item["end_day"] is not None and item["end_day"] <= today
+        ))
+    if expected and latest and latest.end_day:
+        start, end = period_logic.ovulatory_window(expected)
         if start > latest.end_day:
-            ovulatory_window = {"start_day": start, "end_day": end}
+            ovulatory_window = {"start_day": start, "end_day": end, "estimated_day": start + timedelta(days=2)}
     return {
         "items": [_to_out(row, by_id) for row in rows],
         "prediction": {
             "status": prediction.status,
-            "expected_start": prediction.expected_start,
+            "expected_start": expected,
+            "expected_end": expected_end,
             "estimate_days": prediction.estimate_days,
             "cycle_count": prediction.cycle_count,
             "starts_used": prediction.starts_used,

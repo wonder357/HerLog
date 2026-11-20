@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import Decimal, ROUND_HALF_UP
+from itertools import islice
 from typing import Iterable, Sequence
 
 MAX_STARTS = 4
@@ -74,7 +75,7 @@ def predict_next_start(starts: Sequence[date], today: date) -> Prediction:
     status = OVERDUE if today > expected else UPCOMING
     return Prediction(
         status=status,
-        expected_start=expected,
+        expected_start=expected if status == UPCOMING else None,
         estimate_days=estimate,
         cycle_count=len(intervals),
         starts_used=len(ordered),
@@ -92,6 +93,17 @@ def duration_days(start_day: date, end_day: date | None) -> int | None:
     if end_day is None:
         return None
     return (end_day - start_day).days + 1
+
+
+def estimate_period_end(expected_start: date, durations: Iterable[int | None]) -> date:
+    """Use completed records for the calendar band; a lone duration is not enough."""
+
+    sample = sorted(islice((days for days in durations if days is not None and 1 <= days <= 14), MAX_STARTS))
+    if len(sample) < 2:
+        return expected_start
+    middle = len(sample) // 2
+    days = (sample[(len(sample) - 1) // 2] + sample[middle] + 1) // 2
+    return expected_start + timedelta(days=days - 1)
 
 
 def build_history(rows: Sequence[tuple[int, date, date | None]]) -> list[dict]:

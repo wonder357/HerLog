@@ -16,5 +16,6 @@ class HomePreference(Base):
     show_focus: Mapped[bool] = mapped_column(nullable=False, server_default=sa.true())
     show_summary: Mapped[bool] = mapped_column(nullable=False, server_default=sa.true())
     show_questions: Mapped[bool] = mapped_column(nullable=False, server_default=sa.true())
+    assistant_history_enabled: Mapped[bool | None] = mapped_column(nullable=True)
     password_attempt_count: Mapped[int] = mapped_column(sa.SmallInteger, nullable=False, server_default="0")
     password_attempt_window: Mapped[int | None] = mapped_column(sa.BigInteger)

@@ -1,64 +1,64 @@
 <template>
-  <view class="hr-page hr-tab-page home-page">
+  <view class="hr-page hr-tab-page home-page" :class="{ 'home-capture': captureVisible }">
     <SkinCapture v-if="captureVisible" return-label="返回首页" @saved="afterCapture" @close="closeCapture" />
-    <div v-show="!captureVisible">
-      <HerlogHeading class="home-heading" :title="auth.username ? '你好，' + auth.username : '你好'" :eyebrow="dateLabel">
-        <template #actions>
-          <img class="welcome-art" src="/static/home-cosmos.png" alt="" />
+    <div v-if="auth.isLoggedIn" v-show="!captureVisible">
+      <AssistantChat ref="assistant" :key="assistantKey" :record-questions="recordQuestions" :starters="starters"
+        :show-questions="preferences.show_questions" :date-label="dateLabel" :visible="pageVisible && !captureVisible"
+        @reference="openRef" @keyboard="keyboardOpen = $event">
+        <template #shortcuts>
+          <section class="quick-section" aria-labelledby="quick-title">
+            <header class="quick-header">
+              <h2 id="quick-title" class="hr-section-title">快捷记录</h2>
+              <H5Button class="hr-action" aria-haspopup="dialog" @click="recordsVisible = true">今日记录 ›</H5Button>
+            </header>
+            <div class="shortcuts">
+              <H5Button v-for="item in shortcuts" :key="item.key" class="shortcut" :class="item.key"
+                :disabled="item.key === 'feeling' && feelingLoading" @click="runShortcut(item.key)">
+                <span class="shortcut-symbol"><HerlogIcon :name="item.icon" /></span><span>{{ item.label }}</span>
+              </H5Button>
+            </div>
+          </section>
+        </template>
+      </AssistantChat>
+
+      <HerlogSheet v-if="recordsVisible" title="今日记录" :context="dateLabel" @close="recordsVisible = false">
+        <div class="summary-header">
           <H5Button class="cycle-status" @click="go('period')">
             <span class="phase-ring" :class="{ known: statusBasis === '已记录', estimated: statusBasis === '日期估算' }" aria-hidden="true">
               <HerlogIcon name="period" />
             </span>
             <span><strong>{{ statusLabel }}</strong><small>{{ statusBasis }}</small></span>
           </H5Button>
-        </template>
-      </HerlogHeading>
-
-      <AssistantChat ref="assistant" :key="assistantKey" :record-questions="recordQuestions" :starters="starters" :show-questions="preferences.show_questions"
-        @reference="openRef" />
-
-      <section v-if="data && preferences.show_focus && !focusClosed" class="focus card" aria-labelledby="focus-title">
-        <div class="focus-copy">
-          <h2 id="focus-title">今日聚焦</h2>
-          <p>{{ focusCopy[data.focus.message_key] }}</p>
+          <H5Button class="hr-action" @click="openCalendar(today)">打开月历 ›</H5Button>
         </div>
-        <H5Button class="focus-close" aria-label="关闭今日聚焦" @click="focusClosed = true"><HerlogIcon name="close" /></H5Button>
-        <H5Button class="hr-action focus-action" :disabled="feelingLoading" @click="runFocus">{{ focusActions[data.focus.action] }} ›</H5Button>
-      </section>
-
-      <section class="quick-section" aria-labelledby="quick-title">
-        <h2 id="quick-title" class="hr-section-title">快捷记录</h2>
-        <div class="shortcuts">
-          <H5Button v-for="item in shortcuts" :key="item.key" class="shortcut" :class="item.key"
-            :disabled="item.key === 'feeling' && feelingLoading" @click="runShortcut(item.key)">
-            <span class="shortcut-symbol"><HerlogIcon :name="item.icon" /></span><span>{{ item.label }}</span>
-          </H5Button>
+        <div v-if="data" class="checkin-items">
+          <H5Button v-for="item in shortcuts" :key="item.key" class="ghost" :disabled="item.key === 'feeling' && feelingLoading"
+            @click="runShortcut(item.key)">{{ item.short }} <span>{{ data.today_recorded[item.key] ? '已记录' : '可补记' }}</span></H5Button>
         </div>
-        <div v-if="data" class="checkins">
-          <H5Button class="hr-action" :aria-expanded="checkins" @click="checkins = !checkins">{{ checkins ? '收起今日记录' : '查看今日记录' }} {{ checkins ? '−' : '+' }}</H5Button>
-          <span v-if="!checkins && recordedCount" class="muted">已记 {{ recordedCount }} 类</span>
-          <div v-if="checkins" class="checkin-items">
-            <H5Button v-for="item in shortcuts" :key="item.key" class="ghost" :disabled="item.key === 'feeling' && feelingLoading"
-              @click="runShortcut(item.key)">{{ item.short }} <span>{{ data.today_recorded[item.key] ? '已记录' : '可补记' }}</span></H5Button>
+        <section v-if="data && preferences.show_focus && !focusClosed" class="focus card" aria-labelledby="focus-title">
+          <div class="focus-copy">
+            <h2 id="focus-title">今日聚焦</h2>
+            <p>{{ focusCopy[data.focus.message_key] }}</p>
           </div>
-        </div>
-      </section>
+          <H5Button class="focus-close" aria-label="关闭今日聚焦" @click="focusClosed = true"><HerlogIcon name="close" /></H5Button>
+          <H5Button class="hr-action focus-action" :disabled="feelingLoading" @click="runFocus">{{ focusActions[data.focus.action] }} ›</H5Button>
+        </section>
 
-      <section v-if="preferences.show_summary" class="card summary">
-        <H5Button class="summary-toggle" :aria-expanded="summaryOpen" @click="summaryOpen = !summaryOpen">
-          <span><strong>本周已记录 {{ data?.week.recorded_days ?? '—' }} 天</strong><small v-if="preferences.weekly_record_days_target">每周记录目标 {{ preferences.weekly_record_days_target }} 天</small></span>
-          <span>{{ summaryOpen ? '收起' : '健康摘要 ›' }}</span>
-        </H5Button>
-        <div v-if="summaryOpen" class="summary-detail">
-          <H5Button v-for="item in summaryItems" :key="item.page" class="hr-action" @click="go(item.page)">{{ item.text }}</H5Button>
+        <section v-if="preferences.show_summary" class="card summary">
+          <H5Button class="summary-toggle" :aria-expanded="summaryOpen" @click="summaryOpen = !summaryOpen">
+            <span><strong>本周已记录 {{ data?.week.recorded_days ?? '—' }} 天</strong><small v-if="preferences.weekly_record_days_target">每周记录目标 {{ preferences.weekly_record_days_target }} 天</small></span>
+            <span>{{ summaryOpen ? '收起' : '健康摘要 ›' }}</span>
+          </H5Button>
+          <div v-if="summaryOpen" class="summary-detail">
+            <H5Button v-for="item in summaryItems" :key="item.page" class="hr-action" @click="go(item.page)">{{ item.text }}</H5Button>
+          </div>
+        </section>
+        <div v-if="loadError" class="card error-row" role="alert">
+          <span>{{ loadError }}</span><H5Button class="hr-action" @click="refresh">重试</H5Button>
         </div>
-      </section>
-
-      <div v-if="loadError" class="card error-row" role="alert">
-        <span>{{ loadError }}</span><H5Button class="hr-action" @click="refresh">重试</H5Button>
-      </div>
+      </HerlogSheet>
       <RecordCalendar :today="today" :selected="selected" :data="selectedData" :prediction="prediction"
-        :recorded="data?.week.days" :loading="calendarLoading" :error="calendarError"
+        :loading="calendarLoading" :error="calendarError"
         @open="openCalendar" @close="selected = null" @retry="retryCalendar" @details="go" />
 
       <WeightForm :visible="weightVisible" @close="weightVisible = false" @saved="saved" />
@@ -68,7 +68,7 @@
         </template>
       </PeriodForm>
       <FeelingForm :visible="feelingVisible" :day="feelingDay" :existing="existingFeeling" @close="feelingVisible = false" @saved="saved" />
-      <TabBar current="/pages/home/index" />
+      <TabBar v-show="!keyboardOpen" current="/pages/home/index" />
     </div>
   </view>
 </template>
@@ -77,7 +77,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { onHide, onShow } from '@dcloudio/uni-app'
 import H5Button from '../../components/H5Button'
-import HerlogHeading from '../../components/HerlogHeading.vue'
+import HerlogSheet from '../../components/HerlogSheet.vue'
 import HerlogIcon from '../../components/HerlogIcon.vue'
 import TabBar from '../../components/TabBar.vue'
 import WeightForm from '../../components/WeightForm.vue'
@@ -107,7 +107,9 @@ const loadError = ref('')
 const otherError = ref('')
 const focusClosed = ref(false)
 const summaryOpen = ref(false)
-const checkins = ref(false)
+const recordsVisible = ref(false)
+const keyboardOpen = ref(false)
+const pageVisible = ref(false)
 const weightVisible = ref(false)
 const periodVisible = ref(false)
 const captureVisible = ref(false)
@@ -115,7 +117,7 @@ const feelingVisible = ref(false)
 const feelingLoading = ref(false)
 const feelingDay = ref(today.value)
 const existingFeeling = ref<FeelingItem | null>(null)
-const assistant = ref<{ close(): void } | null>(null)
+const assistant = ref<{ suspend(): void } | null>(null)
 const assistantKey = ref(0)
 let overviewSequence = 0
 let calendarSequence = 0
@@ -174,7 +176,6 @@ const calendarLoading = computed(() => calendarMonth.value === currentMonth.valu
 const prediction = computed(() => data.value?.period_prediction.expected_start ?? null)
 const openPeriod = computed(() => data.value?.open_period
   ? { id: data.value.open_period.id, startDay: data.value.open_period.start_day } : null)
-const recordedCount = computed(() => Object.values(data.value?.today_recorded ?? {}).filter(Boolean).length)
 
 async function refresh() {
   const sequence = ++overviewSequence
@@ -210,6 +211,7 @@ async function loadMonth(month: string) {
 }
 
 function openCalendar(day: string) {
+  recordsVisible.value = false
   const previous = calendarMonth.value
   selected.value = day
   if (calendarMonth.value !== previous && calendarMonth.value !== currentMonth.value) void loadMonth(day.slice(0, 7))
@@ -221,6 +223,7 @@ function retryCalendar() {
 }
 
 function go(page: Tab) {
+  recordsVisible.value = false
   selected.value = null
   uni.switchTab({ url: '/pages/' + page + '/index' })
 }
@@ -233,6 +236,7 @@ function openRef(reference: RecordRef) {
 }
 
 function runFocus() {
+  recordsVisible.value = false
   const action = data.value?.focus.action
   if (action === 'record_feeling') void openFeeling(today.value)
   else if (action === 'record_period') periodVisible.value = true
@@ -241,6 +245,7 @@ function runFocus() {
 }
 
 function runShortcut(kind: Shortcut) {
+  recordsVisible.value = false
   if (kind === 'period') periodVisible.value = true
   else if (kind === 'weight') weightVisible.value = true
   else if (kind === 'feeling') void openFeeling(today.value)
@@ -302,7 +307,7 @@ function reset() {
   data.value = otherMonth.value = null
   selected.value = null
   existingFeeling.value = null
-  focusClosed.value = summaryOpen.value = checkins.value = false
+  focusClosed.value = summaryOpen.value = recordsVisible.value = keyboardOpen.value = false
   weightVisible.value = periodVisible.value = feelingVisible.value = captureVisible.value = false
   loading.value = otherLoading.value = feelingLoading.value = false
   loadError.value = otherError.value = ''
@@ -311,7 +316,8 @@ function reset() {
 
 watch(() => [auth.token, auth.privateCacheRevision], reset, { flush: 'sync' })
 onHide(() => {
-  assistant.value?.close()
+  pageVisible.value = keyboardOpen.value = recordsVisible.value = false
+  assistant.value?.suspend()
   formSequence += 1
   selected.value = null
   captureVisible.value = periodVisible.value = weightVisible.value = feelingVisible.value = feelingLoading.value = false
@@ -322,6 +328,7 @@ onShow(() => {
     uni.reLaunch({ url: '/pages/login/index' })
     return
   }
+  pageVisible.value = true
   today.value = todayString()
   void refresh()
   const request = ++settingsSequence
@@ -334,10 +341,8 @@ onShow(() => {
 
 <style scoped>
 .home-page { min-width:0; }
-.home-heading :deep(.hr-heading-title) {
-  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;
-}
-.welcome-art { width:40px; height:40px; object-fit:contain; }
+.home-page:not(.home-capture) { padding:0; }
+.summary-header { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
 .cycle-status { flex-shrink:0; min-height:49px; display:flex; align-items:center; gap:7px; text-align:left; border:0; background:transparent; padding:2px 0; color:var(--hr-ink); }
 .cycle-status strong,.cycle-status small { display:block; }
 .cycle-status strong { font-size:13px; }
@@ -351,18 +356,18 @@ onShow(() => {
 .focus p { margin:0; font-size:15px; overflow-wrap:anywhere; }
 .focus-action { justify-self:start; padding-left:0; }
 .focus-close { display:grid; place-items:center; min-height:44px; background:transparent; color:var(--hr-ink-2); border:0; border-radius:12px; }
-.quick-section { margin-bottom:12px; }
-.quick-section h2 { margin:16px 0 8px; }
-.shortcuts { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; }
-.shortcut { display:grid; justify-items:center; align-items:center; min-height:72px; gap:4px; padding:7px 2px; border:1px solid var(--hr-line); border-radius:15px; background:var(--hr-surface); color:var(--hr-ink); font-size:13px; font-weight:650; overflow-wrap:anywhere; }
-.shortcut-symbol { display:grid; place-items:center; width:35px; height:35px; border-radius:11px; background:var(--hr-rose-soft); color:var(--hr-rose-deep); }
-.shortcut-symbol svg { width:20px; height:20px; }
+.quick-section { padding:3px 9px 8px; border:1px solid var(--hr-line); border-radius:17px; background:var(--hr-surface); }
+.quick-header { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:44px; padding-inline:3px; }
+.quick-header h2 { margin:0; font:700 15px var(--hr-font); }
+.quick-header .hr-action { padding-inline:4px; font-size:13px; }
+.shortcuts { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:5px; }
+.shortcut { display:grid; justify-items:center; align-items:center; min-height:56px; gap:3px; padding:3px 2px; border:0; border-radius:10px; background:transparent; color:var(--hr-ink); font:13px/1.3 var(--hr-font); }
+.shortcut-symbol { display:grid; place-items:center; width:33px; height:33px; border-radius:11px; background:var(--hr-rose-soft); color:var(--hr-rose-deep); }
+.shortcut-symbol svg { width:18px; height:18px; }
 .shortcut.weight .shortcut-symbol { background:var(--hr-peach); color:var(--hr-peach-ink); }
 .shortcut.skin .shortcut-symbol { background:var(--hr-plum-soft); color:var(--hr-plum); }
 .shortcut.feeling .shortcut-symbol { background:var(--hr-taupe-soft); color:var(--hr-taupe); }
-.checkins { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
-.checkins > .hr-action { padding-left:1px; }
-.checkin-items { display:grid; width:100%; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+.checkin-items { display:grid; width:100%; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin-bottom:10px; }
 .checkin-items button { gap:5px; font-size:13px; }
 .checkin-items span { color:var(--hr-ink-2); }
 .summary { padding:5px 14px; }
@@ -372,5 +377,4 @@ onShow(() => {
 .summary-detail { border-top:1px solid var(--hr-line); display:grid; justify-items:start; }
 .summary-detail .hr-action { padding-inline:0; font-size:13px; }
 .error-row { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px; color:var(--hr-danger); padding-block:3px; }
-@media (max-width:350px) { .shortcuts { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 </style>

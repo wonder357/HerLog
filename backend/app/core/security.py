@@ -9,7 +9,7 @@ from app.core.errors import invalid, unauthorized
 
 
 def hash_password(password: str) -> str:
-    _check_password(password)
+    validate_new_password(password)
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("ascii")
 
 
@@ -22,7 +22,7 @@ def verify_password(password: str, hashed: str) -> bool:
         return False
 
 
-def _check_password(password: str) -> None:
+def validate_new_password(password: str) -> None:
     if len(password) < 8:
         raise invalid("密码至少 8 位")
     if len(password.encode("utf-8")) > 72:

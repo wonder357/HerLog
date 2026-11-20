@@ -149,6 +149,7 @@ WeightFeeling = Literal["bloating", "puffy", "tired", "comfortable"]
 class WeightIn(BaseModel):
     client_key: str = Field(min_length=8, max_length=36)
     kg: Decimal
+    body_fat_pct: Decimal | None = Field(default=None, gt=0, lt=100, max_digits=4, decimal_places=2)
     measured_at: datetime
     tag: str | None = Field(default=None, max_length=32)
     note: str | None = Field(default=None, max_length=500)
@@ -186,6 +187,7 @@ class WeightOut(BaseModel):
     client_key: str
     grams: int
     kg: float
+    body_fat_pct: float | None = None
     measured_at: str
     tag: str | None = None
     note: str | None = None
@@ -211,6 +213,18 @@ class MetricSlot(BaseModel):
     measured_at: str | None = None
 
 
+class MetricPointOut(BaseModel):
+    day: date
+    value: float
+    weight_id: int
+    measured_at: str
+
+
+class MetricTrendOut(BaseModel):
+    points: list[MetricPointOut] = Field(default_factory=list)
+    delta: float | None = None
+
+
 class CycleDayOut(BaseModel):
     day: date
     phase: Literal["menstrual", "follicular", "ovulatory", "luteal", "unknown"]
@@ -231,7 +245,33 @@ class WeightSummaryOut(BaseModel):
     latest_record_id: int | None = None
     record_days: int = 0
     metrics: dict[str, MetricSlot] = Field(default_factory=dict)
+    metric_trends: dict[str, MetricTrendOut] = Field(default_factory=dict)
     cycle_context: list[CycleDayOut] | None = None
+
+
+class WeightCycleOut(BaseModel):
+    start_day: date
+    end_day: date
+    completed: bool
+
+
+class WeightCyclePointOut(CycleDayOut):
+    cycle_day: int
+    weight_kg: float
+    bmi: float | None
+    body_fat_pct: float | None
+
+
+class WeightCycleSeriesOut(BaseModel):
+    cycle: WeightCycleOut
+    points: list[WeightCyclePointOut]
+
+
+class WeightCycleCompareOut(BaseModel):
+    cycles: list[WeightCycleOut]
+    current: WeightCycleSeriesOut | None = None
+    previous: WeightCycleSeriesOut | None = None
+    aligned_days: int = 0
 
 
 class WeightListOut(BaseModel):
@@ -331,6 +371,15 @@ class AssistantExchange(BaseModel):
 class AssistantStreamIn(AssistantQueryIn):
     mode: Literal["general", "records"]
     history: list[AssistantExchange] = Field(default_factory=list, max_length=3)
+    conversation_id: str | None = Field(default=None, pattern=r"^[0-9a-f]{32}$")
+    client_turn_id: str | None = Field(default=None, pattern=r"^[0-9a-f]{32}$")
+    create_conversation: bool = False
+
+    @model_validator(mode="after")
+    def history_fields(self) -> "AssistantStreamIn":
+        if bool(self.conversation_id) != bool(self.client_turn_id) or (self.create_conversation and not self.conversation_id):
+            raise ValueError("会话标识和消息标识须一并提供")
+        return self
 
 
 class RecordRef(BaseModel):
@@ -361,6 +410,7 @@ def weight_out(row: Any, has_photo: bool = False) -> WeightOut:
         client_key=row.client_key,
         grams=row.grams,
         kg=round(row.grams / 1000, 3),
+        body_fat_pct=row.body_fat_pct,
         measured_at=_as_utc_iso(row.measured_at),
         tag=row.tag,
         note=row.note,

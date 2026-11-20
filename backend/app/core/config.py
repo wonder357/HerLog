@@ -30,6 +30,12 @@ class Settings(BaseSettings):
     REDIS_ENABLED: bool = False
 
     SESSION_TTL_HOURS: int = 24 * 7
+    HERLOG_SMS_MODE: Literal["disabled", "demo", "aliyun"] = "disabled"
+    HERLOG_SMS_HMAC_SECRET: str = ""
+    HERLOG_SMS_SIGN_NAME: str = ""
+    HERLOG_SMS_TEMPLATE_CODE: str = ""
+    ALIBABA_CLOUD_ACCESS_KEY_ID: str = ""
+    ALIBABA_CLOUD_ACCESS_KEY_SECRET: str = ""
     PENDING_TTL_SECONDS: int = 600
     PENDING_MAX_PER_MEMBER: int = 3
     SKIN_MAX_UPLOAD_BYTES: int = 3 * 1024 * 1024

@@ -38,3 +38,14 @@ export function assistantStarters(phase: string, hasWeight: boolean, hasSkin: bo
     hasWeight ? '怎样读懂体重趋势？' : hasSkin ? '怎样对比同一部位的皮肤观察？' : '肤质观察可以记哪些内容？'
   ]
 }
+
+export function assistantTitle(question: string, mode: 'general' | 'records'): string {
+  const rules: [RegExp, string][] = [
+    [/经期|月经|周期/, '经期记录回顾'],
+    [/护肤|皮肤|防晒/, '日常护肤记录'],
+    [/睡眠|睡觉|作息/, '关于睡眠记录'],
+    [/运动|散步|健身|跑步/, '关于运动记录'],
+    [/体重|称重|体脂|BMI/i, '体重记录回顾']
+  ]
+  return rules.find(([pattern]) => pattern.test(question))?.[1] ?? (mode === 'records' ? '健康记录查询' : '日常健康对话')
+}

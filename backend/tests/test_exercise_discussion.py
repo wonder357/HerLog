@@ -52,7 +52,10 @@ def test_public_posts_are_opt_in_and_legacy_shares_stay_private(client, monkeypa
     assert publish(client, owner, category="checkin", checkin_id=own_checkin, body="另一条记录").status_code == 409
     feed = client.get(POSTS, headers=viewer, params={"category": "checkin"}).json()["data"]["items"]
     assert feed == [{**post, "mine": False}]
-    assert set(feed[0]) == {"public_id", "title", "body", "category", "activity", "published_at", "mine", "reply_count"}
+    assert set(feed[0]) == {
+        "public_id", "title", "body", "category", "activity", "published_at", "mine", "reply_count",
+        "like_count", "liked", "saved",
+    }
     assert feed[0]["activity"] == "散步"
     assert client.get(POSTS, headers=viewer, params={"category": "question"}).json()["data"]["items"] == []
     assert client.delete(f"{POSTS}/{post['public_id']}", headers=viewer).status_code == 404
@@ -97,3 +100,63 @@ def test_discussion_text_limits_and_anonymous_reply_reporting(client, monkeypatc
     assert client.get(POSTS, headers=owner).json()["data"]["items"]
     assert client.delete(post_path, headers=owner).status_code == 200
     assert client.get(POSTS, headers=owner).json()["data"]["items"] == []
+
+
+def test_discussion_discovery_and_private_bookmarks(client, monkeypatch):
+    monkeypatch.setattr("app.services.exercise_discussion.PAGE_SIZE", 2)
+    owner, _ = member(client, "discovery_author")
+    viewer, _ = member(client, "discovery_viewer")
+    oldest = publish(client, owner, title="节奏与呼吸", body="周末溜达时聊到了呼吸节奏。").json()["data"]
+    middle = publish(client, owner, title="户外散步路线", client_key="discussion-middle").json()["data"]
+    newest = publish(client, viewer, title="力量练习提问", category="question").json()["data"]
+    path = f"{POSTS}/{oldest['public_id']}"
+
+    def feed(headers, **params):
+        response = client.get(POSTS, headers=headers, params=params)
+        assert response.status_code == 200, response.text
+        return response.json()["data"]
+
+    assert [row["public_id"] for row in feed(viewer, q="呼吸节奏")["items"]] == [oldest["public_id"]]
+    assert feed(viewer, q="%")["items"] == []
+    assert [row["public_id"] for row in feed(viewer, view="mine")["items"]] == [newest["public_id"]]
+    assert feed(viewer, view="saved")["items"] == []
+    for _ in range(2):
+        assert client.put(path + "/reactions/like", headers=viewer).json()["data"] == {
+            "like_count": 1, "liked": True, "saved": False,
+        }
+    assert client.put(path + "/reactions/save", headers=viewer).json()["data"]["saved"] is True
+    assert feed(owner, view="saved")["items"] == []
+    assert feed(viewer, view="saved")["items"][0]["public_id"] == oldest["public_id"]
+    owner_item = feed(owner, q="呼吸节奏")["items"][0]
+    assert (owner_item["like_count"], owner_item["liked"], owner_item["saved"]) == (1, False, False)
+
+    first = feed(viewer, sort="popular")
+    assert [row["public_id"] for row in first["items"]] == [oldest["public_id"], newest["public_id"]]
+    second = feed(viewer, sort="popular", cursor=first["next_cursor"], cursor_likes=first["next_cursor_likes"])
+    assert [row["public_id"] for row in second["items"]] == [middle["public_id"]]
+    assert second["next_cursor"] is None
+    for _ in range(2):
+        assert client.delete(path + "/reactions/like", headers=viewer).json()["data"]["like_count"] == 0
+    assert client.delete(path + "/reactions/save", headers=viewer).json()["data"]["saved"] is False
+    assert feed(viewer, view="saved")["items"] == []
+
+    client.put(path + "/reactions/save", headers=viewer)
+    assert client.post(path + "/reports", headers=viewer, json={"reason_code": "other"}).status_code == 200
+    assert feed(viewer, view="saved")["items"] == []
+    assert feed(viewer, sort="popular", q="呼吸节奏")["items"] == []
+    assert client.put(path + "/reactions/like", headers=viewer).status_code == 404
+
+
+def test_discussion_edit_is_owned_and_preserves_private_attachment_boundary(client):
+    owner, _ = member(client, "discussion_editor")
+    viewer, _ = member(client, "discussion_visitor")
+    post = publish(client, owner, category="checkin", checkin_id=checkin(client, owner)).json()["data"]
+    path = f"{POSTS}/{post['public_id']}"
+    payload = {"title": "夜间散步", "body": "想交流照明充足的路线。", "category": "question"}
+    assert client.put(path, headers=viewer, json=payload).status_code == 404
+    assert client.put(path, headers=owner, json={**payload, "body": "现在体重 50kg"}).status_code == 422
+    assert client.put(path, headers=owner, json=payload).status_code == 200
+    result = client.get(POSTS, headers=viewer, params={"q": "照明"}).json()["data"]["items"][0]
+    assert {**post, **payload, "mine": False} == result
+    assert client.delete(path, headers=owner).status_code == 200
+    assert client.put(path, headers=owner, json=payload).status_code == 404

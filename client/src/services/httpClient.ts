@@ -6,10 +6,12 @@ const MEMBER_KEY = 'herlog.member'
 
 export class ApiRequestError extends Error {
   status: number
+  data?: unknown
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, data?: unknown) {
     super(message)
     this.status = status
+    this.data = data
   }
 }
 
@@ -142,7 +144,7 @@ export function request<T>(path: string, options: RequestOptions = {}): Promise<
         }
         const envelope = body as Envelope<T>
         if (status >= 400 || envelope.code !== 200) {
-          reject(new ApiRequestError(status, envelope.message || '请求失败'))
+          reject(new ApiRequestError(status, envelope.message || '请求失败', envelope.data))
           return
         }
         resolve(envelope.data)

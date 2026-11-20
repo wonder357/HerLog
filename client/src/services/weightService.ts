@@ -1,11 +1,12 @@
 import { request } from './httpClient'
-import type { Feeling } from './wellnessService'
+import type { CycleDay, Feeling } from './wellnessService'
 import type { WeightItem, WeightList, WeightSummary } from './types'
 import type { PrivatePhotoPayload } from './privatePhotoService'
 
 export interface WeightPayload {
   client_key: string
   kg: string
+  body_fat_pct?: string | null
   measured_at: string
   tag?: string | null
   note?: string | null
@@ -47,6 +48,25 @@ export function getComparison(days: 7 | 30) {
   return request<{ current: ComparisonWindow; previous: ComparisonWindow; avg_delta_kg: number | null; message: string }>(
     '/herlog/weights/compare', { data: { days } }
   )
+}
+
+export interface WeightCycle { start_day: string; end_day: string; completed: boolean }
+export interface WeightCyclePoint extends CycleDay {
+  cycle_day: number
+  weight_kg: number
+  bmi: number | null
+  body_fat_pct: number | null
+}
+export interface WeightCycleSeries { cycle: WeightCycle; points: WeightCyclePoint[] }
+export interface WeightCycleComparison {
+  cycles: WeightCycle[]
+  current: WeightCycleSeries | null
+  previous: WeightCycleSeries | null
+  aligned_days: number
+}
+
+export function getCycleComparison(selection?: { current_start: string; previous_start: string }) {
+  return request<WeightCycleComparison>('/herlog/weights/cycle-compare', { data: selection && { ...selection } })
 }
 
 export function createWeight(payload: WeightPayload): Promise<WeightItem> {

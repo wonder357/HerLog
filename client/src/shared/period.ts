@@ -3,7 +3,7 @@
  * 不请求旧方案服务，也不依赖大模型。
  */
 
-import { addDays, diffDays, startOfMonth } from './dates.ts'
+import { addDays, diffDays, formatDayLabel, startOfMonth } from './dates.ts'
 
 export const MAX_STARTS = 4
 export const MIN_STARTS = 3
@@ -33,6 +33,14 @@ interface CycleRecord {
   end_day: string | null
 }
 
+export function periodRange(item: CycleRecord): string {
+  const year = item.start_day.slice(0, 4)
+  const start = year + ' 年 ' + formatDayLabel(item.start_day)
+  if (!item.end_day || item.end_day === item.start_day) return start
+  const endYear = item.end_day.slice(0, 4)
+  return start + ' – ' + (year === endYear ? '' : endYear + ' 年 ') + formatDayLabel(item.end_day)
+}
+
 export function periodOnDay<T extends CycleRecord>(rows: T[], day: string): T | null {
   return rows.find(row => row.start_day <= day && day <= (row.end_day ?? row.start_day)) ?? null
 }
@@ -46,16 +54,18 @@ export function selectedDayInMonth(month: string, today: string): string {
   return month === startOfMonth(today) ? today : month
 }
 
-export type FeelingFilter = { kind: 'mood' | 'symptom'; label: string }
+export type FeelingFilter = { kind: 'flow' | 'mood' | 'symptom' | 'impact'; label: string }
 
 interface DiaryEntry {
   day: string
+  flow?: string | null
   mood?: string | null
   symptoms: string[]
+  impact?: string | null
 }
 
 export function matchesFeeling(entry: DiaryEntry, filter: FeelingFilter): boolean {
-  return filter.kind === 'mood' ? entry.mood === filter.label : entry.symptoms.includes(filter.label)
+  return filter.kind === 'symptom' ? entry.symptoms.includes(filter.label) : entry[filter.kind] === filter.label
 }
 
 export function summarizeDiary(rows: DiaryEntry[]) {
@@ -73,8 +83,10 @@ export function summarizeDiary(rows: DiaryEntry[]) {
   }
   return {
     days: new Set(rows.map(row => row.day)).size,
+    flows: counts(row => row.flow ? [row.flow] : []),
     moods: counts(row => row.mood ? [row.mood] : []),
-    symptoms: counts(row => row.symptoms)
+    symptoms: counts(row => row.symptoms),
+    impacts: counts(row => row.impact ? [row.impact] : [])
   }
 }
 
@@ -176,8 +188,9 @@ export function predictNextStart(starts: string[], today: string): Prediction {
       message: messageFor('irregular', null)
     }
   }
-  const expectedStart = addDays(ordered[0], estimate)
-  const status: PredictionStatus = today > expectedStart ? 'overdue' : 'upcoming'
+  const candidate = addDays(ordered[0], estimate)
+  const status: PredictionStatus = today > candidate ? 'overdue' : 'upcoming'
+  const expectedStart = status === 'upcoming' ? candidate : null
   return {
     status,
     expectedStart,

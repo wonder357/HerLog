@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
-import { fetchMe, login as loginApi, logout as logoutApi, register as registerApi } from '../services/authService'
+import { bindPhone, fetchMe, login as loginApi, loginByPhone, logout as logoutApi, register as registerApi, registerByPhone } from '../services/authService'
+import type { PhoneProof } from '../services/authService'
 import { clearPrivateCache, clearSession, currentEpoch, getMember, getToken, saveSession, touchMember } from '../services/httpClient'
 import type { LoginResult, MemberInfo } from '../services/types'
 
@@ -30,6 +31,7 @@ export const useAuthStore = defineStore('auth', {
         username: result.username,
         name: result.name,
         phone: result.phone,
+        verified_phone_hint: result.verified_phone_hint,
         avatar: result.avatar ?? null,
         org_id: result.org_id ?? null,
         org_ids: result.org_ids ?? []
@@ -60,6 +62,16 @@ export const useAuthStore = defineStore('auth', {
     },
     register(username: string, password: string) {
       return registerApi(username, password)
+    },
+    async loginByPhone(proof: PhoneProof) {
+      this.applyLoginResult(await loginByPhone(proof))
+    },
+    async registerByPhone(proof: PhoneProof, username: string, password: string) {
+      this.applyLoginResult(await registerByPhone(proof, username, password))
+    },
+    async bindPhone(proof: PhoneProof, password: string) {
+      this.member = await bindPhone(proof, password)
+      touchMember(this.member)
     },
     async logout() {
       const epoch = currentEpoch()

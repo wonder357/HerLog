@@ -5,14 +5,14 @@ import unicodedata
 from datetime import timedelta, timezone
 from uuid import uuid4
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.clock import utc_now
 from app.core.errors import ApiError, conflict, invalid, not_found
-from app.models.wellness import DiscussionReply, DiscussionReplyReport, GroupShare, ShareReport
-from app.schemas.discussion import DiscussionPostIn, DiscussionReplyIn
+from app.models.wellness import DiscussionReaction, DiscussionReply, DiscussionReplyReport, GroupShare, ShareReport
+from app.schemas.discussion import DiscussionEditIn, DiscussionPostIn, DiscussionReplyIn
 from app.services.period_service import lock_member
 from app.services.wellness import ACTIVITIES, member_checkin
 
@@ -65,11 +65,12 @@ def _iso(moment):
     return moment.replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def _post_out(post: GroupShare, customer_id: str, reply_count: int = 0) -> dict:
+def _post_out(post: GroupShare, customer_id: str, reply_count: int = 0, **reactions) -> dict:
     return {
         "public_id": post.public_id, "category": post.snapshot["category"], "title": post.snapshot["title"],
         "body": post.snapshot["body"], "activity": post.snapshot.get("activity"),
         "published_at": _iso(post.published_at), "mine": post.customer_id == customer_id, "reply_count": reply_count,
+        "like_count": 0, "liked": False, "saved": False, **reactions,
     }
 
 
@@ -90,7 +91,32 @@ def _visible_replies(customer_id: str):
     )
 
 
-def list_posts(session: Session, customer_id: str, category: str | None, cursor: int | None) -> dict:
+def _like_count():
+    return select(func.count()).select_from(DiscussionReaction).where(
+        DiscussionReaction.share_id == GroupShare.id, DiscussionReaction.kind == "like",
+    ).correlate(GroupShare).scalar_subquery()
+
+
+def _reaction_states(session: Session, customer_id: str, ids: list[int]) -> dict[int, dict]:
+    if not ids:
+        return {}
+    likes = dict(session.execute(
+        select(DiscussionReaction.share_id, func.count()).where(
+            DiscussionReaction.share_id.in_(ids), DiscussionReaction.kind == "like",
+        ).group_by(DiscussionReaction.share_id)
+    ).all())
+    own = set(session.execute(select(DiscussionReaction.share_id, DiscussionReaction.kind).where(
+        DiscussionReaction.share_id.in_(ids), DiscussionReaction.customer_id == customer_id,
+    )))
+    return {
+        post_id: {"like_count": likes.get(post_id, 0), "liked": (post_id, "like") in own,
+                  "saved": (post_id, "save") in own}
+        for post_id in ids
+    }
+
+
+def list_posts(session: Session, customer_id: str, category: str | None, cursor: int | None, *,
+               q: str | None = None, view: str = "all", sort: str = "latest", cursor_likes: int | None = None) -> dict:
     query = _public_posts().where(
         GroupShare.status == "published",
         ~select(ShareReport.share_id).where(
@@ -99,19 +125,72 @@ def list_posts(session: Session, customer_id: str, category: str | None, cursor:
     )
     if category:
         query = query.where(GroupShare.snapshot["category"].as_string() == category)
-    if cursor is not None:
+    if keyword := (q or "").strip():
+        query = query.where(or_(
+            GroupShare.snapshot["title"].as_string().icontains(keyword, autoescape=True),
+            GroupShare.snapshot["body"].as_string().icontains(keyword, autoescape=True),
+        ))
+    if view == "mine":
+        query = query.where(GroupShare.customer_id == customer_id)
+    elif view == "saved":
+        query = query.where(select(DiscussionReaction.share_id).where(
+            DiscussionReaction.share_id == GroupShare.id, DiscussionReaction.kind == "save",
+            DiscussionReaction.customer_id == customer_id,
+        ).exists())
+    if sort == "popular":
+        likes = _like_count()
+        if cursor is not None:
+            if cursor_likes is None:
+                raise invalid("热门分页缺少点赞游标")
+            query = query.where(or_(likes < cursor_likes, (likes == cursor_likes) & (GroupShare.id < cursor)))
+        query = query.add_columns(likes.label("rank_likes")).order_by(likes.desc())
+    elif cursor is not None:
         query = query.where(GroupShare.id < cursor)
-    rows = list(session.scalars(query.order_by(GroupShare.id.desc()).limit(PAGE_SIZE + 1)))
-    page = rows[:PAGE_SIZE]
+    rows = session.execute(query.order_by(GroupShare.id.desc()).limit(PAGE_SIZE + 1)).all()
+    page = [result[0] for result in rows[:PAGE_SIZE]]
+    ids = [row.id for row in page]
+    states = _reaction_states(session, customer_id, ids)
     counts = dict(session.execute(
         select(DiscussionReply.share_id, func.count()).where(
-            DiscussionReply.share_id.in_([row.id for row in page]), *_visible_replies(customer_id),
+            DiscussionReply.share_id.in_(ids), *_visible_replies(customer_id),
         ).group_by(DiscussionReply.share_id),
     ).all()) if page else {}
-    return {
-        "items": [_post_out(row, customer_id, counts.get(row.id, 0)) for row in page],
+    result = {
+        "items": [_post_out(row, customer_id, counts.get(row.id, 0), **states[row.id]) for row in page],
         "next_cursor": page[-1].id if len(rows) > PAGE_SIZE else None,
     }
+    if sort == "popular":
+        result["next_cursor_likes"] = rows[PAGE_SIZE - 1].rank_likes if len(rows) > PAGE_SIZE else None
+    return result
+
+
+def edit_post(session: Session, customer_id: str, post_id: str, payload: DiscussionEditIn) -> None:
+    row = _visible_post(session, customer_id, post_id, lock=True)
+    if row.customer_id != customer_id:
+        raise not_found()
+    _check_text(payload.title, payload.body)
+    row.snapshot = {**row.snapshot, **payload.model_dump()}
+    session.commit()
+
+
+def set_reaction(session: Session, customer_id: str, post_id: str, kind: str, enabled: bool) -> dict:
+    post = _visible_post(session, customer_id, post_id, lock=True)
+    current = session.get(DiscussionReaction, (post.id, kind, customer_id))
+    if enabled and current is None:
+        session.add(DiscussionReaction(share_id=post.id, kind=kind, customer_id=customer_id))
+        try:
+            session.flush()
+        except IntegrityError:
+            session.rollback()
+            post = _visible_post(session, customer_id, post_id, lock=True)
+            if session.get(DiscussionReaction, (post.id, kind, customer_id)) is None:
+                raise
+    elif not enabled and current is not None:
+        session.delete(current)
+        session.flush()
+    state = _reaction_states(session, customer_id, [post.id])[post.id]
+    session.commit()
+    return state
 
 
 def publish(session: Session, customer_id: str, payload: DiscussionPostIn) -> dict:

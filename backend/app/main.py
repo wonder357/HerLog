@@ -2,7 +2,7 @@
 
 启动前对齐的两条约束：
 1. 后台调度器只在非 contest 环境启动（`settings.ENV != "contest"`），比赛五页不需要它。
-2. 只有 `/api/v1/c/auth/username-register` 与 `/username-login` 允许匿名，其余业务路由都要会员会话。
+2. 业务路由使用会员会话，注册、登录及其验证码入口允许匿名访问。
 """
 
 from __future__ import annotations
@@ -80,7 +80,7 @@ async def log_request(request: Request, call_next):
     elapsed = (time.perf_counter() - started) * 1000
     response.headers["X-Request-Id"] = request_id
     path = request.url.path
-    if path.startswith("/api/v1/c/herlog/"):
+    if path.startswith(("/api/v1/c/herlog/", "/api/v1/c/auth/")):
         response.headers["Cache-Control"] = "private, no-store"
     if path.startswith("/api/v1/c/herlog/fertility-daily/"):
         path = "/api/v1/c/herlog/fertility-daily/{day}"

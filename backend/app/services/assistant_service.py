@@ -172,11 +172,7 @@ def _period_answer(session: Session, customer_id: str, question: str) -> Assista
     elif prediction["status"] == "irregular":
         text = prediction["message"] + "。本次不给出具体日期，也不据此判断健康状况。"
     elif prediction["status"] == "overdue":
-        expected = prediction["expected_start"]
-        text = (
-            f"按最近记录的间隔估算，预计开始日是 {expected.isoformat()}，"
-            "现在已经过了这一天，还没有新的开始记录。可以在经期页补记。"
-        )
+        text = "已过上次估算的开始时间，尚未记录新的开始日。如果经期已经开始，可以在经期页补记。"
     else:
         expected = prediction["expected_start"]
         text = (

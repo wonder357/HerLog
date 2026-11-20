@@ -62,7 +62,10 @@ test('附录六组预测边界', () => {
 
   const overdue = predictNextStart(['2026-10-03', '2026-11-01', '2026-11-30'], '2026-12-30')
   assert.equal(overdue.status, 'overdue')
-  assert.equal(overdue.expectedStart, '2026-12-29')
+  assert.equal(overdue.expectedStart, null)
+  const dueToday = predictNextStart(['2026-10-03', '2026-11-01', '2026-11-30'], '2026-12-29')
+  assert.equal(dueToday.status, 'upcoming')
+  assert.equal(dueToday.expectedStart, '2026-12-29')
 })
 
 test('三次以上开始日取中位数', () => {
@@ -109,18 +112,22 @@ test('月份切换同步选中日，历史未结束记录不覆盖较新周期',
   assert.equal(currentStatus(rows.map(row => ({ startDay: row.start_day, endDay: row.end_day })), '2026-11-18').inPeriod, false)
 })
 
-test('本月小结按实际记录日期去重，支持按心情或身体感受筛选', () => {
+test('本月小结按实际记录日期去重，支持按四类感受筛选', () => {
   const rows = [
-    { day: '2026-11-02', symptoms: ['腹胀', '腹胀'], mood: '平静' },
-    { day: '2026-11-03', symptoms: ['腹胀'] },
+    { day: '2026-11-02', symptoms: ['腹胀', '腹胀'], mood: '平静', flow: '少量' },
+    { day: '2026-11-03', symptoms: ['腹胀'], flow: '少量', impact: '轻微影响' },
     { day: '2026-11-04', symptoms: [], mood: '平静' }
   ]
   assert.deepEqual(summarizeDiary(rows), {
-    days: 3, symptoms: [{ label: '腹胀', days: 2 }], moods: [{ label: '平静', days: 2 }]
+    days: 3, symptoms: [{ label: '腹胀', days: 2 }], moods: [{ label: '平静', days: 2 }],
+    flows: [{ label: '少量', days: 2 }], impacts: [{ label: '轻微影响', days: 1 }]
   })
   assert.deepEqual(rows.filter(row => matchesFeeling(row, { kind: 'mood', label: '平静' })).map(row => row.day),
     ['2026-11-02', '2026-11-04'])
   assert.equal(matchesFeeling(rows[2], { kind: 'symptom', label: '腹胀' }), false)
+  assert.equal(matchesFeeling(rows[0], { kind: 'flow', label: '少量' }), true)
+  assert.equal(matchesFeeling(rows[1], { kind: 'impact', label: '轻微影响' }), true)
+  assert.equal(matchesFeeling(rows[0], { kind: 'impact', label: '轻微影响' }), false)
 })
 
 test('周期回顾排除缺失值，只取最近六个完整样本', () => {

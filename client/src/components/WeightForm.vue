@@ -21,6 +21,11 @@
     </view>
 
     <details class="optional">
+      <summary>体脂率 <span>选填</span></summary>
+      <H5Label class="hr-field-label" for="weight-body-fat">实际测量读数（%）</H5Label>
+      <H5Input id="weight-body-fat" v-model="bodyFat" inputmode="decimal" class="field" placeholder="例如 25.5" maxlength="5" />
+    </details>
+    <details class="optional">
       <summary>身体感受、标签和备注 <span>选填</span></summary>
       <view class="hr-field-label">身体感受</view>
       <view class="feeling-options">
@@ -49,7 +54,7 @@ import H5Button from './H5Button'
 import PrivatePhotoEditor from './PrivatePhotoEditor.vue'
 import { ref, watch } from 'vue'
 import { currentTime, formatDayLabel, todayString, toZonedIso } from '../shared/dates'
-import { parseKgToGrams } from '../shared/weight'
+import { parseBodyFat, parseKgToGrams } from '../shared/weight'
 import { ApiRequestError, StaleSessionError } from '../services/httpClient'
 import { createWeight, newClientKey } from '../services/weightService'
 import type { Feeling } from '../services/wellnessService'
@@ -59,6 +64,7 @@ const props = defineProps<{ visible: boolean; presetDay?: string; presetTime?: s
 const emit = defineEmits<{ (event: 'close'): void; (event: 'saved'): void }>()
 
 const kg = ref('')
+const bodyFat = ref('')
 const day = ref(todayString())
 const time = ref(currentTime())
 const tag = ref('')
@@ -116,6 +122,7 @@ async function submit() {
   }
   try {
     parseKgToGrams(kg.value)
+    parseBodyFat(bodyFat.value)
   } catch (validation) {
     error.value = (validation as Error).message
     return
@@ -125,6 +132,7 @@ async function submit() {
     await createWeight({
       client_key: clientKey.value,
       kg: kg.value.trim(),
+      body_fat_pct: parseBodyFat(bodyFat.value),
       measured_at: toZonedIso(day.value, time.value),
       tag: tag.value.trim() || null,
       note: note.value.trim() || null,
@@ -132,6 +140,7 @@ async function submit() {
       ...(photo.value ? { photo: photo.value } : {})
     })
     kg.value = ''
+    bodyFat.value = ''
     tag.value = ''
     note.value = ''
     feelingTags.value = []

@@ -6,8 +6,12 @@
       <p v-else-if="failed" class="prediction-note" role="alert">暂时无法读取经期预测。</p>
       <template v-else-if="prediction?.status === 'upcoming' && day">
         <div class="date-row">
-          <span class="prediction-label">预计开始</span>
+          <span class="prediction-label">{{ end && end !== day ? '预计经期' : '预计开始' }}</span>
           <time class="prediction-date" :datetime="day">{{ dateLabel(day) }}</time>
+          <template v-if="end && end !== day">
+            <span aria-hidden="true">–</span>
+            <time class="prediction-date" :datetime="end">{{ dateLabel(end) }}</time>
+          </template>
           <span class="prediction-countdown">{{ daysUntil === 0 ? '今天' : '还有 ' + daysUntil + ' 天' }}</span>
         </div>
         <p class="prediction-note">按最近 {{ prediction.cycle_count }} 个周期估算。实际日期可能不同，不用于避孕。</p>
@@ -15,7 +19,7 @@
       <template v-else-if="prediction?.status === 'overdue'">
         <strong class="prediction-status">已过预计开始日</strong>
         <p class="prediction-note">
-          <template v-if="prediction.expected_start">原预计 {{ dateLabel(prediction.expected_start) }} 开始。</template>如果经期已经开始，可以补记实际日期。
+          尚未记录新的开始日。如果经期已经开始，可以补记实际日期。
         </p>
       </template>
       <template v-else-if="prediction?.status === 'irregular'">
@@ -50,6 +54,7 @@ import { MIN_STARTS } from '../../shared/period'
 const props = defineProps<{
   prediction: PeriodPrediction | null
   day: string | null
+  end: string | null
   today: string
   loading: boolean
   failed: boolean
@@ -92,7 +97,7 @@ function dateLabel(day: string) {
 .prediction-content { padding-bottom: 8px; }
 .date-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; }
 .prediction-label, .prediction-countdown { font-size: 13px; }
-.prediction-date { font: 650 clamp(19px, 5.6vw, 24px)/1.35 var(--hr-serif); font-variant-numeric: tabular-nums; }
+.prediction-date { font: 650 clamp(19px, 5.6vw, 24px)/1.35 var(--hr-serif, Georgia, "Songti SC", serif); font-variant-numeric: tabular-nums; }
 .prediction-status { font-size: 15px; font-weight: 650; }
 .prediction-note { margin: 4px 0 0; color: var(--hr-ink-2); font-size: 13px; line-height: 1.5; }
 .prediction-actions { display: flex; flex-wrap: wrap; column-gap: 14px; }

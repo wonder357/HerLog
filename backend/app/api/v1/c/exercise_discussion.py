@@ -8,7 +8,7 @@ from app.core.config import settings
 from app.core.errors import not_found
 from app.db.session import get_session
 from app.schemas.common import ApiResponse
-from app.schemas.discussion import Category, DiscussionPostIn, DiscussionReplyIn
+from app.schemas.discussion import Category, DiscussionEditIn, DiscussionPostIn, DiscussionReplyIn, DiscussionSort, DiscussionView, ReactionKind
 from app.schemas.wellness import ModerationIn, ReportIn
 from app.services import exercise_discussion as discussion
 from app.services.auth_service import CurrentUser
@@ -20,13 +20,33 @@ Cursor = Annotated[int | None, Query(ge=1)]
 
 
 @router.get("/posts")
-def posts(db: Db, user: User, category: Category | None = None, cursor: Cursor = None):
-    return ApiResponse(data=discussion.list_posts(db, user.customer_id, category, cursor))
+def posts(db: Db, user: User, category: Category | None = None, cursor: Cursor = None,
+          q: Annotated[str | None, Query(max_length=60)] = None, view: DiscussionView = "all",
+          sort: DiscussionSort = "latest", cursor_likes: Annotated[int | None, Query(ge=0)] = None):
+    return ApiResponse(data=discussion.list_posts(
+        db, user.customer_id, category, cursor, q=q, view=view, sort=sort, cursor_likes=cursor_likes,
+    ))
 
 
 @router.post("/posts")
 def post(payload: DiscussionPostIn, db: Db, user: User):
     return ApiResponse(data=discussion.publish(db, user.customer_id, payload))
+
+
+@router.put("/posts/{post_id}")
+def edit(post_id: str, payload: DiscussionEditIn, db: Db, user: User):
+    discussion.edit_post(db, user.customer_id, post_id, payload)
+    return ApiResponse(data=None)
+
+
+@router.put("/posts/{post_id}/reactions/{kind}")
+def add_reaction(post_id: str, kind: ReactionKind, db: Db, user: User):
+    return ApiResponse(data=discussion.set_reaction(db, user.customer_id, post_id, kind, True))
+
+
+@router.delete("/posts/{post_id}/reactions/{kind}")
+def remove_reaction(post_id: str, kind: ReactionKind, db: Db, user: User):
+    return ApiResponse(data=discussion.set_reaction(db, user.customer_id, post_id, kind, False))
 
 
 @router.delete("/posts/{post_id}")

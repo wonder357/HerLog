@@ -29,6 +29,7 @@
       <view v-for="item in items" :key="item.id" class="record">
         <view class="record-main">
           <view class="record-value hr-number">{{ item.kg }} <text class="unit">kg</text></view>
+          <view v-if="item.body_fat_pct != null" class="muted">体脂率 {{ item.body_fat_pct }}%</view>
           <view class="muted">{{ formatMoment(item.measured_at) }}<text v-if="item.tag"> · {{ item.tag }}</text></view>
           <view class="muted">{{ item.source === 'scale' ? '设备测量' : '手动记录' }}<text v-if="item.feeling_tags?.length"> · {{ item.feeling_tags.map(code => feelingLabels[code]).join('、') }}</text></view>
           <view v-if="item.note" class="muted">{{ item.note }}</view>
@@ -47,13 +48,16 @@
       <view v-if="bmi?.value != null">最近一次 BMI {{ bmi.value.toFixed(1) }}</view>
       <H5Button v-else-if="bmi?.status === 'missing_height'" class="hr-action" @click="openProfile">补充身高后可查看 BMI</H5Button>
       <view v-else class="muted">有了体重和身高记录后，可以在这里查看 BMI。</view>
-      <view class="muted">体成分设备尚未接入</view>
+      <view v-if="fat?.value != null" class="muted">最近一次体脂率 {{ fat.value }}% · {{ fat.source === 'scale' ? '设备测量' : '手动填录' }}</view>
+      <view v-else class="muted">在记体重时可以填入已测量的体脂率。</view>
     </view>
 
     <HerlogSheet v-if="editVisible" title="修改体重" :context="formatMoment(editing?.measured_at || '')"
       :busy="saving" @close="closeEdit">
       <H5Label class="hr-field-label" for="edit-weight">体重（kg）</H5Label>
       <H5Input id="edit-weight" v-model="editKg" class="field" inputmode="decimal" />
+      <H5Label class="hr-field-label" for="edit-body-fat">体脂率（%，选填）</H5Label>
+      <H5Input id="edit-body-fat" v-model="editBodyFat" class="field" inputmode="decimal" maxlength="5" />
       <view class="filter-grid">
         <view><H5Label class="hr-field-label" for="edit-day">日期</H5Label><H5Input id="edit-day" v-model="editDay" class="field" type="date" :max="today" /></view>
         <view><H5Label class="hr-field-label" for="edit-time">时间</H5Label><H5Input id="edit-time" v-model="editTime" class="field" type="time" /></view>
@@ -89,7 +93,7 @@ import PrivatePhotoEditor from '../../components/PrivatePhotoEditor.vue'
 import { nextTick, ref } from 'vue'
 import { onHide, onShow } from '@dcloudio/uni-app'
 import { formatMoment, shanghaiDayKey, toZonedIso, todayString } from '../../shared/dates'
-import { parseKgToGrams } from '../../shared/weight'
+import { parseBodyFat, parseKgToGrams } from '../../shared/weight'
 import { ApiRequestError, currentEpoch, StaleSessionError } from '../../services/httpClient'
 import { deleteWeight, getSummary, listWeights, updateWeight } from '../../services/weightService'
 import type { WeightItem, WeightSummary } from '../../services/types'
@@ -100,6 +104,7 @@ import type { PrivatePhotoPayload } from '../../services/privatePhotoService'
 const today = todayString()
 const items = ref<WeightItem[]>([])
 const bmi = ref<NonNullable<WeightSummary['metrics']>[string] | null>(null)
+const fat = ref<NonNullable<WeightSummary['metrics']>[string] | null>(null)
 const feelingLabels = { comfortable: '舒适', tired: '疲惫', bloating: '腹胀', puffy: '感觉浮肿' }
 const total = ref(0)
 const page = ref(1)
@@ -111,6 +116,7 @@ const editVisible = ref(false)
 const editFeelings = ref<Feeling[]>([])
 const editing = ref<WeightItem | null>(null)
 const editKg = ref('')
+const editBodyFat = ref('')
 const editDay = ref(today)
 const editTime = ref('08:00')
 const editTag = ref('')
@@ -169,6 +175,7 @@ function startEdit(item: WeightItem, focusPhoto = false) {
   editPhoto.value = undefined
   editing.value = item
   editKg.value = String(item.kg)
+  editBodyFat.value = item.body_fat_pct == null ? '' : String(item.body_fat_pct)
   editDay.value = shanghaiDayKey(item.measured_at)
   editTime.value = formatMoment(item.measured_at).slice(-5)
   editTag.value = item.tag ?? ''
@@ -203,6 +210,7 @@ async function saveEdit() {
   }
   try {
     parseKgToGrams(editKg.value)
+    parseBodyFat(editBodyFat.value)
   } catch (validation) {
     editError.value = (validation as Error).message
     return
@@ -214,6 +222,7 @@ async function saveEdit() {
     await updateWeight(target.id, {
       client_key: target.client_key,
       kg: editKg.value.trim(),
+      body_fat_pct: parseBodyFat(editBodyFat.value),
       measured_at: sameMoment ? target.measured_at : toZonedIso(editDay.value, editTime.value),
       tag: editTag.value.trim() || null,
       note: editNote.value.trim() || null,
@@ -260,9 +269,13 @@ function remove(item: WeightItem) {
 async function loadMetrics() {
   const epoch = currentEpoch()
   bmi.value = null
+  fat.value = null
   try {
     const data = await getSummary(30)
-    if (epoch === currentEpoch()) bmi.value = data.metrics?.bmi ?? null
+    if (epoch === currentEpoch()) {
+      bmi.value = data.metrics?.bmi ?? null
+      fat.value = data.metrics?.body_fat_pct ?? null
+    }
   } catch {
     // 明细仍可以独立读取。
   }

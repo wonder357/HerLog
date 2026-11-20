@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.models.assistant import AssistantConversation, AssistantTurn
 from app.models.fertility import CyclePreference, FertilityDaily, FertilityTest
 from app.models.herlog import (
     Feeling,
@@ -14,9 +15,11 @@ from app.models.herlog import (
 from app.models.member import MemberAuth, MemberAuthSession
 from app.models.home import HomePreference
 from app.models.private_photo import CheckinPhoto, ProfilePhoto, WeightPhoto
-from app.models.wellness import Checkin, DiscussionReply, DiscussionReplyReport, GroupMembership, GroupShare, ShareReport, SkinJournal
+from app.models.wellness import Checkin, DiscussionReaction, DiscussionReply, DiscussionReplyReport, GroupMembership, GroupShare, ShareReport, SkinJournal
 
 __all__ = [
+    "AssistantConversation",
+    "AssistantTurn",
     "CyclePreference",
     "FertilityDaily",
     "FertilityTest",
@@ -25,6 +28,7 @@ __all__ = [
     "Checkin",
     "CheckinPhoto",
     "DiscussionReply",
+    "DiscussionReaction",
     "DiscussionReplyReport",
     "GroupMembership",
     "GroupShare",

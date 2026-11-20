@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { assistantStarters, calendarMarks, suggestedQuestions } from '../src/shared/home.ts'
+import { assistantStarters, assistantTitle, calendarMarks, suggestedQuestions } from '../src/shared/home.ts'
 
 test('日历以固定顺序提供四类组合标记，0 次皮肤不出标记', () => {
   assert.deepEqual(calendarMarks(true, { weight_kg: '58.2', skin_observation_count: 1, feeling_tags: ['平静'] }),
@@ -21,4 +21,10 @@ test('首页 DeepSeek 建议问题使用通用主题，对应阶段并与查记�
   assert.deepEqual(prompts, ['回看经期估算时要留意什么？', '怎样读懂体重趋势？'])
   assert.notEqual(assistantStarters('menstrual', true, false)[0], prompts[0])
   assert.notEqual(prompts[0], suggestedQuestions('luteal', true, false)[0])
+})
+
+test('自动标题取主题，省略问题里的日期和手机号', () => {
+  assert.equal(assistantTitle('我的电话是 13800000000，11 月 18 日开始记睡眠', 'general'), '关于睡眠记录')
+  assert.equal(assistantTitle('查 2026 年 11 月 15 日', 'records'), '健康记录查询')
+  assert.equal(assistantTitle('想了解 bmi', 'general'), '体重记录回顾')
 })

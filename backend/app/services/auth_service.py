@@ -4,12 +4,12 @@ import uuid
 from dataclasses import dataclass
 from datetime import timedelta
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.core.clock import utc_now
 from app.core.config import settings
-from app.core.errors import unauthorized
+from app.core.errors import ApiError, conflict, unauthorized
 from app.core.security import (
     hash_password,
     new_token,
@@ -31,6 +31,14 @@ class CurrentUser:
 def register(session: Session, username: str, password: str) -> Profile:
     """用户名注册：会员主体 + 比赛资料同一事务写入，phone 保持 NULL。"""
 
+    profile, _ = _new_member(session, username, password)
+    session.commit()
+    return profile
+
+
+def _new_member(
+    session: Session, username: str, password: str, verified_phone: str | None = None,
+) -> tuple[Profile, MemberAuth]:
     hashed = hash_password(password)
     customer_id = uuid.uuid4().hex
     now = utc_now()
@@ -43,12 +51,54 @@ def register(session: Session, username: str, password: str) -> Profile:
         created_at=now,
         updated_at=now,
     )
-    profile = Profile(customer_id=customer_id, username=username)
+    profile = Profile(customer_id=customer_id, username=username, verified_phone=verified_phone)
     session.add(member)
     session.add(profile)
-    # 并发重名由 uq_herlog_username 裁决，IntegrityError 统一映射为 409。
-    session.commit()
+    return profile, member
+
+
+def register_verified(session: Session, username: str, password: str, phone: str) -> dict:
+    if session.scalar(select(Profile.customer_id).where(Profile.verified_phone == phone)):
+        raise conflict("该手机号已用于登录，请直接登录")
+    profile, member = _new_member(session, username, password, phone)
+    return issue_session(session, profile, member)
+
+
+def login_verified(session: Session, phone: str) -> dict:
+    found = session.execute(
+        select(Profile, MemberAuth).join(MemberAuth, Profile.customer_id == MemberAuth.customer_id)
+        .where(Profile.verified_phone == phone, MemberAuth.status == "active").with_for_update()
+    ).one_or_none()
+    if found is None:
+        raise unauthorized("该号码暂不可用。新用户可注册，老用户可用账号密码登录")
+    return issue_session(session, *found)
+
+
+def require_unbound_phone(session: Session, customer_id: str, *, lock: bool = False) -> Profile:
+    query = select(Profile).where(Profile.customer_id == customer_id)
+    profile = session.scalar(query.with_for_update() if lock else query)
+    if profile is None:
+        raise unauthorized()
+    if profile.verified_phone:
+        raise conflict("该账号已绑定登录手机号")
     return profile
+
+
+def bind_verified_phone(session: Session, customer_id: str, password: str, phone: str) -> dict:
+    profile = require_unbound_phone(session, customer_id, lock=True)
+    member = session.scalar(select(MemberAuth).where(MemberAuth.customer_id == customer_id).with_for_update())
+    if not member or member.status != "active" or not verify_password(password, member.password):
+        raise ApiError(422, "当前密码不正确或账号暂不可用，请重新获取验证码", {"reason": "sms_consumed"})
+    if session.scalar(select(Profile.customer_id).where(Profile.verified_phone == phone)):
+        raise conflict("该手机号已绑定其他账号")
+    bound = session.execute(
+        update(Profile).where(Profile.customer_id == customer_id, Profile.verified_phone.is_(None))
+        .values(verified_phone=phone)
+    )
+    if bound.rowcount != 1:
+        raise conflict("该账号已绑定登录手机号")
+    session.commit()
+    return _member_out(profile, member)
 
 
 def find_member_by_username(session: Session, username: str) -> tuple[Profile, MemberAuth] | None:
@@ -91,15 +141,9 @@ def issue_session(session: Session, profile: Profile, member: MemberAuth) -> dic
     )
     session.commit()
     return {
+        **_member_out(profile, member),
         "session_id": token,
         "token": token,
-        "customer_id": member.customer_id,
-        "username": profile.username,
-        "name": profile.username,
-        "phone": member.phone,
-        "avatar": None,
-        "org_id": None,
-        "org_ids": [],
         "expires_at": expires_at,
     }
 
@@ -144,11 +188,17 @@ def member_view(session: Session, customer_id: str) -> dict:
     member = session.scalar(select(MemberAuth).where(MemberAuth.customer_id == customer_id))
     if profile is None or member is None:
         raise unauthorized()
+    return _member_out(profile, member)
+
+
+def _member_out(profile: Profile, member: MemberAuth) -> dict:
+    phone = profile.verified_phone
     return {
         "customer_id": member.customer_id,
         "username": profile.username,
         "name": profile.username,
         "phone": member.phone,
+        "verified_phone_hint": f"{phone[:3]}****{phone[-4:]}" if phone else None,
         "avatar": None,
         "org_id": None,
         "org_ids": [],

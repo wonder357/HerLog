@@ -1,20 +1,4 @@
 <template>
-  <section class="card calendar-preview" aria-label="记录日历">
-    <header class="calendar-header">
-      <div><h2 class="hr-section-title">记录日历</h2><p class="muted">{{ weekLabel }}</p></div>
-      <H5Button class="hr-action" @click="emit('open', today)">打开月历 ›</H5Button>
-    </header>
-    <div class="date-grid">
-      <span v-for="label in weekdays" :key="label" class="weekday">{{ label }}</span>
-      <H5Button v-for="day in week" :key="day" class="date-button" :class="{ today: day === today }"
-        :aria-label="formatDayLabel(day) + (recorded?.includes(day) ? '，有记录' : '')" :aria-current="day === today ? 'date' : undefined"
-        @click="emit('open', day)">
-        {{ Number(day.slice(-2)) }}
-        <span v-if="recorded?.includes(day)" class="week-mark" aria-hidden="true" />
-      </H5Button>
-    </div>
-  </section>
-
   <HerlogSheet v-if="selected" title="健康记录月历" @close="emit('close')">
     <div class="calendar-header month-header">
       <H5Button class="hr-action" aria-label="上个月" :disabled="month <= '1900-01'" @click="shift(-1)">‹</H5Button>
@@ -64,22 +48,16 @@
 import { computed } from 'vue'
 import H5Button from '../../components/H5Button'
 import HerlogSheet from '../../components/HerlogSheet.vue'
-import { addDays, formatDayLabel, formatMonthLabel, monthGrid, shiftMonth } from '../../shared/dates'
+import { formatDayLabel, formatMonthLabel, monthGrid, shiftMonth } from '../../shared/dates'
 import { calendarKinds, calendarMarks } from '../../shared/home'
 import type { HomeOverview } from '../../services/homeService'
 
 const props = defineProps<{
   today: string; selected: string | null; data: HomeOverview | null; prediction: string | null
-  recorded: string[] | undefined; loading: boolean; error: string
+  loading: boolean; error: string
 }>()
 const emit = defineEmits<{ open: [day: string]; close: []; retry: []; details: [page: 'period' | 'weight' | 'skin'] }>()
 const weekdays = ['一', '二', '三', '四', '五', '六', '日']
-const week = computed(() => {
-  const weekday = new Date(props.today + 'T00:00:00Z').getUTCDay()
-  const monday = addDays(props.today, -((weekday + 6) % 7))
-  return weekdays.map((_, index) => addDays(monday, index))
-})
-const weekLabel = '点日期看当天记录'
 const month = computed(() => (props.selected ?? props.today).slice(0, 7))
 const lastMonth = computed(() => (props.prediction && props.prediction > props.today ? props.prediction : props.today).slice(0, 7))
 const grid = computed(() => monthGrid(month.value + '-01'))
@@ -104,10 +82,7 @@ function shift(delta: number) {
 .calendar-header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
 .calendar-header h2,.calendar-header p { margin:0; }
 .calendar-header p { margin-top:2px; }
-.calendar-preview { padding:12px 14px; }
-.calendar-preview .hr-action { padding-inline:4px; white-space:nowrap; }
 .date-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:3px; margin-top:8px; }
-.calendar-preview .date-grid { gap:0; margin-inline:-9px; }
 .weekday { text-align:center; color:var(--hr-ink-2); font-size:12px; }
 .date-button { position:relative; min-width:0; min-height:44px; display:grid; place-items:center; padding:5px 0 9px; border:1px solid transparent; border-radius:10px; background:transparent; color:var(--hr-ink); font:16px var(--hr-serif); }
 .date-button.actual { background:var(--hr-rose-soft); color:var(--hr-rose-deep); }
@@ -115,7 +90,6 @@ function shift(delta: number) {
 .date-button.selected { box-shadow:inset 0 0 0 1px var(--hr-rose-deep); }
 .date-button.today { font-weight:700; text-decoration:underline; text-underline-offset:3px; }
 .date-button.future { color:var(--hr-ink-3); }
-.week-mark { position:absolute; bottom:4px; width:5px; height:5px; border-radius:50%; background:var(--hr-taupe); }
 .period-start { position:absolute; top:5px; right:5px; width:5px; height:5px; border-radius:50%; background:var(--hr-rose); }
 .marks { position:absolute; bottom:5px; display:grid; grid-template-columns:repeat(3,5px); align-items:center; gap:3px; }
 .marks i,.legend i { display:inline-block; }

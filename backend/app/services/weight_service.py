@@ -18,6 +18,12 @@ from app.schemas.herlog import (
     WeightPointOut,
     WeightSummaryOut,
     MetricSlot,
+    MetricPointOut,
+    MetricTrendOut,
+    WeightCycleCompareOut,
+    WeightCycleOut,
+    WeightCyclePointOut,
+    WeightCycleSeriesOut,
     weight_out,
 )
 from app.schemas.weight_plus import CompareOut, CompareWindowOut
@@ -87,6 +93,7 @@ def list_weights(
 def _same_content(row: Weight, payload: WeightIn, measured_at_utc: datetime, grams: int) -> bool:
     return (
         row.grams == grams
+        and row.body_fat_pct == payload.body_fat_pct
         and row.measured_at == measured_at_utc
         and (row.tag or None) == (payload.tag or None)
         and (row.note or None) == (payload.note or None)
@@ -120,6 +127,7 @@ def create_weight(session: Session, customer_id: str, payload: WeightIn) -> tupl
         customer_id=customer_id,
         client_key=payload.client_key,
         grams=grams,
+        body_fat_pct=payload.body_fat_pct,
         measured_at=measured_at_utc,
         tag=payload.tag,
         note=payload.note,
@@ -157,6 +165,8 @@ def update_weight(session: Session, customer_id: str, weight_id: int, payload: W
     except ValueError as exc:
         raise invalid(str(exc)) from exc
     row.grams = grams
+    if "body_fat_pct" in payload.model_fields_set:
+        row.body_fat_pct = payload.body_fat_pct
     row.measured_at = to_utc_naive(payload.measured_at)
     row.tag = payload.tag
     row.note = payload.note
@@ -176,29 +186,50 @@ def delete_weight(session: Session, customer_id: str, weight_id: int) -> None:
     session.commit()
 
 
+def _fat_points(rows: list[Weight]) -> list[MetricPointOut]:
+    measurements = {row.id: row.body_fat_pct for row in rows if row.body_fat_pct is not None}
+    points = weight_logic.daily_points(_rows([row for row in rows if row.id in measurements]))
+    return [
+        MetricPointOut(day=point.day, value=measurements[point.weight_id], weight_id=point.weight_id,
+                       measured_at=point.measured_at.isoformat() + "Z")
+        for point in points
+    ]
+
+
+def _trend(points: list[MetricPointOut], digits: int) -> MetricTrendOut:
+    delta = round(points[-1].value - points[0].value, digits) if len(points) >= 2 else None
+    return MetricTrendOut(points=points, delta=delta)
+
+
+def _window_rows(session: Session, customer_id: str, start_day: date, end_day: date) -> list[Weight]:
+    return list(session.scalars(select(Weight).where(
+        Weight.customer_id == customer_id,
+        Weight.measured_at >= local_day_start_utc(start_day),
+        Weight.measured_at < local_day_end_utc(end_day),
+    )))
+
+
 def summary(session: Session, customer_id: str, days: int, include_cycle: bool = False) -> WeightSummaryOut:
     if days not in (7, 30):
         raise invalid("days 只支持 7 或 30")
     today = local_today()
     start_day = weight_logic.range_start(days, today)
-    rows = list(
-        session.scalars(
-            select(Weight).where(
-                Weight.customer_id == customer_id,
-                Weight.measured_at >= local_day_start_utc(start_day),
-                Weight.measured_at < local_day_end_utc(today),
-            )
-        ).all()
-    )
+    rows = _window_rows(session, customer_id, start_day, today)
+    fat_points = _fat_points(rows)
     latest = session.scalar(
         select(Weight)
-        .where(Weight.customer_id == customer_id)
+        .where(Weight.customer_id == customer_id, Weight.measured_at < local_day_end_utc(today))
         .order_by(Weight.measured_at.desc(), Weight.id.desc())
         .limit(1)
     )
     if latest is not None and all(row.id != latest.id for row in rows):
         rows.append(latest)
     data = weight_logic.summarize(_rows(rows), days, today)
+    latest_fat = session.scalar(
+        select(Weight).where(Weight.customer_id == customer_id, Weight.body_fat_pct.is_not(None),
+                             Weight.measured_at < local_day_end_utc(today))
+        .order_by(Weight.measured_at.desc(), Weight.id.desc()).limit(1)
+    )
     profile = session.get(Profile, customer_id)
     height = profile.height_cm if profile else None
     bmi = bmi_value(latest.grams, height) if latest else None
@@ -212,9 +243,21 @@ def summary(session: Session, customer_id: str, days: int, include_cycle: bool =
         ),
         **{
             key: MetricSlot(unit=unit, status="not_connected")
-            for key, unit in DEVICE_METRIC_UNITS.items()
+            for key, unit in DEVICE_METRIC_UNITS.items() if key != "body_fat_pct"
         },
+        "body_fat_pct": MetricSlot(
+            value=latest_fat.body_fat_pct if latest_fat else None,
+            unit="percent",
+            status="available" if latest_fat else "no_data",
+            source=latest_fat.source if latest_fat else None,
+            measured_at=latest_fat.measured_at.isoformat() + "Z" if latest_fat else None,
+        ),
     }
+    bmi_points = [
+        MetricPointOut(day=point.day, value=value, weight_id=point.weight_id,
+                       measured_at=point.measured_at.isoformat() + "Z")
+        for point in data.points if (value := bmi_value(point.grams, height)) is not None
+    ]
     cycle_context = None
     if include_cycle:
         periods = cycle_records(session, customer_id)
@@ -259,20 +302,13 @@ def summary(session: Session, customer_id: str, days: int, include_cycle: bool =
         latest_record_id=latest.id if latest else None,
         record_days=len(data.points),
         metrics=metrics,
+        metric_trends={"bmi": _trend(bmi_points, 1), "body_fat_pct": _trend(fat_points, 2)},
         cycle_context=cycle_context,
     )
 
 
 def _window(session: Session, customer_id: str, start_day: date, end_day: date, days: int) -> CompareWindowOut:
-    rows = list(
-        session.scalars(
-            select(Weight).where(
-                Weight.customer_id == customer_id,
-                Weight.measured_at >= local_day_start_utc(start_day),
-                Weight.measured_at < local_day_end_utc(end_day),
-            )
-        ).all()
-    )
+    rows = _window_rows(session, customer_id, start_day, end_day)
     points = weight_logic.daily_points(_rows(rows))
     grams = [point.grams for point in points]
     return CompareWindowOut(
@@ -323,3 +359,53 @@ def compare(session: Session, customer_id: str, days: int) -> CompareOut:
         avg_delta_kg=avg_delta,
         message=message,
     )
+
+
+def cycle_compare(
+    session: Session, customer_id: str, current_start: date | None, previous_start: date | None,
+) -> WeightCycleCompareOut:
+    """Compare only elapsed days measured in two cycles anchored to actual start dates."""
+
+    today = local_today()
+    records = [row for row in cycle_records(session, customer_id) if row.start_day <= today]
+    cycles = [
+        WeightCycleOut(
+            start_day=row.start_day,
+            end_day=records[index + 1].start_day - timedelta(days=1) if index + 1 < len(records) else today,
+            completed=index + 1 < len(records),
+        )
+        for index, row in enumerate(records)
+    ][-8:][::-1]
+    if (current_start is None) != (previous_start is None):
+        raise invalid("请选择两个周期的实际开始日")
+    if current_start is not None and previous_start is not None:
+        by_start = {cycle.start_day: cycle for cycle in cycles}
+        if current_start not in by_start or previous_start not in by_start:
+            raise not_found("没有找到可比较的周期")
+        if current_start <= previous_start:
+            raise invalid("当前周期须晚于对照周期")
+        current, previous = by_start[current_start], by_start[previous_start]
+    elif len(cycles) < 2:
+        return WeightCycleCompareOut(cycles=cycles)
+    else:
+        current, previous = cycles[:2]
+    aligned = min((cycle.end_day - cycle.start_day).days + 1 for cycle in (current, previous))
+    profile = session.get(Profile, customer_id)
+    height = profile.height_cm if profile else None
+
+    def series(cycle: WeightCycleOut) -> WeightCycleSeriesOut:
+        through = cycle.start_day + timedelta(days=aligned - 1)
+        rows = _window_rows(session, customer_id, cycle.start_day, through)
+        fat_by_day = {point.day: point.value for point in _fat_points(rows)}
+        points = []
+        for point in weight_logic.daily_points(_rows(rows)):
+            phase = phase_for(point.day, records, today)
+            points.append(WeightCyclePointOut(
+                day=point.day, phase=phase.phase, basis=phase.basis,
+                cycle_day=(point.day - cycle.start_day).days + 1,
+                weight_kg=point.grams / 1000, bmi=bmi_value(point.grams, height),
+                body_fat_pct=fat_by_day.get(point.day),
+            ))
+        return WeightCycleSeriesOut(cycle=cycle, points=points)
+
+    return WeightCycleCompareOut(cycles=cycles, current=series(current), previous=series(previous), aligned_days=aligned)

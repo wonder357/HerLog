@@ -100,7 +100,10 @@ def test_exercise_photo_stays_private_even_on_public_discussion(client):
     })
     assert result.status_code == 200, result.text
     public = client.get(posts, headers=viewer).json()["data"]["items"][0]
-    assert set(public) == {"public_id", "title", "body", "category", "activity", "published_at", "mine", "reply_count"}
+    assert set(public) == {
+        "public_id", "title", "body", "category", "activity", "published_at", "mine", "reply_count",
+        "like_count", "liked", "saved",
+    }
     assert public["activity"] == "散步"
     assert client.put(path, headers=owner, json={"photo": photo("blue")}).json()["data"]["has_photo"]
     assert get_photo(client, path, owner) != original

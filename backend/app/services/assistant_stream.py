@@ -19,17 +19,21 @@ SYSTEM_PROMPT = """你是「她记」的女性健康记录助手，用简明中�
 不要假扮医疗人员。只输出简洁正文，避免 Markdown 表格和链接。"""
 
 
-def event(kind: str, **data: object) -> str:
-    return "data: " + json.dumps({"type": kind, **data}, ensure_ascii=False) + "\n\n"
+def event(kind: str, **data: object) -> dict:
+    return {"type": kind, **data}
 
 
-def completed(answer: AssistantAnswerOut) -> str:
+def encode_event(data: dict) -> str:
+    return "data: " + json.dumps(data, ensure_ascii=False) + "\n\n"
+
+
+def completed(answer: AssistantAnswerOut) -> dict:
     return event("complete", answer=answer.model_dump(mode="json"))
 
 
 async def stream_assistant(
     payload: AssistantStreamIn, record_answer: AssistantAnswerOut | None,
-) -> AsyncIterator[str]:
+) -> AsyncIterator[dict]:
     if record_answer is not None:
         yield event("source", source="records")
         yield completed(record_answer)

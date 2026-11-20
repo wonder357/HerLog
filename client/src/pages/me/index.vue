@@ -57,6 +57,9 @@
 
     <section class="card" aria-labelledby="privacy-settings">
       <h2 id="privacy-settings" class="hr-section-title">账号与隐私</h2>
+      <H5Button class="settings-row" @click="panel = 'login-phone'">
+        <span>登录手机号</span><span class="row-value">{{ auth.member?.verified_phone_hint ?? '未绑定' }} ›</span>
+      </H5Button>
       <H5Button class="settings-row" @click="panel = 'privacy'"><span>隐私说明</span><span class="row-value" aria-hidden="true">›</span></H5Button>
       <H5Button class="settings-row" @click="panel = 'password'"><span>修改密码</span><span class="row-value" aria-hidden="true">›</span></H5Button>
       <H5Button class="settings-row" @click="panel = 'clear'"><span>清除本机缓存</span><span class="row-value" aria-hidden="true">›</span></H5Button>
@@ -126,6 +129,7 @@
         <li>「查记录」仅在当前登录账号下读取已保存的信息。「DeepSeek 对话」会把本次对话中该模式的文字发送给 DeepSeek。</li>
         <li>皮肤照片的使用范围在分析前说明，确认保存后才进入账号历史。查看照片需要登录。</li>
         <li>头像、体重和运动照片仅自己可见，可在对应记录中更换或移除。</li>
+        <li>手机号验证使用短信服务商投递，登录手机号和资料里的联系电话分别管理。</li>
         <li>清除本机缓存或退出登录会清理本机浏览数据，账号内已保存的记录仍可在下次登录后查看。</li>
       </ul>
       <template #actions><H5Button class="primary" @click="panel = null">完成</H5Button></template>
@@ -141,6 +145,7 @@
       </template>
     </HerlogSheet>
     <PasswordSheet v-if="panel === 'password'" @close="panel = null" @saved="passwordSaved" />
+    <BindPhoneSheet v-if="panel === 'login-phone'" @close="panel = null" @saved="phoneBound" />
     <WeightForm :visible="weightVisible" @close="weightVisible = false" @saved="weightSaved" />
     <CycleModeSheet v-if="modeSettings" @close="modeSettings = false" @changed="modeChanged" />
     <TabBar current="/pages/me/index" />
@@ -162,6 +167,7 @@ import PrivatePhotoEditor from '../../components/PrivatePhotoEditor.vue'
 import { usePrivatePhoto } from '../../components/usePrivatePhoto'
 import CycleModeSheet from '../period/CycleModeSheet.vue'
 import PasswordSheet from './PasswordSheet.vue'
+import BindPhoneSheet from './BindPhoneSheet.vue'
 import { useAuthStore } from '../../stores/auth'
 import { useCyclePreference } from '../../stores/cyclePreference'
 import { ApiRequestError, currentEpoch } from '../../services/httpClient'
@@ -213,7 +219,7 @@ const preferenceLoading = ref(false)
 const preferenceSaving = ref(false)
 const preferenceSaved = ref(false)
 const preferenceError = ref('')
-const panel = ref<'profile' | 'password' | 'privacy' | 'clear' | 'logout' | PreferencePanel | null>(null)
+const panel = ref<'profile' | 'password' | 'login-phone' | 'privacy' | 'clear' | 'logout' | PreferencePanel | null>(null)
 const modeSettings = ref(false)
 const weightVisible = ref(false)
 const loggingOut = ref(false)
@@ -439,6 +445,11 @@ async function logout() {
   loggingOut.value = true
   await auth.logout()
   if (!auth.isLoggedIn) uni.reLaunch({ url: '/pages/login/index' })
+}
+
+function phoneBound() {
+  panel.value = null
+  uni.showToast({ title: '手机号已验证', icon: 'none' })
 }
 
 function passwordSaved() {

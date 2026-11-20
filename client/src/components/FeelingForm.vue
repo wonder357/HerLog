@@ -1,31 +1,33 @@
 <template>
   <HerlogSheet v-if="visible" :title="existing ? '编辑感受' : '记录感受'" :context="formatDayLabel(day)"
     :busy="saving" @close="cancel">
+    <div ref="formFields">
     <view class="hr-field-label">经量</view>
-    <view class="chips">
+    <view class="chips" role="group" aria-label="经量" data-feeling-section="flow">
       <H5Button v-for="item in flows" :key="item" class="chip" :class="{ active: flow === item }"
         :aria-pressed="flow === item" @click="toggleSingle(item)">{{ item }}</H5Button>
     </view>
 
     <view class="hr-field-label">心情 <small>选填</small></view>
-    <view class="chips" role="group" aria-label="心情">
+    <view class="chips" role="group" aria-label="心情" data-feeling-section="mood">
       <H5Button v-for="item in moods" :key="item" class="chip" :class="{ active: mood === item }"
         :aria-pressed="mood === item" @click="mood = mood === item ? null : item">{{ item }}</H5Button>
     </view>
 
-    <view class="hr-field-label">症状 <small>可多选</small></view>
-    <view class="chips">
+    <view class="hr-field-label">身体感受 <small>可多选</small></view>
+    <view class="chips" role="group" aria-label="身体感受" data-feeling-section="symptom">
       <H5Button v-for="item in symptoms" :key="item" class="chip" :class="{ active: selectedSymptoms.includes(item) }"
         :aria-pressed="selectedSymptoms.includes(item)" @click="toggleSymptom(item)">{{ item }}</H5Button>
     </view>
 
     <view class="hr-field-label">生活影响</view>
-    <view class="chips">
+    <view class="chips" role="group" aria-label="生活影响" data-feeling-section="impact">
       <H5Button v-for="item in impacts" :key="item" class="chip" :class="{ active: impact === item }"
         :aria-pressed="impact === item" @click="toggleImpact(item)">{{ item }}</H5Button>
     </view>
     <H5Label class="hr-field-label" for="cycle-note">备注 <small>选填</small></H5Label>
     <H5Input id="cycle-note" v-model="note" class="field" maxlength="500" />
+    </div>
     <p v-if="error" ref="errorNotice" class="error" role="alert" tabindex="-1">{{ error }}</p>
     <template #actions>
       <H5Button class="primary" :disabled="saving || (!hasContent && !existing)" @click="submit">
@@ -45,8 +47,9 @@ import { formatDayLabel } from '../shared/dates'
 import { ApiRequestError, StaleSessionError } from '../services/httpClient'
 import { saveFeeling } from '../services/periodService'
 import type { FeelingItem } from '../services/types'
+import type { FeelingFilter } from '../shared/period'
 
-const props = defineProps<{ visible: boolean; day: string; existing: FeelingItem | null }>()
+const props = defineProps<{ visible: boolean; day: string; existing: FeelingItem | null; initialSection?: FeelingFilter['kind'] }>()
 const emit = defineEmits<{ (event: 'close'): void; (event: 'saved'): void }>()
 
 const flows = ['少量', '中等', '较多']
@@ -61,6 +64,7 @@ const impact = ref<string | null>(null)
 const note = ref('')
 const error = ref('')
 const errorNotice = ref<HTMLElement | null>(null)
+const formFields = ref<HTMLElement | null>(null)
 const saving = ref(false)
 const hasContent = computed(() => Boolean(flow.value || mood.value || selectedSymptoms.value.length || impact.value || note.value.trim()))
 
@@ -77,6 +81,11 @@ watch(
     note.value = props.existing?.note ?? ''
     error.value = ''
     saving.value = false
+    if (props.initialSection) {
+      void nextTick(() => {
+        formFields.value?.querySelector(`[data-feeling-section="${props.initialSection}"]`)?.scrollIntoView({ block: 'nearest' })
+      })
+    }
   },
   { immediate: true }
 )

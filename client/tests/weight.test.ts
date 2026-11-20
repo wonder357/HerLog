@@ -5,6 +5,9 @@ import {
   dailyPoints,
   formatDelta,
   formatKg,
+  measureChange,
+  pairCycleMeasurements,
+  parseBodyFat,
   parseKgToGrams,
   suggestion,
   summarize
@@ -15,6 +18,33 @@ const records = [
   { id: 2, grams: 57000, measuredAt: '2026-11-16T13:00:00Z' }, // 11-16 21:00
   { id: 3, grams: 56600, measuredAt: '2026-11-18T00:00:00Z' } // 11-18 08:00
 ]
+
+test('可选体脂测量验证与百分点变化', () => {
+  assert.equal(parseBodyFat('25.75'), '25.75')
+  assert.equal(parseBodyFat(' '), null)
+  for (const value of ['0', '100', '-25', '26.101', 'NaN']) assert.throws(() => parseBodyFat(value), /体脂率/)
+  assert.equal(measureChange(26.7 - 27.25, 'body_fat_pct'), '−0.55 个百分点')
+})
+
+test('周期对比仅汇总同周期日双方有值的配对，阶段筛选不跨阶段补齐', () => {
+  const current = [
+    { cycle_day: 1, phase: 'menstrual', weight_kg: 57, bmi: 20.1, body_fat_pct: null },
+    { cycle_day: 2, phase: 'menstrual', weight_kg: 58, bmi: 20.3, body_fat_pct: 25.5 },
+    { cycle_day: 3, phase: 'follicular', weight_kg: 64, bmi: 22, body_fat_pct: 25 }
+  ] as const
+  const previous = [
+    { cycle_day: 1, phase: 'menstrual', weight_kg: 58, bmi: 20.3, body_fat_pct: 26 },
+    { cycle_day: 2, phase: 'follicular', weight_kg: 59, bmi: 20.6, body_fat_pct: 26.8 }
+  ] as const
+  const overall = pairCycleMeasurements([...current], [...previous], 'weight_kg')
+  assert.deepEqual(overall.averages, { current: 57.5, previous: 58.5 })
+  const stages = pairCycleMeasurements([...current], [...previous], 'weight_kg', 'menstrual')
+  assert.equal(stages.pairs.length, 1)
+  assert.equal(stages.averages, null)
+  const fat = pairCycleMeasurements([...current], [...previous], 'body_fat_pct')
+  assert.equal(fat.pairs.length, 1)
+  assert.equal(fat.averages, null)
+})
 
 test('跨年的两个趋势范围使用相同的已保存测量', () => {
   const entries = [

@@ -34,9 +34,11 @@ class Profile(Base):
     birthday: Mapped[date | None] = mapped_column(sa.Date, nullable=True)
     height_cm: Mapped[Decimal | None] = mapped_column(sa.Numeric(5, 2), nullable=True)
     contact_phone: Mapped[str | None] = mapped_column(sa.String(32), nullable=True)
+    verified_phone: Mapped[str | None] = mapped_column(sa.String(11), nullable=True)
 
     __table_args__ = (
         sa.CheckConstraint("height_cm IS NULL OR height_cm > 0", name="ck_herlog_height"),
+        sa.Index("ux_herlog_verified_phone", "verified_phone", unique=True),
     )
 
 
@@ -79,6 +81,7 @@ class Weight(Base):
     )
     client_key: Mapped[str] = mapped_column(sa.String(36), nullable=False)
     grams: Mapped[int] = mapped_column(sa.Integer, nullable=False)
+    body_fat_pct: Mapped[Decimal | None] = mapped_column(sa.Numeric(5, 2), nullable=True)
     measured_at: Mapped[datetime] = mapped_column(_MOMENT, nullable=False)
     tag: Mapped[str | None] = mapped_column(sa.String(32), nullable=True)
     note: Mapped[str | None] = mapped_column(sa.String(500), nullable=True)
@@ -91,6 +94,7 @@ class Weight(Base):
         sa.UniqueConstraint("customer_id", "client_key", name="uq_herlog_weight_key"),
         sa.UniqueConstraint("customer_id", "device_id", "source_record_id", name="uq_herlog_weight_source"),
         sa.CheckConstraint("grams > 0", name="ck_herlog_positive_weight"),
+        sa.CheckConstraint("body_fat_pct > 0 AND body_fat_pct < 100", name="ck_herlog_weight_body_fat"),
         sa.Index("ix_herlog_weight_time", "customer_id", "measured_at", "id"),
     )
 

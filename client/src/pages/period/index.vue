@@ -5,16 +5,17 @@
         <H5Button class="hr-action mode-entry" @click="modeSheetVisible = true">
           {{ isFertility ? '模式 · 备孕' : '周期模式' }}
         </H5Button>
-        <H5Button class="hr-action" @click="selectDate(today)">回到今天</H5Button>
+        <H5Button class="hr-action" @click="goToday">回到今天</H5Button>
       </template>
     </HerlogHeading>
 
     <view v-if="!cyclePreference.preference && !cyclePreference.unavailable" class="card muted" role="status">正在读取周期模式…</view>
     <FertilityJournal v-else-if="isFertility && pageVisible" :selected="selected" :today="today"
-      :overview="overview" :predicted-day="predictedDay" :selected-feeling="selectedFeeling"
+      :overview="overview" :predicted-day="predictedDay" :predicted-end="predictedEnd" :selected-feeling="selectedFeeling"
       :feelings-loading="feelingsLoading" :feeling-error="feelingError" :period-action="periodAction"
       :trying-started-on="cyclePreference.preference?.trying_started_on ?? null"
-      @select="selectDate" @record-period="openPeriodForm(selectedPeriod)" @record-feeling="feelingFormVisible = true"
+      @select="selectDate" @pick-month="monthPickerVisible = true"
+      @record-period="openPeriodForm(selectedPeriod)" @record-feeling="openFeeling()"
       @retry-feelings="loadFeelings">
       <template #prediction>
         <PeriodPredictionCard v-bind="predictionProps" @show-day="showPredictedDay" @backfill="backfillPeriod"
@@ -22,153 +23,107 @@
       </template>
     </FertilityJournal>
     <template v-else-if="!isFertility">
-    <section class="cycle-panel" aria-labelledby="cycle-status">
-      <view class="cycle-panel-content" aria-live="polite">
-        <text class="panel-label">周期状态</text>
-        <h2 id="cycle-status">{{ heroTitle }}</h2>
-        <view v-if="heroNote" class="panel-note" :role="overviewError ? 'alert' : undefined">{{ heroNote }}</view>
-        <view v-if="phaseLabel" class="panel-note">{{ phaseLabel }}</view>
-      </view>
-      <view class="panel-icon"><HerlogIcon name="period" /></view>
-      <view class="panel-actions">
-        <H5Button v-if="overview" class="primary" @click="recordToday">{{ todayAction }}</H5Button>
-        <H5Button v-if="overviewError" class="ghost" @click="loadOverview">重新加载</H5Button>
-      </view>
-    </section>
+    <nav class="cycle-sections" aria-label="经期页面视图">
+      <H5Button class="cycle-section" :aria-pressed="section === 'calendar'" @click="section = 'calendar'">
+        <HerlogIcon name="period" />月历
+      </H5Button>
+      <H5Button class="cycle-section" :aria-pressed="section === 'review'" @click="section = 'review'">
+        <HerlogIcon name="mobility" />周期回顾
+      </H5Button>
+    </nav>
 
-    <PeriodPredictionCard v-bind="predictionProps" @show-day="showPredictedDay" @backfill="backfillPeriod"
-      @retry="loadOverview" @remind="reminderVisible = true" />
-
-    <CycleCalendar :month="month" :selected="selected" :today="today" :predicted-day="predictedDay"
-      :ovulatory-window="ovulatoryWindow"
-      :periods="items" :marked-days="markedDays" :mark-label="filter ? filter.label : '有感受'" @select="selectDate">
-      <H5Button v-if="filter" class="hr-action" @click="filter = null">清除筛选</H5Button>
-    </CycleCalendar>
-
-    <section ref="dayCard" class="card day-card" aria-labelledby="day-title">
-      <view class="section-head">
-        <h2 id="day-title" class="hr-section-title">{{ formatDayLabel(selected) }}</h2>
-        <text v-if="selected === today" class="today-tag">今天</text>
-      </view>
-      <view v-if="selected === predictedDay && !selectedPeriod" class="muted">
-        {{ selected > today ? '这是预计开始日。实际日期可能不同，请在当天或之后补记。' : '今天是预计开始日，实际日期可能不同。' }}
-      </view>
-      <view v-else-if="selectedInOvulatoryWindow" class="muted">排卵相关阶段估算 · 根据经期日期推算，仅供记录参考。</view>
-      <view v-else-if="selected > today" class="muted">这一天还没到，可以回到今天继续记录。</view>
-      <template v-if="selected <= today">
-        <view v-if="selectedPeriod" class="day-record">
-          <view class="record-copy">
-            <text class="record-label">实际经期 · 第 {{ diffDays(selected, selectedPeriod.start_day) + 1 }} 天</text>
-            <text class="muted">{{ periodRange(selectedPeriod) }}</text>
-          </view>
-          <H5Button class="hr-action" @click="removePeriod(selectedPeriod)">删除经期</H5Button>
-        </view>
-        <view v-else-if="openPeriod" class="muted">
-          {{ formatDayLabel(openPeriod.start_day) }} 开始的经期还没有结束日期。
-        </view>
-        <view v-if="feelingError" class="retry-row" role="alert">
-          <span class="muted">这月的感受暂时读不到。</span>
-          <H5Button class="hr-action" @click="loadFeelings">重试</H5Button>
-        </view>
-        <view v-else-if="feelingsLoading" class="muted" role="status">正在读取感受…</view>
-        <view v-else-if="selectedFeeling" class="day-record">
-          <view class="record-copy">
-            <text class="record-label">当天感受</text>
-            <view v-if="feelingTags.length" class="day-tags">
-              <span v-for="tag in feelingTags" :key="tag">{{ tag }}</span>
-            </view>
-            <text v-if="selectedFeeling.note" class="diary-note">{{ selectedFeeling.note }}</text>
-          </view>
-          <H5Button class="hr-action" @click="removeFeeling(selected)">删除感受</H5Button>
-        </view>
-        <view v-else-if="overview && !selectedPeriod && !openPeriod && selected !== predictedDay && !selectedInOvulatoryWindow" class="muted">这一天还没有记录。</view>
-        <view class="day-actions">
-          <H5Button class="primary" :disabled="!overview" @click="openPeriodForm(selectedPeriod)">
-            {{ periodAction }}
+    <div v-if="section === 'calendar'">
+      <section class="cycle-panel" :class="{ forecast: heroForecast }" aria-labelledby="cycle-status">
+        <div class="cycle-panel-content" aria-live="polite">
+          <p class="panel-label">{{ heroForecast ? '预计下次经期' : '今天的周期' }}</p>
+          <h2 id="cycle-status">{{ heroTitle }}</h2>
+          <p v-if="heroNote" class="panel-note" :role="overviewError ? 'alert' : undefined">{{ heroNote }}</p>
+          <p v-if="phaseLabel" class="phase-label">{{ phaseLabel }}</p>
+        </div>
+        <div class="panel-icon" aria-hidden="true"><HerlogIcon name="period" /></div>
+        <div class="panel-actions">
+          <H5Button v-if="overview && !overviewError" class="primary" @click="recordToday">{{ todayAction }}</H5Button>
+          <H5Button v-if="overview && !overviewError" class="ghost" :disabled="preparingFeeling" @click="recordTodayFeeling">
+            {{ preparingFeeling ? '正在读取…' : '记今日感受' }}
           </H5Button>
-          <H5Button class="ghost" :disabled="!overview || feelingsLoading || feelingError"
-            @click="feelingFormVisible = true">{{ selectedFeeling ? '编辑感受' : '记录感受' }}</H5Button>
-        </view>
-      </template>
-    </section>
+          <H5Button v-if="overviewError" class="ghost" @click="loadOverview">重新加载</H5Button>
+        </div>
+      </section>
 
-    <section class="card diary-card" aria-labelledby="diary-title">
-      <view class="section-head">
-        <h2 id="diary-title" class="hr-section-title">本月感受小结</h2>
-        <text v-if="!feelingsLoading && !feelingError && diary.days" class="today-tag">已记 {{ diary.days }} 天</text>
-      </view>
-      <view v-if="feelingsLoading" class="muted">正在整理本月记录…</view>
-      <view v-else-if="feelingError" class="muted">重试加载感受后可查看小结。</view>
-      <view v-else-if="!diary.days" class="muted">这月还没有感受记录。经量、心情或一句备注都可以单独记。</view>
-      <template v-else>
-        <view v-if="diary.moods.length || diary.symptoms.length" class="muted diary-hint">按记录天数汇总，点标签可在月历上回看。</view>
-        <view v-else class="muted">点月历上的圆点可查看当天感受。</view>
-        <view v-for="group in diaryGroups" :key="group.kind" class="diary-group">
-          <h3>{{ group.title }}</h3>
-          <view class="diary-filters" role="group" :aria-label="group.title">
-            <H5Button v-for="item in group.items" :key="item.label" class="diary-filter"
-              :aria-pressed="filter?.kind === group.kind && filter.label === item.label"
-              @click="toggleFilter({ kind: group.kind, label: item.label })">
-              {{ item.label }} <span>{{ item.days }} 天</span>
-            </H5Button>
-          </view>
-        </view>
-        <view v-if="filter" class="matched-dates">
-          <text class="muted">{{ filter.label }} · 记录日期</text>
-          <view class="diary-filters">
-            <H5Button v-for="entry in matchedFeelings" :key="entry.day" class="diary-filter"
-              :aria-pressed="selected === entry.day" @click="showDay(entry.day)">
-              {{ formatDayLabel(entry.day) }}
-            </H5Button>
-          </view>
-        </view>
-      </template>
-    </section>
+      <CycleCalendar :month="month" :selected="selected" :today="today" :predicted-day="predictedDay"
+        :predicted-end="predictedEnd" :ovulatory-window="ovulatoryWindow"
+        :periods="items" :marked-days="markedDays" :mark-label="filter ? filter.label : '有感受'"
+        @select="selectDate" @pick-month="monthPickerVisible = true">
+        <H5Button v-if="filter" class="hr-action" @click="filter = null">清除筛选</H5Button>
+      </CycleCalendar>
 
-    <section class="card history-card" aria-labelledby="cycle-history">
-      <view class="section-head">
-        <h2 id="cycle-history" class="hr-section-title">周期回顾</h2>
-        <text v-if="items.length" class="muted">{{ items.length }} 次记录</text>
-      </view>
-      <view v-if="overviewLoading && !overview" class="muted">正在读取经期记录…</view>
-      <view v-else-if="overviewError && !overview" class="muted">重试加载后可查看历史。</view>
-      <view v-else-if="!items.length" class="muted">保存第一段经期后，就能在这里回看。</view>
-      <template v-else>
-        <view v-if="cycleStats.interval || cycleStats.duration" class="cycle-stats">
-          <view v-if="cycleStats.interval">
-            <text class="muted">开始日间隔</text>
-            <text class="stats-value">{{ formatRange(cycleStats.interval) }} <small>天</small></text>
-            <text class="stats-caption">最近 {{ cycleStats.interval.count }} 个间隔</text>
-          </view>
-          <view v-if="cycleStats.duration">
-            <text class="muted">经期持续</text>
-            <text class="stats-value">{{ formatRange(cycleStats.duration) }} <small>天</small></text>
-            <text class="stats-caption">最近 {{ cycleStats.duration.count }} 段完整记录</text>
-          </view>
-        </view>
-        <view v-for="item in visibleHistory" :key="item.id" class="history-row">
-          <H5Button class="history-date" :aria-label="'查看 ' + item.start_day + ' 的记录'" @click="showDay(item.start_day)">
-            <span>{{ periodRange(item) }}</span>
-            <span class="muted">
-              {{ item.duration_days === null ? '未记录结束' : '持续 ' + item.duration_days + ' 天' }}
-              <template v-if="item.cycle_days !== null"> · 距上次开始 {{ item.cycle_days }} 天</template>
-            </span>
-          </H5Button>
-          <H5Button class="hr-action" :aria-label="'更正 ' + item.start_day + ' 开始的经期'"
-            @click="editFromHistory(item)">更正</H5Button>
-        </view>
-        <H5Button v-if="items.length > 4" class="hr-action" :aria-expanded="allHistory"
-          @click="allHistory = !allHistory">{{ allHistory ? '收起较早记录' : '查看全部记录' }}</H5Button>
-      </template>
-    </section>
+      <section ref="dayCard" class="card day-card" aria-labelledby="day-title" tabindex="-1">
+        <div class="section-head">
+          <h2 id="day-title" class="hr-section-title">{{ formatDayLabel(selected) }}</h2>
+          <span v-if="selected === today" class="today-tag">今天</span>
+        </div>
+        <p v-if="selectedInPrediction" class="day-context estimate">
+          {{ selected === predictedDay ? '预计经期开始 · 根据近期记录推算，实际日期可能不同。' : '预计经期 · 根据以往经期时长估算。' }}
+        </p>
+        <p v-else-if="selectedInOvulatoryWindow" class="day-context estimate">
+          {{ selected === ovulatoryWindow?.estimated_day ? '排卵估算日 · 阶段区间的中心日期。' : '排卵阶段估算 · 根据经期日期推算。' }}
+          仅供记录参考。
+        </p>
+        <p v-else-if="selected > today" class="muted">可以在当天或之后补记。</p>
+        <template v-if="selected <= today">
+          <div v-if="selectedPeriod" class="day-context actual">
+            <strong>实际经期 · 第 {{ diffDays(selected, selectedPeriod.start_day) + 1 }} 天</strong>
+            <span>{{ periodRange(selectedPeriod) }}</span>
+          </div>
+          <p v-else-if="openPeriod" class="day-context actual">{{ formatDayLabel(openPeriod.start_day) }} 开始的经期尚未填写结束日。</p>
+          <div v-if="feelingError" class="retry-row" role="alert">
+            <span class="muted">暂时无法读取当天感受。</span>
+            <H5Button class="hr-action" @click="loadFeelings">重试</H5Button>
+          </div>
+          <p v-else-if="feelingsLoading" class="muted" role="status">正在读取当天感受…</p>
+          <div v-else class="journal-grid" role="group" aria-label="当天感受">
+            <H5Button v-for="entry in journalFields" :key="entry.key" class="journal-field"
+              :aria-label="entry.label + '，' + entry.value + '，点按记录'" @click="openFeeling(entry.key)">
+              <span class="journal-label">{{ entry.label }}</span>
+              <strong :class="{ 'journal-empty': !entry.recorded }">{{ entry.value }}</strong>
+            </H5Button>
+          </div>
+          <p v-if="selectedFeeling?.note && !feelingError && !feelingsLoading" class="diary-note">{{ selectedFeeling.note }}</p>
+          <div class="day-actions">
+            <H5Button class="ghost" :disabled="!overview || overviewError" @click="openPeriodForm(selectedPeriod)">
+              {{ periodAction }}
+            </H5Button>
+            <H5Button class="ghost" :disabled="feelingsLoading || feelingError"
+              @click="openFeeling()">{{ selectedFeeling ? '编辑感受' : '记录感受' }}</H5Button>
+          </div>
+          <div v-if="selectedPeriod || selectedFeeling" class="delete-actions">
+            <H5Button v-if="selectedPeriod" class="hr-action" @click="removePeriod(selectedPeriod)">删除经期</H5Button>
+            <H5Button v-if="selectedFeeling" class="hr-action" @click="removeFeeling(selected)">删除感受</H5Button>
+          </div>
+        </template>
+      </section>
+
+      <PeriodPredictionCard v-bind="predictionProps" @show-day="showPredictedDay" @backfill="backfillPeriod"
+        @retry="loadOverview" @remind="reminderVisible = true" />
+    </div>
+
+    <div v-show="section === 'review'">
+      <CycleReview :key="auth.member?.customer_id" :items="items" :feelings="feelings"
+        :filter="filter" :month="month" :loaded="Boolean(overview) && !overviewError" :pending="overviewLoading"
+        :failed="overviewError" :diary-loading="feelingsLoading" :diary-failed="feelingError"
+        @backfill="backfillPeriod" @retry="loadOverview" @retry-diary="loadFeelings"
+        @pick-month="monthPickerVisible = true" @select="showDay" @edit="editFromHistory" @filter="toggleFilter" />
+    </div>
     </template>
 
     <PeriodForm :visible="periodFormVisible" :day="predictionBackfill ? '' : selected" :editing="periodEditing"
       :selectable-day="predictionBackfill"
       :open-period="!predictionBackfill && openPeriod ? { id: openPeriod.id, startDay: openPeriod.start_day } : null"
       @close="periodFormVisible = false" @saved="onPeriodSaved" />
-    <FeelingForm :visible="feelingFormVisible" :day="selected" :existing="selectedFeeling"
+    <FeelingForm :visible="feelingFormVisible" :day="selected" :existing="selectedFeeling" :initial-section="feelingSection"
       @close="feelingFormVisible = false" @saved="onFeelingSaved" />
+    <CycleMonthPicker v-if="monthPickerVisible" :month="month" :today="today" :forecast-end="predictedEnd"
+      @close="monthPickerVisible = false" @select="pickMonth" />
     <CycleReminder v-if="reminderVisible && predictedDay" :expected-start="predictedDay"
       @close="reminderVisible = false" />
     <CycleModeSheet v-if="modeSheetVisible" @close="modeSheetVisible = false" @changed="modeSheetVisible = false" />
@@ -177,7 +132,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { onHide, onShow } from '@dcloudio/uni-app'
 import H5Button from '../../components/H5Button'
 import HerlogHeading from '../../components/HerlogHeading.vue'
@@ -187,6 +142,8 @@ import PeriodForm from '../../components/PeriodForm.vue'
 import FeelingForm from '../../components/FeelingForm.vue'
 import CycleReminder from './CycleReminder.vue'
 import CycleCalendar from './CycleCalendar.vue'
+import CycleMonthPicker from './CycleMonthPicker.vue'
+import CycleReview from './CycleReview.vue'
 import PeriodPredictionCard from './PeriodPredictionCard.vue'
 import CycleModeSheet from './CycleModeSheet.vue'
 import FertilityJournal from './FertilityJournal.vue'
@@ -194,7 +151,7 @@ import {
   daysInMonth, diffDays, formatDayLabel, startOfMonth, todayString
 } from '../../shared/dates'
 import {
-  matchesFeeling, openPeriodOnDay, periodOnDay, recentCycleStats, reminderDay, summarizeDiary
+  matchesFeeling, openPeriodOnDay, periodOnDay, periodRange, reminderDay
 } from '../../shared/period'
 import type { FeelingFilter } from '../../shared/period'
 import { ApiRequestError, currentEpoch, StaleSessionError } from '../../services/httpClient'
@@ -212,6 +169,8 @@ const cyclePreference = useCyclePreference()
 const today = ref(todayString())
 const pageVisible = ref(false)
 const modeSheetVisible = ref(false)
+const monthPickerVisible = ref(false)
+const section = ref<'calendar' | 'review'>('calendar')
 const isFertility = computed(() => cyclePreference.mode === 'trying_to_conceive')
 const lastSelected: Partial<Record<CycleMode, string>> = {}
 const selected = ref(today.value)
@@ -230,22 +189,34 @@ const overviewError = ref(false)
 const feelingError = ref(false)
 const periodFormVisible = ref(false)
 const feelingFormVisible = ref(false)
+const feelingSection = ref<FeelingFilter['kind']>()
+const preparingFeeling = ref(false)
 const reminderVisible = ref(false)
 const periodEditing = ref<PeriodItem | null>(null)
 const predictionBackfill = ref(false)
-const allHistory = ref(false)
 const filter = ref<FeelingFilter | null>(null)
 const dayCard = ref<HTMLElement | null>(null)
 let overviewRequest = 0
 let feelingRequest = 0
 let epoch = currentEpoch()
+let todayTimer: ReturnType<typeof setInterval> | undefined
 
 const items = computed(() => overview.value?.items ?? [])
-const prediction = computed(() => !overviewError.value && !overviewLoading.value ? overview.value?.prediction ?? null : null)
-const predictedDay = computed(() =>
-  prediction.value?.status === 'upcoming' ? prediction.value.expected_start : null
+const prediction = computed(() => {
+  if (overviewError.value || overviewLoading.value) return null
+  const data = overview.value?.prediction
+  if (data?.status === 'upcoming' && data.expected_start && data.expected_start < today.value) {
+    return { ...data, status: 'overdue' as const, expected_start: null, expected_end: null, ovulatory_window: null }
+  }
+  return data ?? null
+})
+const predictedDay = computed(() => prediction.value?.status === 'upcoming' ? prediction.value.expected_start : null)
+const predictedEnd = computed(() => predictedDay.value ? prediction.value?.expected_end ?? predictedDay.value : null)
+const selectedInPrediction = computed(() =>
+  !selectedPeriod.value && predictedDay.value && predictedEnd.value &&
+  selected.value >= predictedDay.value && selected.value <= predictedEnd.value
 )
-const ovulatoryWindow = computed(() => prediction.value?.ovulatory_window ?? null)
+const ovulatoryWindow = computed(() => predictedDay.value ? prediction.value?.ovulatory_window ?? null : null)
 const selectedInOvulatoryWindow = computed(() => {
   const range = ovulatoryWindow.value
   return range && !selectedPeriod.value && selected.value >= range.start_day && selected.value <= range.end_day
@@ -253,6 +224,7 @@ const selectedInOvulatoryWindow = computed(() => {
 const predictionProps = computed(() => ({
   prediction: prediction.value,
   day: predictedDay.value,
+  end: predictedEnd.value,
   today: today.value,
   loading: overviewLoading.value,
   failed: overviewError.value,
@@ -269,47 +241,44 @@ const matchedFeelings = computed(() => {
   return active ? feelings.value.filter(item => matchesFeeling(item, active)) : feelings.value
 })
 const markedDays = computed(() => new Set(matchedFeelings.value.map(item => item.day)))
-const diary = computed(() => summarizeDiary(feelings.value))
-const diaryGroups = computed(() => [
-  { kind: 'mood' as const, title: '心情', items: diary.value.moods },
-  { kind: 'symptom' as const, title: '身体感受', items: diary.value.symptoms }
-].filter(group => group.items.length))
-const cycleStats = computed(() => recentCycleStats(items.value))
-const visibleHistory = computed(() => allHistory.value ? items.value : items.value.slice(0, 4))
-const feelingTags = computed(() => {
+const journalFields = computed(() => {
   const entry = selectedFeeling.value
-  if (!entry) return []
-  return [entry.flow && '经量 ' + entry.flow, entry.mood, ...entry.symptoms, entry.impact]
-    .filter((tag): tag is string => Boolean(tag))
+  const fields = [
+    { key: 'flow', label: '经量', value: entry?.flow },
+    { key: 'mood', label: '心情', value: entry?.mood },
+    { key: 'symptom', label: '身体感受', value: entry?.symptoms.join('、') },
+    { key: 'impact', label: '生活影响', value: entry?.impact }
+  ] as const
+  return fields.map(field => ({ ...field, recorded: Boolean(field.value), value: field.value || '添加记录' }))
 })
 
+const heroForecast = computed(() => Boolean(predictedDay.value && !actualToday.value && !openToday.value))
 const heroTitle = computed(() => {
-  if (!overview.value) return overviewError.value ? '暂时读不到周期记录' : '正在读取周期记录…'
+  if (overviewError.value) return '暂时读不到周期记录'
+  if (!overview.value) return '正在读取周期记录…'
   if (actualToday.value) return '经期第 ' + (diffDays(today.value, actualToday.value.start_day) + 1) + ' 天'
   if (openToday.value) return '待补记结束'
-  const latest = items.value.find(item => item.start_day <= today.value)
-  return latest ? formatDayLabel(latest.start_day) + ' 开始' : '从一次记录开始'
+  if (predictedDay.value) return formatDayLabel(predictedDay.value)
+  if (prediction.value?.status === 'overdue') return '已过预计开始日'
+  return items.value.length ? '记录这一次周期' : '记下第一次经期'
 })
 const heroNote = computed(() => {
-  if (!overview.value) return overviewError.value ? '请检查网络并重试。' : ''
-  if (openToday.value) return formatDayLabel(openToday.value.start_day) + ' 已记开始。确定最后一天后可补记。'
-  if (!items.value.length) return '记下实际开始日期，之后可以补记最后一天。'
+  if (overviewError.value) return '请检查网络并重试。'
+  if (!overview.value) return ''
+  if (openToday.value) return formatDayLabel(openToday.value.start_day) + ' 已记开始'
+  if (heroForecast.value && predictedDay.value) {
+    const days = diffDays(predictedDay.value, today.value)
+    return days ? '还有 ' + days + ' 天，实际日期可能不同。' : '预计今天开始，实际日期可能不同。'
+  }
+  if (prediction.value?.status === 'overdue') return '经期已开始时，可以补记实际日期。'
+  const latest = items.value.find(item => item.start_day <= today.value)
+  if (latest && !actualToday.value) return '上次开始于 ' + formatDayLabel(latest.start_day)
+  if (!items.value.length) return '先记开始日期，结束后可补记。'
   return ''
 })
 const todayAction = computed(() =>
   actualToday.value?.end_day ? '更正今日经期' : openToday.value ? '补记经期结束' : '记经期'
 )
-
-function formatRange(range: { min: number; max: number }): string {
-  return range.min === range.max ? String(range.min) : range.min + '–' + range.max
-}
-
-function periodRange(item: PeriodItem): string {
-  const start = formatDayLabel(item.start_day)
-  if (!item.end_day || item.end_day === item.start_day) return item.start_day.slice(0, 4) + ' 年 ' + start
-  const endYear = item.end_day.slice(0, 4) === item.start_day.slice(0, 4) ? '' : item.end_day.slice(0, 4) + ' 年 '
-  return item.start_day.slice(0, 4) + ' 年 ' + start + ' – ' + endYear + formatDayLabel(item.end_day)
-}
 
 function setSelection(day: string): boolean {
   selected.value = day
@@ -325,10 +294,22 @@ function selectDate(day: string) {
   if (setSelection(day)) void loadFeelings()
 }
 
+function goToday() {
+  section.value = 'calendar'
+  selectDate(today.value)
+}
+
+function pickMonth(day: string) {
+  monthPickerVisible.value = false
+  selectDate(day)
+}
+
 async function showDay(day: string) {
+  section.value = 'calendar'
   selectDate(day)
   await nextTick()
   dayCard.value?.scrollIntoView({ block: 'start' })
+  dayCard.value?.focus({ preventScroll: true })
 }
 
 async function showPredictedDay(day: string) {
@@ -342,6 +323,27 @@ async function showPredictedDay(day: string) {
 function recordToday() {
   selectDate(today.value)
   openPeriodForm(actualToday.value?.end_day ? actualToday.value : null)
+}
+
+function openFeeling(initial?: FeelingFilter['kind']) {
+  if (feelingsLoading.value || feelingError.value || selected.value > today.value) return
+  feelingSection.value = initial
+  feelingFormVisible.value = true
+}
+
+async function recordTodayFeeling() {
+  const session = currentEpoch()
+  const day = today.value
+  const changedMonth = setSelection(day)
+  if (changedMonth || feelingsLoading.value || feelingError.value) {
+    preparingFeeling.value = true
+    await loadFeelings()
+    if (session !== currentEpoch()) return
+    preparingFeeling.value = false
+  }
+  if (!pageVisible.value || isFertility.value || section.value !== 'calendar' || selected.value !== day) return
+  if (feelingError.value) await showDay(day)
+  else openFeeling()
 }
 
 function openPeriodForm(editing: PeriodItem | null, backfill = false) {
@@ -359,10 +361,9 @@ function editFromHistory(item: PeriodItem) {
   openPeriodForm(item)
 }
 
-function toggleFilter(next: FeelingFilter) {
+function toggleFilter(next: FeelingFilter | null) {
   const active = filter.value
-  filter.value = active?.kind === next.kind && active.label === next.label ? null : next
-  if (filter.value && matchedFeelings.value.length) selected.value = matchedFeelings.value[0].day
+  filter.value = next && active?.kind === next.kind && active.label === next.label ? null : next
 }
 
 async function loadOverview() {
@@ -416,12 +417,15 @@ function resetAccount() {
   activePhase.value = null
   feelings.value = []
   filter.value = null
-  allHistory.value = false
+  section.value = 'calendar'
   delete lastSelected.period
   delete lastSelected.trying_to_conceive
   modeSheetVisible.value = false
+  monthPickerVisible.value = false
   periodFormVisible.value = false
   feelingFormVisible.value = false
+  feelingSection.value = undefined
+  preparingFeeling.value = false
   reminderVisible.value = false
   periodEditing.value = null
   predictionBackfill.value = false
@@ -437,14 +441,17 @@ watch(() => cyclePreference.mode, (next, previous) => {
   if (pageVisible.value && auth.isLoggedIn) selectDate(day)
   else setSelection(day)
 })
+function refreshToday() {
+  const now = todayString()
+  if (today.value === now) return false
+  const wasToday = selected.value === today.value
+  today.value = now
+  if (wasToday) setSelection(now)
+  return true
+}
 onShow(() => {
   pageVisible.value = true
-  const now = todayString()
-  if (today.value !== now) {
-    const wasToday = selected.value === today.value
-    today.value = now
-    if (wasToday) setSelection(now)
-  }
+  refreshToday()
   if (epoch !== currentEpoch()) resetAccount()
   if (!auth.isLoggedIn) {
     uni.reLaunch({ url: '/pages/login/index' })
@@ -453,11 +460,20 @@ onShow(() => {
   void cyclePreference.load()
   void loadOverview()
   void loadFeelings()
+  clearInterval(todayTimer)
+  todayTimer = setInterval(() => {
+    if (!pageVisible.value || !auth.isLoggedIn || !refreshToday()) return
+    void loadOverview()
+    void loadFeelings()
+  }, 15_000)
 })
 onHide(() => {
+  clearInterval(todayTimer)
   pageVisible.value = false
   modeSheetVisible.value = false
+  monthPickerVisible.value = false
 })
+onBeforeUnmount(() => clearInterval(todayTimer))
 
 function onPeriodSaved(day: string) {
   periodFormVisible.value = false
@@ -501,65 +517,48 @@ function removeFeeling(day: string) {
 
 <style scoped>
 .mode-entry { color: var(--hr-rose-deep); background: var(--hr-rose-soft); }
+.cycle-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 4px; margin: 0 0 12px; border: 1px solid var(--hr-line); border-radius: 18px; background: var(--hr-surface); }
+.cycle-section { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 4px 8px; border: 0; border-radius: 14px; background: transparent; color: var(--hr-ink-2); font: 600 14px var(--hr-font); }
+.cycle-section[aria-pressed='true'] { color: var(--hr-rose-deep); background: var(--hr-rose-soft); }
+.cycle-section svg { width: 18px; height: 18px; }
 .cycle-panel {
-  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px 8px;
-  padding: 18px 16px 15px; margin-bottom: 14px; color: var(--hr-rose-deep);
-  background: radial-gradient(ellipse at 100% 0%, var(--hr-peach) 0%, transparent 62%), var(--hr-rose-soft);
+  position: relative; isolation: isolate; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center; gap: 10px 8px; padding: 14px 14px 12px; margin-bottom: 12px;
+  color: var(--hr-rose-deep); background: linear-gradient(115deg, var(--hr-rose-soft), var(--hr-peach));
   border: 1px solid var(--hr-line); border-radius: var(--hr-radius-lg);
 }
-.cycle-panel h2 { margin: 4px 0 5px; font: 680 clamp(25px, 7vw, 34px)/1.2 var(--hr-serif); }
-.panel-label { font-size: 13px; font-weight: 650; }
-.panel-note { max-width: 35em; color: var(--hr-ink-2); font-size: 13px; line-height: 1.55; }
+.cycle-panel.forecast { color: var(--hr-plum); background: linear-gradient(115deg, var(--hr-plum-soft), var(--hr-peach)); }
+.cycle-panel h2 { margin: 2px 0 0; font: 680 clamp(23px, 7vw, 32px)/1.2 var(--hr-serif, Georgia, "Songti SC", serif); }
+.panel-label { margin: 0; color: var(--hr-ink-2); font-size: 13px; font-weight: 650; }
+.panel-note { margin: 4px 0 0; color: var(--hr-ink-2); font-size: 13px; line-height: 1.5; }
+.phase-label { display: inline-block; margin: 5px 0 0; color: var(--hr-ink-2); font-size: 12px; line-height: 1.45; }
 .panel-icon {
-  display: grid; place-items: center; width: 46px; height: 46px; color: var(--hr-rose-deep);
+  display: grid; place-items: center; width: 50px; height: 50px; margin-inline: 8px 4px;
   border: 1px solid var(--hr-line); border-radius: 50%; background: var(--hr-surface);
+  box-shadow: 0 0 0 5px var(--hr-rose-soft), 0 0 0 6px var(--hr-line);
 }
+.forecast .panel-icon { box-shadow: 0 0 0 5px var(--hr-plum-soft), 0 0 0 6px var(--hr-line); }
 .panel-icon svg { width: 24px; height: 24px; }
-.panel-actions, .day-actions {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 132px), 1fr)); gap: 8px;
-}
+.panel-actions, .day-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 124px), 1fr)); gap: 8px; }
 .panel-actions { grid-column: 1 / -1; }
 .panel-actions:empty { display: none; }
+.panel-actions .primary, .panel-actions .ghost, .day-actions .ghost { min-height: 44px; padding-inline: 8px; font-size: 14px; }
 .section-head, .retry-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.section-head { margin-bottom: 9px; }
-.section-head h2 { margin: 0; }
-.muted, .stats-caption { color: var(--hr-ink-2); font-size: 13px; line-height: 1.5; }
+.section-head { margin-bottom: 8px; }
+.section-head h2 { margin: 0; font: 700 21px/1.25 var(--hr-serif, Georgia, "Songti SC", serif); }
+.day-card { scroll-margin-top: 12px; }
+.muted { margin: 5px 0; color: var(--hr-ink-2); font-size: 14px; line-height: 1.5; }
 .today-tag { padding: 3px 8px; border-radius: 99px; background: var(--hr-rose-soft); color: var(--hr-rose-deep); font-size: 12px; }
-.day-record, .history-row {
-  display: flex; justify-content: space-between; align-items: flex-start; gap: 6px;
-  padding: 7px 0; border-top: 1px solid var(--hr-line); font-size: 14px;
-}
-.record-copy, .history-date { display: grid; gap: 5px; min-width: 0; padding: 6px 0; }
-.record-label { font-weight: 650; }
-.day-record .hr-action, .history-row .hr-action { flex-shrink: 0; padding-inline: 4px; }
-.day-actions { margin-top: 12px; }
-.day-tags, .diary-filters { display: flex; flex-wrap: wrap; gap: 6px; }
-.day-tags span {
-  background: var(--hr-paper-deep); border-radius: 999px; padding: 3px 8px;
-  color: var(--hr-ink-2); font-size: 12px;
-}
-.diary-note { color: var(--hr-ink); white-space: pre-wrap; overflow-wrap: anywhere; }
-.diary-group, .matched-dates { margin-top: 12px; }
-.diary-group h3 { font: 650 13px var(--hr-font); margin: 0 0 5px; }
-.diary-filter {
-  display: inline-flex; gap: 5px; align-items: center; min-height: 44px; padding: 6px 10px;
-  background: var(--hr-paper); color: var(--hr-ink); border: 1px solid var(--hr-line-strong);
-  border-radius: 999px; font-size: 13px;
-}
-.diary-filter span { color: var(--hr-ink-2); font-size: 12px; }
-.diary-filter[aria-pressed='true'] { color: var(--hr-rose-deep); border-color: var(--hr-rose); background: var(--hr-rose-soft); }
-.matched-dates .diary-filters { margin-top: 4px; }
-.cycle-stats {
-  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;
-  padding: 10px 12px; margin-bottom: 8px; border-radius: 12px; background: var(--hr-paper-deep);
-}
-.cycle-stats > * { display: grid; gap: 2px; }
-.stats-value { font: 680 22px/1.15 var(--hr-serif); color: var(--hr-rose-deep); }
-.stats-value small { font: 13px var(--hr-font); }
-.stats-caption { font-size: 12px; }
-.history-date {
-  justify-items: start; min-height: 44px; text-align: left; border: 0;
-  border-radius: 8px; background: transparent; color: var(--hr-ink); font-size: 14px;
-}
-.diary-filter:active, .history-date:active { filter: brightness(.95); }
+.day-context { display: grid; gap: 2px; margin: 0 0 10px; padding: 8px 10px; border-radius: 11px; font-size: 13px; line-height: 1.5; }
+.day-context.estimate { background: var(--hr-plum-soft); color: var(--hr-plum); }
+.day-context.actual { background: var(--hr-rose-soft); color: var(--hr-rose-deep); }
+.journal-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.journal-field { display: grid; gap: 2px; align-content: center; min-width: 0; min-height: 56px; padding: 8px 9px; text-align: left; border: 1px solid var(--hr-line); border-radius: 11px; color: var(--hr-ink); background: var(--hr-paper); font: 14px/1.45 var(--hr-font); overflow-wrap: anywhere; }
+.journal-label { color: var(--hr-ink-2); font-size: 12px; }
+.journal-field strong { font-weight: 650; }
+.journal-field .journal-empty { color: var(--hr-ink-2); font-weight: 400; }
+.diary-note { margin: 9px 0 0; padding: 9px 10px; border-left: 2px solid var(--hr-line-strong); color: var(--hr-ink); font-size: 14px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.day-actions { margin-top: 10px; }
+.delete-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.delete-actions .hr-action { color: var(--hr-ink-2); }
 </style>

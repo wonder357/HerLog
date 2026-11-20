@@ -1,22 +1,54 @@
 import { API_PREFIX, apiUrl } from '../config/runtime'
-import { ApiRequestError, currentEpoch, expireSession, getToken, StaleSessionError } from './httpClient'
+import { ApiRequestError, currentEpoch, expireSession, getToken, request, StaleSessionError } from './httpClient'
 import type { AssistantAnswer } from './types'
 
 export type AssistantTopic = Extract<AssistantAnswer['domain'], 'weight' | 'period' | 'skin'>
 export type AssistantMode = 'general' | 'records'
 export type AssistantSource = 'deepseek' | 'fixture' | 'records'
 export interface AssistantExchange { question: string; answer: string }
+export interface AssistantConversation { id: string; title: string; updated_at: string }
+export interface SavedAssistantTurn {
+  id: string
+  question: string
+  mode: AssistantMode
+  topic: AssistantTopic | null
+  source: AssistantSource | null
+  status: 'pending' | 'complete' | 'failed' | 'stopped'
+  answer: AssistantAnswer | null
+  partial: string | null
+  error: string | null
+}
+interface HistoryPage { items: AssistantConversation[]; next_cursor: string | null }
+const assistantPath = '/herlog/assistant'
+const conversationPath = assistantPath + '/conversations'
+const specificConversation = (id: string) => conversationPath + '/' + encodeURIComponent(id)
+
+export const getHistoryPreference = () => request<{ enabled: boolean | null }>(assistantPath + '/history-preference')
+export const setHistoryPreference = (enabled: boolean) => request<{ enabled: boolean }>(assistantPath + '/history-preference', {
+  method: 'PUT', data: { enabled }
+})
+export const listConversations = (q: string, cursor?: string) => q
+  ? request<HistoryPage>(conversationPath + '/search', { method: 'POST', data: { q, ...(cursor ? { cursor } : {}) } })
+  : request<HistoryPage>(conversationPath, { data: cursor ? { cursor } : undefined })
+export const getConversation = (id: string) =>
+  request<{ conversation: AssistantConversation; turns: SavedAssistantTurn[] }>(specificConversation(id))
+export const renameConversation = (id: string, title: string) =>
+  request<AssistantConversation>(specificConversation(id), { method: 'PUT', data: { title } })
+export const removeConversation = (id: string) => request<null>(specificConversation(id), { method: 'DELETE' })
 
 interface QuestionOptions {
   mode: AssistantMode
   history?: AssistantExchange[]
   topic?: AssistantTopic
   signal: AbortSignal
+  save?: { conversation_id: string; client_turn_id: string; create_conversation: boolean }
+  onAccepted?: (conversation: AssistantConversation) => void
   onSource: (source: AssistantSource) => void
   onDelta: (text: string) => void
 }
 
 type StreamEvent =
+  | { type: 'accepted'; conversation: AssistantConversation }
   | { type: 'source'; source: AssistantSource }
   | { type: 'delta'; text: string }
   | { type: 'complete'; answer: AssistantAnswer }
@@ -37,13 +69,16 @@ export async function ask(question: string, options: QuestionOptions): Promise<A
     body: JSON.stringify({
       question,
       mode: options.mode,
-      ...(options.mode === 'records' ? { follow_up_topic: options.topic } : { history: options.history })
+      ...(options.mode === 'records' ? { follow_up_topic: options.topic } : { history: options.save ? undefined : options.history }),
+      ...options.save
     })
   })
   checkSession()
   if (response.status === 401) expireSession()
   if (!response.ok || !response.body || !response.headers.get('content-type')?.includes('text/event-stream')) {
-    throw new ApiRequestError(response.status, '暂时无法开始对话，请重试。')
+    const error = await response.json().catch(() => null)
+    checkSession()
+    throw new ApiRequestError(response.status, typeof error?.message === 'string' ? error.message : '暂时无法开始对话，请重试。')
   }
 
   const reader = response.body.getReader()
@@ -59,6 +94,7 @@ export async function ask(question: string, options: QuestionOptions): Promise<A
       for (const line of lines) {
         if (!line.startsWith('data:')) continue
         const event = JSON.parse(line.slice(5).trim()) as StreamEvent
+        if (event.type === 'accepted') options.onAccepted?.(event.conversation)
         if (event.type === 'source') options.onSource(event.source)
         if (event.type === 'delta') options.onDelta(event.text)
         if (event.type === 'complete') return event.answer

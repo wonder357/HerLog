@@ -21,6 +21,9 @@ dependencies = [
 [dependency-groups]
 dev = ["pytest>=8.2"]
 
+[project.optional-dependencies]
+sms = ["alibabacloud_dysmsapi20170525>=4.0"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]

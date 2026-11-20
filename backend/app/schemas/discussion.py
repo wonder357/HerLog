@@ -4,12 +4,14 @@ from pydantic import Field, field_validator
 
 from app.schemas.wellness import StrictInput
 
-Category = Literal["experience", "question", "checkin"]
+Category = Literal["experience", "question", "checkin", "cycle", "training"]
+DiscussionView = Literal["all", "saved", "mine"]
+DiscussionSort = Literal["latest", "popular"]
+ReactionKind = Literal["like", "save"]
 
 
-class DiscussionText(StrictInput):
+class DiscussionBody(StrictInput):
     body: str = Field(min_length=1, max_length=600)
-    client_key: str = Field(min_length=8, max_length=36)
 
     @field_validator("body", mode="before")
     @classmethod
@@ -17,10 +19,9 @@ class DiscussionText(StrictInput):
         return value.strip() if isinstance(value, str) else value
 
 
-class DiscussionPostIn(DiscussionText):
+class DiscussionEditIn(DiscussionBody):
     title: str = Field(min_length=2, max_length=60)
     category: Category
-    checkin_id: int | None = Field(default=None, gt=0, strict=True)
 
     @field_validator("title", mode="before")
     @classmethod
@@ -28,5 +29,11 @@ class DiscussionPostIn(DiscussionText):
         return value.strip() if isinstance(value, str) else value
 
 
-class DiscussionReplyIn(DiscussionText):
+class DiscussionPostIn(DiscussionEditIn):
+    client_key: str = Field(min_length=8, max_length=36)
+    checkin_id: int | None = Field(default=None, gt=0, strict=True)
+
+
+class DiscussionReplyIn(DiscussionBody):
     body: str = Field(min_length=1, max_length=300)
+    client_key: str = Field(min_length=8, max_length=36)

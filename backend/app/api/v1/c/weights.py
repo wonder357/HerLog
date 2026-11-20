@@ -5,10 +5,10 @@ from datetime import date
 from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, own_account
 from app.db.session import get_session
 from app.schemas.common import ApiResponse
-from app.schemas.herlog import WeightIn, WeightListOut, WeightOut, WeightSummaryOut, weight_out
+from app.schemas.herlog import WeightCycleCompareOut, WeightIn, WeightListOut, WeightOut, WeightSummaryOut, weight_out
 from app.models.private_photo import WeightPhoto
 from app.services import private_photo, weight_service
 from app.services.auth_service import CurrentUser
@@ -41,6 +41,16 @@ def weight_summary(
     user: CurrentUser = Depends(get_current_user),
 ) -> ApiResponse[WeightSummaryOut]:
     return ApiResponse(data=weight_service.summary(session, user.customer_id, days, include_cycle))
+
+
+@router.get("/cycle-compare", response_model=ApiResponse[WeightCycleCompareOut], dependencies=[Depends(own_account)])
+def weight_cycle_compare(
+    current_start: date | None = None,
+    previous_start: date | None = None,
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+) -> ApiResponse[WeightCycleCompareOut]:
+    return ApiResponse(data=weight_service.cycle_compare(session, user.customer_id, current_start, previous_start))
 
 
 @router.post("", response_model=ApiResponse[WeightOut])

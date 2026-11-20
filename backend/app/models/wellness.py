@@ -116,3 +116,16 @@ class DiscussionReplyReport(Base):
     customer_id: Mapped[str] = mapped_column(sa.String(32), sa.ForeignKey(MEMBER), primary_key=True)
     reason_code: Mapped[str] = mapped_column(sa.String(20), nullable=False)
     created_at: Mapped[datetime] = mapped_column(_MOMENT, nullable=False)
+
+
+class DiscussionReaction(Base):
+    __tablename__ = PREFIX + "discussion_reaction"
+
+    share_id: Mapped[int] = mapped_column(_ROW_ID, sa.ForeignKey(f"{GroupShare.__tablename__}.id"), primary_key=True)
+    kind: Mapped[str] = mapped_column(sa.String(8), primary_key=True)
+    customer_id: Mapped[str] = mapped_column(sa.String(32), sa.ForeignKey(MEMBER), primary_key=True)
+
+    __table_args__ = (
+        sa.CheckConstraint("kind IN ('like', 'save')", name="ck_herlog_discussion_reaction"),
+        sa.Index("ix_herlog_discussion_reaction_member", "customer_id", "kind", "share_id"),
+    )

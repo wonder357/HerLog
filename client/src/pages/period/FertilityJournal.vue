@@ -11,7 +11,8 @@
   <slot name="prediction" />
 
   <CycleCalendar :month="month" :selected="selected" :today="today" :predicted-day="predictedDay"
-    :periods="items" :marked-days="markedDays" mark-label="有备孕记录" @select="emit('select', $event)" />
+    :predicted-end="predictedEnd" :periods="items" :marked-days="markedDays" mark-label="有备孕记录"
+    @select="emit('select', $event)" @pick-month="emit('pick-month')" />
 
   <section ref="dayCard" class="card day-card" aria-labelledby="fertility-day">
     <div class="day-head">
@@ -74,12 +75,12 @@ import TemperatureChart from './TemperatureChart.vue'
 import { useFertilityRange } from './useFertilityRange'
 
 const props = defineProps<{
-  selected: string; today: string; overview: PeriodOverview | null; predictedDay: string | null
+  selected: string; today: string; overview: PeriodOverview | null; predictedDay: string | null; predictedEnd: string | null
   selectedFeeling: FeelingItem | null; feelingError: boolean; feelingsLoading: boolean
   tryingStartedOn: string | null; periodAction: string
 }>()
 const emit = defineEmits<{
-  select: [day: string]; 'record-period': []; 'record-feeling': []; 'retry-feelings': []
+  select: [day: string]; 'pick-month': []; 'record-period': []; 'record-feeling': []; 'retry-feelings': []
 }>()
 const editing = ref(false)
 const refresh = ref(0)
@@ -119,7 +120,7 @@ function onSaved(row: FertilityDay | null) {
 
 <style scoped>
 .fertility-intro { display: grid; grid-template-columns: minmax(0, 1fr) 38px; gap: 8px; background: var(--hr-rose-soft); }
-.fertility-intro h2 { margin: 5px 0; color: var(--hr-rose-deep); font: 680 clamp(23px, 6vw, 30px)/1.15 var(--hr-serif); }
+.fertility-intro h2 { margin: 5px 0; color: var(--hr-rose-deep); font: 680 clamp(23px, 6vw, 30px)/1.15 var(--hr-serif, Georgia, "Songti SC", serif); }
 .notice { margin: 0; font-size: 13px; font-weight: 650; color: var(--hr-rose-deep); }
 .hero-icon { box-sizing: border-box; width: 38px; height: 38px; padding: 8px; color: var(--hr-rose-deep); background: var(--hr-surface); border-radius: 50%; }
 .start-date { margin: 7px 0 0; font-size: 13px; color: var(--hr-ink-2); }

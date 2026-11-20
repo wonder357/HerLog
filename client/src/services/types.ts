@@ -5,6 +5,7 @@ export interface MemberInfo {
   username: string
   name: string
   phone: string | null
+  verified_phone_hint?: string | null
   avatar?: string | null
   org_id?: string | null
   org_ids?: string[]
@@ -35,11 +36,12 @@ export interface PeriodItem {
 export interface PeriodPrediction {
   status: 'insufficient' | 'irregular' | 'upcoming' | 'overdue'
   expected_start: string | null
+  expected_end: string | null
   estimate_days: number | null
   cycle_count: number
   starts_used: number
   message: string
-  ovulatory_window?: { start_day: string; end_day: string } | null
+  ovulatory_window?: { start_day: string; end_day: string; estimated_day?: string } | null
 }
 
 export interface PeriodStatus {
@@ -74,6 +76,7 @@ export interface WeightItem {
   client_key: string
   grams: number
   kg: number
+  body_fat_pct?: number | null
   measured_at: string
   tag: string | null
   note: string | null
@@ -91,6 +94,10 @@ export interface WeightSummary {
   record_days?: number
   latest_record_id?: number | null
   cycle_context?: CycleDay[] | null
+  metric_trends?: Partial<Record<'bmi' | 'body_fat_pct', {
+    points: { day: string; value: number; weight_id: number; measured_at: string }[]
+    delta: number | null
+  }>>
   metrics?: Record<string, {
     value: number | null
     unit: string

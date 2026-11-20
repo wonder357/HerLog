@@ -46,7 +46,7 @@ def test_prediction_matches_appendix_cases() -> None:
         [date(2026, 10, 3), date(2026, 11, 1), date(2026, 11, 30)], date(2026, 12, 30)
     )
     assert overdue.status == "overdue"
-    assert overdue.expected_start == date(2026, 12, 29)
+    assert overdue.expected_start is None
 
 
 def test_prediction_uses_median_of_three_cycles() -> None:
@@ -93,6 +93,7 @@ def test_period_crud_updates_history_and_prediction(client: TestClient, monkeypa
     assert listing["prediction"]["status"] == "upcoming"
     assert listing["prediction"]["estimate_days"] == 29
     assert listing["prediction"]["ovulatory_window"] is None
+    assert listing["prediction"]["expected_end"] == listing["prediction"]["expected_start"]
 
     latest = listing["items"][0]
     edited = client.put(
@@ -102,7 +103,31 @@ def test_period_crud_updates_history_and_prediction(client: TestClient, monkeypa
     )
     assert edited.status_code == 200
     listing = client.get("/api/v1/c/herlog/periods", headers=headers).json()["data"]
-    assert listing["prediction"]["ovulatory_window"] == {"start_day": "2026-12-13", "end_day": "2026-12-17"}
+    assert listing["prediction"]["ovulatory_window"] == {
+        "start_day": "2026-12-13", "estimated_day": "2026-12-15", "end_day": "2026-12-17",
+    }
+
+
+def test_period_forecast_crosses_month_then_expires_until_new_start(client: TestClient, monkeypatch: MonkeyPatch) -> None:
+    today = date(2026, 11, 30)
+    monkeypatch.setattr("app.services.period_service.local_today", lambda: today)
+    headers = auth_headers(register_and_login(client))
+    for start, end in (("2026-09-07", "2026-09-10"), ("2026-10-05", "2026-10-09"), ("2026-11-02", "2026-11-07")):
+        _create_period(client, headers, start, end)
+
+    path = "/api/v1/c/herlog/periods"
+    forecast = client.get(path, headers=headers).json()["data"]["prediction"]
+    assert forecast["status"] == "upcoming"
+    assert (forecast["expected_start"], forecast["expected_end"]) == ("2026-11-30", "2026-12-04")
+    assert forecast["ovulatory_window"]["estimated_day"] == "2026-11-16"
+
+    today += timedelta(days=1)
+    forecast = client.get(path, headers=headers).json()["data"]["prediction"]
+    assert forecast["status"] == "overdue"
+    assert forecast["expected_start"] is forecast["expected_end"] is forecast["ovulatory_window"] is None
+    _create_period(client, headers, "2026-11-30")
+    forecast = client.get(path, headers=headers).json()["data"]["prediction"]
+    assert (forecast["expected_start"], forecast["expected_end"]) == ("2026-12-28", "2027-01-01")
 
 
 def test_overlapping_period_is_rejected_with_the_conflicting_date(client: TestClient) -> None:
