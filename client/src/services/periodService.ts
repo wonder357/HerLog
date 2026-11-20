@@ -1,8 +1,16 @@
 import { request } from './httpClient'
-import type { FeelingItem, PeriodItem, PeriodOverview } from './types'
+import type { CycleInsight, FeelingItem, PeriodItem, PeriodOverview } from './types'
 
 export function getOverview(): Promise<PeriodOverview> {
   return request<PeriodOverview>('/herlog/periods')
+}
+
+/** 周期小结与建议：服务端有 6 小时缓存，refresh=true 时重新生成。 */
+export function getCycleInsight(refresh = false): Promise<CycleInsight> {
+  return request<CycleInsight>('/herlog/cycle-insight', {
+    data: refresh ? { refresh: 'true' } : undefined,
+    timeout: 70000
+  })
 }
 
 export function createPeriod(startDay: string, endDay: string | null): Promise<PeriodItem> {

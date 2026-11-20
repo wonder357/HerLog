@@ -11,8 +11,13 @@ from sqlalchemy.orm import Session
 
 from app.core.clock import utc_now
 from app.core.errors import ApiError, conflict, invalid, not_found
-from app.models.wellness import DiscussionReply, DiscussionReplyReport, GroupShare, ShareReport
+from app.models.herlog import Profile
+from app.models.wellness import (
+    DiscussionImage, DiscussionLike, DiscussionReply, DiscussionReplyLike, DiscussionReplyReport, GroupShare,
+    ShareReport,
+)
 from app.schemas.discussion import DiscussionPostIn, DiscussionReplyIn
+from app.services import private_photo
 from app.services.period_service import lock_member
 from app.services.wellness import ACTIVITIES, member_checkin
 
@@ -65,18 +70,45 @@ def _iso(moment):
     return moment.replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def _post_out(post: GroupShare, customer_id: str, reply_count: int = 0) -> dict:
+def _display_name(session: Session, customer_id: str) -> str:
+    profile = session.get(Profile, customer_id)
+    if profile is not None and profile.username:
+        return profile.username[:32]
+    return "她记用户"
+
+
+def _snapshot(payload: DiscussionPostIn, author: str | None, activity: str | None) -> dict:
+    snapshot = {
+        "category": payload.category, "title": payload.title, "body": payload.body,
+        "visibility": payload.visibility, "author": author,
+    }
+    if activity:
+        snapshot["activity"] = activity
+    return snapshot
+
+
+def _post_out(post: GroupShare, customer_id: str, reply_count: int = 0, like_count: int = 0,
+              liked: bool = False, image_ids: list[int] | None = None) -> dict:
+    anonymous = post.snapshot.get("visibility", "anonymous") != "public"
     return {
         "public_id": post.public_id, "category": post.snapshot["category"], "title": post.snapshot["title"],
         "body": post.snapshot["body"], "activity": post.snapshot.get("activity"),
-        "published_at": _iso(post.published_at), "mine": post.customer_id == customer_id, "reply_count": reply_count,
+        "visibility": "anonymous" if anonymous else "public",
+        "author": None if anonymous else post.snapshot.get("author"),
+        "published_at": _iso(post.published_at), "mine": post.customer_id == customer_id,
+        "reply_count": reply_count, "like_count": like_count, "liked": liked,
+        "image_ids": image_ids or [],
     }
 
 
-def _reply_out(row: DiscussionReply, customer_id: str) -> dict:
+def _reply_out(row: DiscussionReply, customer_id: str, like_count: int = 0, liked: bool = False) -> dict:
+    anonymous = (row.visibility or "anonymous") != "public"
     return {
         "public_id": row.public_id, "body": row.body, "published_at": _iso(row.published_at),
         "mine": row.customer_id == customer_id,
+        "visibility": "anonymous" if anonymous else "public",
+        "author": None if anonymous else row.author,
+        "like_count": like_count, "liked": liked,
     }
 
 
@@ -90,38 +122,104 @@ def _visible_replies(customer_id: str):
     )
 
 
-def list_posts(session: Session, customer_id: str, category: str | None, cursor: int | None) -> dict:
-    query = _public_posts().where(
+def _count_map(session: Session, column, model, ids: list[int]) -> dict[int, int]:
+    if not ids:
+        return {}
+    return dict(session.execute(
+        select(column, func.count()).where(column.in_(ids)).group_by(column)
+    ).all())
+
+
+def _liked_ids(session: Session, column, model, ids: list[int], customer_id: str) -> set[int]:
+    if not ids:
+        return set()
+    return set(session.scalars(select(column).where(column.in_(ids), model.customer_id == customer_id)))
+
+
+def _image_ids(session: Session, share_ids: list[int]) -> dict[int, list[int]]:
+    if not share_ids:
+        return {}
+    grouped: dict[int, list[int]] = {}
+    for share_id, image_id in session.execute(
+        select(DiscussionImage.share_id, DiscussionImage.id)
+        .where(DiscussionImage.share_id.in_(share_ids))
+        .order_by(DiscussionImage.share_id, DiscussionImage.position)
+    ):
+        grouped.setdefault(share_id, []).append(image_id)
+    return grouped
+
+
+def list_posts(session: Session, customer_id: str, category: str | None, cursor: int | None,
+               sort: str = "latest", scope: str = "all") -> dict:
+    base = _public_posts().where(
         GroupShare.status == "published",
         ~select(ShareReport.share_id).where(
             ShareReport.share_id == GroupShare.id, ShareReport.customer_id == customer_id,
         ).exists(),
     )
     if category:
-        query = query.where(GroupShare.snapshot["category"].as_string() == category)
-    if cursor is not None:
-        query = query.where(GroupShare.id < cursor)
-    rows = list(session.scalars(query.order_by(GroupShare.id.desc()).limit(PAGE_SIZE + 1)))
+        base = base.where(GroupShare.snapshot["category"].as_string() == category)
+    if scope == "mine":
+        base = base.where(GroupShare.customer_id == customer_id)
+
+    liked = DiscussionLike
+    reply_count_query = (
+        select(DiscussionReply.share_id, func.count().label("total"))
+        .where(DiscussionReply.status == "published")
+        .group_by(DiscussionReply.share_id).subquery()
+    )
+    like_count_query = (
+        select(liked.share_id, func.count().label("total")).group_by(liked.share_id).subquery()
+    )
+    if sort == "popular":
+        # 热门：点赞权重 3，回复权重 1；同一分数按时间倒序。cursor 为偏移量。
+        score = (func.coalesce(like_count_query.c.total, 0) * 3
+                 + func.coalesce(reply_count_query.c.total, 0))
+        query = (
+            base.outerjoin(like_count_query, like_count_query.c.share_id == GroupShare.id)
+            .outerjoin(reply_count_query, reply_count_query.c.share_id == GroupShare.id)
+            .order_by(score.desc(), GroupShare.id.desc())
+            .offset(cursor or 0)
+            .limit(PAGE_SIZE + 1)
+        )
+    else:
+        if cursor is not None:
+            base = base.where(GroupShare.id < cursor)
+        query = base.order_by(GroupShare.id.desc()).limit(PAGE_SIZE + 1)
+
+    rows = list(session.scalars(query))
     page = rows[:PAGE_SIZE]
-    counts = dict(session.execute(
-        select(DiscussionReply.share_id, func.count()).where(
-            DiscussionReply.share_id.in_([row.id for row in page]), *_visible_replies(customer_id),
-        ).group_by(DiscussionReply.share_id),
-    ).all()) if page else {}
+    ids = [row.id for row in page]
+    replies = _count_map(session, DiscussionReply.share_id, DiscussionReply, ids)
+    likes = _count_map(session, DiscussionLike.share_id, DiscussionLike, ids)
+    mine_liked = _liked_ids(session, DiscussionLike.share_id, DiscussionLike, ids, customer_id)
+    images = _image_ids(session, ids)
+    if sort == "popular":
+        next_cursor = (cursor or 0) + PAGE_SIZE if len(rows) > PAGE_SIZE else None
+    else:
+        next_cursor = page[-1].id if len(rows) > PAGE_SIZE else None
     return {
-        "items": [_post_out(row, customer_id, counts.get(row.id, 0)) for row in page],
-        "next_cursor": page[-1].id if len(rows) > PAGE_SIZE else None,
+        "items": [
+            _post_out(row, customer_id, replies.get(row.id, 0), likes.get(row.id, 0),
+                      row.id in mine_liked, images.get(row.id, []))
+            for row in page
+        ],
+        "next_cursor": next_cursor,
     }
 
 
 def publish(session: Session, customer_id: str, payload: DiscussionPostIn) -> dict:
     _check_text(payload.title, payload.body)
     lock_member(session, customer_id)
+    prepared = [private_photo.prepare(image) for image in payload.images]
+    digests = [photo.digest for photo in prepared if photo is not None]
     post_id = uuid4().hex
-    snapshot = {"category": payload.category, "title": payload.title, "body": payload.body}
+    author = _display_name(session, customer_id) if payload.visibility == "public" else None
+    activity = None
     if payload.checkin_id is not None:
         entry = member_checkin(session, customer_id, payload.checkin_id, lock=True)
-        snapshot["activity"] = ACTIVITIES[entry.activity_code][0]
+        activity = ACTIVITIES[entry.activity_code][0]
+    snapshot = _snapshot(payload, author, activity)
     reference = str(payload.checkin_id) if payload.checkin_id is not None else post_id
     original = session.scalar(_public_posts().where(
         GroupShare.customer_id == customer_id, GroupShare.client_key == payload.client_key,
@@ -129,9 +227,9 @@ def publish(session: Session, customer_id: str, payload: DiscussionPostIn) -> di
     if original is not None:
         if original.status != "published" or original.snapshot != snapshot or (
             payload.checkin_id is not None and original.reference_key != reference
-        ):
+        ) or sorted(_stored_digests(session, original.id)) != sorted(digests):
             raise conflict("这次请求已用于另一条讨论，请重新发布")
-        return _post_out(original, customer_id)
+        return _post_out(original, customer_id, image_ids=_image_ids(session, [original.id]).get(original.id, []))
 
     now = utc_now()
     recent = session.scalar(select(func.count()).select_from(GroupShare).where(
@@ -147,6 +245,12 @@ def publish(session: Session, customer_id: str, payload: DiscussionPostIn) -> di
     )
     session.add(row)
     try:
+        session.flush()
+        for position, photo in enumerate(prepared):
+            if photo is None:
+                continue
+            session.add(DiscussionImage(share_id=row.id, position=position, image_bytes=photo.data,
+                                        digest=photo.digest))
         session.commit()
     except IntegrityError:
         session.rollback()
@@ -155,10 +259,48 @@ def publish(session: Session, customer_id: str, payload: DiscussionPostIn) -> di
         ))
         if original is not None and original.status == "published" and original.snapshot == snapshot and (
             payload.checkin_id is None or original.reference_key == reference
-        ):
-            return _post_out(original, customer_id)
+        ) and sorted(_stored_digests(session, original.id)) == sorted(digests):
+            return _post_out(original, customer_id,
+                             image_ids=_image_ids(session, [original.id]).get(original.id, []))
         raise conflict("该打卡已有公开讨论，或发布请求已使用")
-    return _post_out(row, customer_id)
+    return _post_out(row, customer_id, image_ids=_image_ids(session, [row.id]).get(row.id, []))
+
+
+def _stored_digests(session: Session, share_id: int) -> list[str]:
+    return list(session.scalars(
+        select(DiscussionImage.digest).where(DiscussionImage.share_id == share_id)
+        .order_by(DiscussionImage.position)
+    ))
+
+
+def post_images(session: Session, customer_id: str, post_id: str, image_id: int):
+    post = _visible_post(session, customer_id, post_id)
+    image = session.scalar(
+        select(DiscussionImage.image_bytes).where(
+            DiscussionImage.id == image_id, DiscussionImage.share_id == post.id,
+        )
+    )
+    if image is None:
+        raise not_found()
+    return image
+
+
+def toggle_like(session: Session, customer_id: str, post_id: str, *, liked: bool) -> dict:
+    post = _visible_post(session, customer_id, post_id, lock=True)
+    existing = session.get(DiscussionLike, (post.id, customer_id))
+    if liked and existing is None:
+        session.add(DiscussionLike(share_id=post.id, customer_id=customer_id, created_at=utc_now()))
+    elif not liked and existing is not None:
+        session.delete(existing)
+    try:
+        session.commit()
+    except IntegrityError:
+        # 并发点赞：另一请求已写入，结果等价。
+        session.rollback()
+    total = session.scalar(
+        select(func.count()).select_from(DiscussionLike).where(DiscussionLike.share_id == post.id)
+    ) or 0
+    return {"liked": liked, "like_count": total}
 
 
 def remove_post(session: Session, customer_id: str, post_id: str) -> None:
@@ -175,8 +317,12 @@ def list_replies(session: Session, customer_id: str, post_id: str, cursor: int |
     if cursor is not None:
         query = query.where(DiscussionReply.id < cursor)
     rows = list(session.scalars(query.order_by(DiscussionReply.id.desc()).limit(PAGE_SIZE + 1)))
+    page = rows[:PAGE_SIZE]
+    ids = [row.id for row in page]
+    likes = _count_map(session, DiscussionReplyLike.reply_id, DiscussionReplyLike, ids)
+    mine_liked = _liked_ids(session, DiscussionReplyLike.reply_id, DiscussionReplyLike, ids, customer_id)
     return {
-        "items": [_reply_out(row, customer_id) for row in rows[:PAGE_SIZE]],
+        "items": [_reply_out(row, customer_id, likes.get(row.id, 0), row.id in mine_liked) for row in page],
         "next_cursor": rows[PAGE_SIZE - 1].id if len(rows) > PAGE_SIZE else None,
     }
 
@@ -187,6 +333,8 @@ def reply(session: Session, customer_id: str, post_id: str, payload: DiscussionR
     row = DiscussionReply(
         public_id=uuid4().hex, share_id=post.id, customer_id=customer_id,
         body=payload.body, client_key=payload.client_key, published_at=utc_now(), status="published",
+        visibility=payload.visibility,
+        author=_display_name(session, customer_id) if payload.visibility == "public" else None,
     )
     session.add(row)
     try:
@@ -210,6 +358,26 @@ def _reply_row(session: Session, post: GroupShare, reply_id: str) -> DiscussionR
     if row is None:
         raise not_found()
     return row
+
+
+def toggle_reply_like(session: Session, customer_id: str, post_id: str, reply_id: str, *, liked: bool) -> dict:
+    post = _visible_post(session, customer_id, post_id, lock=True)
+    row = _reply_row(session, post, reply_id)
+    if row.status != "published":
+        raise not_found()
+    existing = session.get(DiscussionReplyLike, (row.id, customer_id))
+    if liked and existing is None:
+        session.add(DiscussionReplyLike(reply_id=row.id, customer_id=customer_id, created_at=utc_now()))
+    elif not liked and existing is not None:
+        session.delete(existing)
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+    total = session.scalar(
+        select(func.count()).select_from(DiscussionReplyLike).where(DiscussionReplyLike.reply_id == row.id)
+    ) or 0
+    return {"liked": liked, "like_count": total}
 
 
 def remove_reply(session: Session, customer_id: str, post_id: str, reply_id: str) -> None:

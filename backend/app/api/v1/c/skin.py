@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, pending_store
 from app.db.session import get_session
+from app.schemas.assistant_chat import ChatDetailOut, ChatRenameIn, ChatSummaryOut, summary_out
 from app.schemas.common import ApiResponse
 from app.schemas.herlog import (
     AssistantAnswerOut,
@@ -19,7 +20,7 @@ from app.schemas.herlog import (
     SkinSaveIn,
     SkinSummaryOut,
 )
-from app.services import assistant_service, assistant_stream, skin_service
+from app.services import assistant_chat, assistant_service, assistant_stream, skin_service
 from app.services.auth_service import CurrentUser
 from app.services.pending_store import PendingStore
 
@@ -119,8 +120,62 @@ def assistant_conversation(
             session, user.customer_id, payload.question, payload.follow_up_topic
         )
     session.rollback()
+
+    def save(answer: str, source: str) -> int:
+        chat = assistant_chat.append_exchange(
+            session,
+            user.customer_id,
+            payload.question,
+            answer,
+            source,
+            chat_id=payload.chat_id,
+        )
+        session.commit()
+        return chat.id
+
     return StreamingResponse(
-        assistant_stream.stream_assistant(payload, record_answer),
+        assistant_stream.stream_assistant(payload, record_answer, save),
         media_type="text/event-stream",
         headers={"Cache-Control": "private, no-store", "X-Accel-Buffering": "no"},
     )
+
+
+@router.get("/assistant/chats", response_model=ApiResponse[list[ChatSummaryOut]])
+def assistant_chat_list(
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+) -> ApiResponse[list[ChatSummaryOut]]:
+    return ApiResponse(data=assistant_chat.list_chats(session, user.customer_id))
+
+
+@router.get("/assistant/chats/{chat_id}", response_model=ApiResponse[ChatDetailOut])
+def assistant_chat_detail(
+    chat_id: int,
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+) -> ApiResponse[ChatDetailOut]:
+    return ApiResponse(data=assistant_chat.chat_detail(session, user.customer_id, chat_id))
+
+
+@router.patch("/assistant/chats/{chat_id}", response_model=ApiResponse[ChatSummaryOut])
+def assistant_chat_rename(
+    chat_id: int,
+    payload: ChatRenameIn,
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+) -> ApiResponse[ChatSummaryOut]:
+    chat = assistant_chat.rename_chat(session, user.customer_id, chat_id, payload.title)
+    total = assistant_chat.message_count(session, user.customer_id, chat.id)
+    session.commit()
+    return ApiResponse(data=summary_out(chat.id, chat.title, total, chat.updated_at))
+
+
+@router.delete("/assistant/chats/{chat_id}", response_model=ApiResponse[None])
+def assistant_chat_delete(
+    chat_id: int,
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+) -> ApiResponse[None]:
+    assistant_chat.delete_chat(session, user.customer_id, chat_id)
+    session.commit()
+    return ApiResponse(data=None)

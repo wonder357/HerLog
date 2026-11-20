@@ -11,6 +11,16 @@ MAX_STARTS = 4
 MIN_STARTS = 3
 MAX_SPREAD_DAYS = 7
 
+# 日历高亮所需的派生区间：预测经期长度、排卵日与易孕期，规则与前端
+# `client/src/shared/period.ts` 的 estimateDurationDays / predictedRange /
+# ovulationDay / fertileWindow 保持一致。
+DEFAULT_DURATION_DAYS = 5
+MIN_DURATION_DAYS = 2
+MAX_DURATION_DAYS = 10
+LUTEAL_DAYS = 14
+FERTILE_BEFORE_OVULATION = 5
+FERTILE_AFTER_OVULATION = 1
+
 INSUFFICIENT = "insufficient"
 IRREGULAR = "irregular"
 UPCOMING = "upcoming"
@@ -81,9 +91,67 @@ def predict_next_start(starts: Sequence[date], today: date) -> Prediction:
     )
 
 
-def ovulatory_window(next_start: date) -> tuple[date, date]:
-    """日期估算使用的阶段区间，供周期上下文与月历共用。"""
-    return next_start - timedelta(days=16), next_start - timedelta(days=12)
+def ovulation_day(next_start: date) -> date:
+    """排卵日：按黄体期 14 天从下次经期开始日回推。"""
+
+    return next_start - timedelta(days=LUTEAL_DAYS)
+
+
+def fertile_window(next_start: date) -> tuple[date, date]:
+    """易孕期：排卵日前 5 天到排卵日后 1 天。"""
+
+    day = ovulation_day(next_start)
+    return (
+        day - timedelta(days=FERTILE_BEFORE_OVULATION),
+        day + timedelta(days=FERTILE_AFTER_OVULATION),
+    )
+
+
+def clamp_duration(duration_days: int) -> int:
+    return max(MIN_DURATION_DAYS, min(MAX_DURATION_DAYS, duration_days))
+
+
+def estimate_duration_days(durations: Iterable[int], limit: int = MAX_STARTS) -> int:
+    """最近至多 4 段完整经期的平均持续天数，四舍五入后夹在 2–10 天。"""
+
+    values = [value for value in list(durations)[:limit] if value]
+    if not values:
+        return DEFAULT_DURATION_DAYS
+    average = Decimal(sum(values)) / Decimal(len(values))
+    return clamp_duration(int(average.quantize(Decimal(1), rounding=ROUND_HALF_UP)))
+
+
+def predicted_range(expected_start: date, duration_days: int) -> tuple[date, date]:
+    """预计经期区间：开始日到开始日 + 持续天数 - 1。"""
+
+    return expected_start, expected_start + timedelta(days=clamp_duration(duration_days) - 1)
+
+
+def schedule_range(
+    expected_start: date, today: date, duration_days: int = DEFAULT_DURATION_DAYS
+) -> tuple[date, date, int]:
+    """日历上真正高亮的预测经期区间。
+
+    已经过了预计开始日却还没有新的经期记录时，预测不能让高亮停在过去：
+    区间从今天起算，顺延天数逐日增加，直到用户补记新的开始日。
+    返回 (区间开始, 区间结束, 顺延天数)。
+    """
+
+    overdue = max(0, (today - expected_start).days)
+    start = expected_start + timedelta(days=overdue)
+    end = start + timedelta(days=clamp_duration(duration_days) - 1)
+    return start, end, overdue
+
+
+def recent_durations(rows: Sequence[tuple[date, date | None]]) -> list[int]:
+    """按开始日倒序取最近几段完整经期的持续天数。"""
+
+    ordered = sorted(rows, key=lambda row: row[0], reverse=True)
+    durations: list[int] = []
+    for start_day, end_day in ordered:
+        if end_day is not None:
+            durations.append((end_day - start_day).days + 1)
+    return durations
 
 
 def duration_days(start_day: date, end_day: date | None) -> int | None:

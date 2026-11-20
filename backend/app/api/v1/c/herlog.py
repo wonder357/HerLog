@@ -11,6 +11,7 @@ from app.db.session import get_session
 from app.models.private_photo import ProfilePhoto
 from app.schemas.common import ApiResponse
 from app.schemas.herlog import (
+    CycleInsightOut,
     FeelingIn,
     FeelingOut,
     PeriodIn,
@@ -18,7 +19,13 @@ from app.schemas.herlog import (
     ProfileOut,
     ProfileUpdate,
 )
-from app.services import feeling_service, period_service, private_photo, profile_service
+from app.services import (
+    feeling_service,
+    period_insight_service,
+    period_service,
+    private_photo,
+    profile_service,
+)
 from app.services.auth_service import CurrentUser
 
 router = APIRouter(prefix="/herlog", tags=["herlog"])
@@ -81,6 +88,17 @@ def delete_period(
 ) -> ApiResponse[None]:
     period_service.delete_period(session, user.customer_id, period_id)
     return ApiResponse(data=None)
+
+
+@router.get("/cycle-insight", response_model=ApiResponse[CycleInsightOut])
+def read_cycle_insight(
+    refresh: bool = Query(default=False, description="true 时跳过服务端缓存重新生成"),
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+) -> ApiResponse[CycleInsightOut]:
+    """周期小结与日常建议：事实由服务端算，模型只做解释。"""
+
+    return ApiResponse(data=period_insight_service.insight(session, user.customer_id, refresh))
 
 
 @router.get("/feelings", response_model=ApiResponse[list[FeelingOut]])

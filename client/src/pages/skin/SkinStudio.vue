@@ -34,6 +34,19 @@
         </SkinButton>
       </view>
 
+      <view class="studio-panel sample-panel">
+        <view class="panel-header">
+          <view><view class="panel-kicker">拍照示例</view><view class="panel-title">照着这样拍</view></view>
+        </view>
+        <view class="sample-grid">
+          <view v-for="sample in SKIN_SAMPLES" :key="sample.src" class="sample-item">
+            <image class="sample-photo" :src="sample.src" mode="aspectFill" :aria-label="sample.alt" />
+            <view class="sample-meta"><strong>{{ sample.site }}</strong>{{ sample.note }}</view>
+          </view>
+        </view>
+        <view class="studio-muted">示例为展示用照片。拍照时保持光线均匀、避开滤镜，按部位选择对应的取景范围。</view>
+      </view>
+
       <view class="studio-panel featured care-preview">
         <view class="featured-main">
           <view class="panel-kicker">护理参考</view>
@@ -246,6 +259,7 @@ import HerlogSheet from '../../components/HerlogSheet.vue'
 import guideSource from './skin-care-guide.md?raw'
 import ObservationCopy from './ObservationCopy.vue'
 import PrivateSkinImage from './PrivateSkinImage.vue'
+import { SKIN_SAMPLES } from './skinSamples'
 import { formatDayLabel, formatMoment, formatMonthLabel, monthGrid, shanghaiDayKey, shiftMonth, startOfMonth, todayString } from '../../shared/dates'
 import { groupSkinDays, selfAssessedSkinType, skinMonthRange } from '../../shared/skin'
 import { listObservations } from '../../services/skinService'
