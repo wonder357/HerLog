@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-  <title>体重</title>
-  <rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/>
-  <path d="M7.6 15.6a4.4 4.4 0 0 1 8.8 0"/>
-  <path d="M12 15.4l-1.7-3.1"/>
-  <circle cx="12" cy="15.6" r="0.9" fill="currentColor" stroke="none"/>
-</svg>
