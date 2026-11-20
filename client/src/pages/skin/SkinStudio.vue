@@ -12,7 +12,10 @@
       <view class="today-hero">
         <img class="photo-examples" src="/static/skin-photo-guide.png" alt="拍照示例：正面自然表情与微笑侧倾" />
         <view class="hero-copy">
-          <view class="date-line">{{ formatDayLabel(today) }}</view>
+          <view class="hero-top">
+            <view class="date-line">{{ formatDayLabel(today) }}</view>
+            <HerlogMascot class="hero-mascot" pose="care" :size="64" alt="" />
+          </view>
           <view class="hero-title">今天，皮肤感觉怎样？</view>
           <view class="hero-actions">
             <SkinButton class="primary hero-button" @click="emit('capture')"><HerlogIcon name="camera" />拍照记录</SkinButton>
@@ -32,6 +35,19 @@
         <SkinButton class="mini-panel" @click="switchTab('care')">
           <view class="mini-label">日光防护</view><view class="mini-value">{{ sunLogged ? '已记录' : '去看看' }}</view>
         </SkinButton>
+      </view>
+
+      <view class="studio-panel sample-panel">
+        <view class="panel-header">
+          <view><view class="panel-kicker">拍照示例</view><view class="panel-title">照着这样拍</view></view>
+        </view>
+        <view class="sample-grid">
+          <view v-for="sample in SKIN_SAMPLES" :key="sample.src" class="sample-item">
+            <image class="sample-photo" :src="sample.src" mode="aspectFill" :aria-label="sample.alt" />
+            <view class="sample-meta"><strong>{{ sample.site }}</strong>{{ sample.note }}</view>
+          </view>
+        </view>
+        <view class="studio-muted">示例为展示用照片。拍照时保持光线均匀、避开滤镜，按部位选择对应的取景范围。</view>
       </view>
 
       <view class="studio-panel featured care-preview">
@@ -58,7 +74,9 @@
         </view>
         <view v-else-if="photoLoading" class="studio-muted" role="status">正在读取照片观察…</view>
         <view v-else-if="photoError" class="studio-muted" role="alert">照片观察没有加载成功。<SkinButton class="studio-text" @click="emit('refresh-photo')">重试</SkinButton></view>
-        <view v-else class="studio-muted">保存一次照片观察后，可以在这里回看。</view>
+        <view v-else class="studio-muted">
+          <text>保存一次照片观察后，可以在这里回看。</text>
+        </view>
       </view>
     </template>
 
@@ -242,10 +260,12 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import SkinButton from '../../components/H5Button'
 import HerlogHeading from '../../components/HerlogHeading.vue'
 import HerlogIcon from '../../components/HerlogIcon.vue'
+import HerlogMascot from '../../components/HerlogMascot.vue'
 import HerlogSheet from '../../components/HerlogSheet.vue'
 import guideSource from './skin-care-guide.md?raw'
 import ObservationCopy from './ObservationCopy.vue'
 import PrivateSkinImage from './PrivateSkinImage.vue'
+import { SKIN_SAMPLES } from './skinSamples'
 import { formatDayLabel, formatMoment, formatMonthLabel, monthGrid, shanghaiDayKey, shiftMonth, startOfMonth, todayString } from '../../shared/dates'
 import { groupSkinDays, selfAssessedSkinType, skinMonthRange } from '../../shared/skin'
 import { listObservations } from '../../services/skinService'

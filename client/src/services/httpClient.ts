@@ -94,7 +94,7 @@ export function expireSession(): void {
 }
 
 interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   data?: Record<string, unknown> | undefined
   /** 匿名入口（注册、登录）遇 401 不跳登录页。 */
   anonymous?: boolean

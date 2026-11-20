@@ -24,6 +24,7 @@
       <div v-if="!chat" class="welcome">
         <section class="welcome-panel" aria-labelledby="chat-welcome-title">
           <img class="welcome-bloom" src="/static/home-cosmos.png" alt="" />
+          <HerlogMascot class="welcome-mascot" pose="hi" :size="72" />
           <div class="welcome-copy">
             <p class="welcome-date">{{ dateLabel }}</p>
             <h2 id="chat-welcome-title">今天，<br />想聊点什么？</h2>
@@ -163,6 +164,7 @@ import H5Button from '../../components/H5Button'
 import H5Form, { H5Label } from '../../components/H5Form'
 import H5Input from '../../components/H5Input'
 import HerlogIcon from '../../components/HerlogIcon.vue'
+import HerlogMascot from '../../components/HerlogMascot.vue'
 import HerlogSheet from '../../components/HerlogSheet.vue'
 import AssistantHistory from './AssistantHistory.vue'
 import { ask, getConversation, getHistoryPreference, removeConversation, renameConversation, setHistoryPreference } from '../../services/assistantService'
@@ -170,6 +172,7 @@ import type { AssistantConversation, AssistantMode, AssistantSource, AssistantTo
 import { ApiRequestError, currentEpoch } from '../../services/httpClient'
 import type { AssistantAnswer, RecordRef } from '../../services/types'
 import { assistantTitle } from '../../shared/home'
+import { suggestFollowUps } from '../../shared/followUps'
 
 const props = defineProps<{ dateLabel: string; starters: string[]; recordQuestions: string[]; showQuestions: boolean; visible: boolean }>()
 const emit = defineEmits<{ reference: [item: RecordRef]; keyboard: [open: boolean] }>()
@@ -228,7 +231,16 @@ const topic = computed<AssistantTopic | undefined>(() => {
 })
 const suggestions = computed(() => {
   if (pending.value || !props.showQuestions) return []
-  if (mode.value === 'general') return chat.value?.turns.some(turn => turn.mode === 'general') ? [] : props.starters.slice(0, 2)
+  if (mode.value === 'general') {
+    const general = chat.value?.turns.filter(turn => turn.mode === 'general') ?? []
+    const latest = general.at(-1)
+    if (!latest) return props.starters.slice(0, 2)
+    return latest.answer ? suggestFollowUps({
+      question: latest.question,
+      answer: latest.answer.answer,
+      asked: general.map(turn => turn.question)
+    }, 2) : []
+  }
   if (!latestRecordAnswer.value) return [...new Set([...props.recordQuestions, '最近的皮肤观察是什么？'])].slice(0, 2)
   if (topic.value === 'weight') return [latestRecordAnswer.value.range.days === 30 ? '那近 7 天呢？' : '那近 30 天呢？']
   if (topic.value === 'period') return [latestRecordAnswer.value.range.label === '最近一次实际经期' ? '那下次呢？' : '那上次呢？']
@@ -602,6 +614,7 @@ const actionRefs = (answer: AssistantAnswer) => answer.record_refs.filter(ref =>
 .welcome-panel { position:relative; isolation:isolate; min-height:207px; overflow:hidden; border:1px solid var(--hr-line-strong); border-radius:22px; background:radial-gradient(ellipse at 93% 23%, var(--hr-rose-soft), transparent 68%), linear-gradient(115deg, var(--hr-peach), var(--hr-rose-soft)); }
 .welcome-panel::after { position:absolute; z-index:-1; inset:0; content:''; background:linear-gradient(90deg, var(--hr-peach), transparent 72%); }
 .welcome-bloom { position:absolute; z-index:-2; right:-77px; bottom:-18px; width:317px; opacity:.95; pointer-events:none; }
+.welcome-mascot { position:absolute; right:12px; top:8px; }
 .welcome-copy { padding:19px 0 15px 16px; max-width:59%; }
 .welcome-copy h2 { margin:7px 0; font:750 clamp(27px, 8vw, 34px)/1.22 "Songti SC","SimSun",serif; letter-spacing:-.055em; }
 .welcome-copy p { margin:0; color:var(--hr-ink-2); font-size:13px; line-height:1.55; }

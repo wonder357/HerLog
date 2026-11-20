@@ -20,6 +20,7 @@ from app.schemas.herlog import (
     MetricSlot,
     MetricPointOut,
     MetricTrendOut,
+    TrendMetricOut,
     WeightCycleCompareOut,
     WeightCycleOut,
     WeightCyclePointOut,
@@ -258,6 +259,20 @@ def summary(session: Session, customer_id: str, days: int, include_cycle: bool =
                        measured_at=point.measured_at.isoformat() + "Z")
         for point in data.points if (value := bmi_value(point.grams, height)) is not None
     ]
+    bmi_trend = _trend(bmi_points, 1)
+    fat_trend = _trend(fat_points, 2)
+    fat_by_weight = {point.weight_id: point.value for point in fat_points}
+    trends = []
+    for key, label, unit, values, delta in (
+        ("weight", "体重", "kg", [round(point.grams / 1000, 3) for point in data.points], data.delta_kg),
+        ("bmi", "BMI", "kg/m2", [point.value for point in bmi_points], bmi_trend.delta),
+        ("body_fat_pct", "体脂率", "percent", [point.value for point in fat_points], fat_trend.delta),
+    ):
+        trends.append(TrendMetricOut(
+            key=key, label=label, unit=unit,
+            status="available" if values else "missing_height" if key == "bmi" and data.points and not height else "no_data",
+            first=values[0] if values else None, last=values[-1] if values else None, delta=delta, points=values,
+        ))
     cycle_context = None
     if include_cycle:
         periods = cycle_records(session, customer_id)
@@ -291,6 +306,7 @@ def summary(session: Session, customer_id: str, days: int, include_cycle: bool =
                 day=point.day,
                 grams=point.grams,
                 kg=round(point.grams / 1000, 3),
+                body_fat_pct=fat_by_weight.get(point.weight_id),
                 weight_id=point.weight_id,
                 measured_at=point.measured_at.isoformat() + "Z",
             )
@@ -302,7 +318,8 @@ def summary(session: Session, customer_id: str, days: int, include_cycle: bool =
         latest_record_id=latest.id if latest else None,
         record_days=len(data.points),
         metrics=metrics,
-        metric_trends={"bmi": _trend(bmi_points, 1), "body_fat_pct": _trend(fat_points, 2)},
+        metric_trends={"bmi": bmi_trend, "body_fat_pct": fat_trend},
+        trends=trends,
         cycle_context=cycle_context,
     )
 

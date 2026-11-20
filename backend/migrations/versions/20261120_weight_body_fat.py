@@ -13,6 +13,9 @@ CHECK = "ck_herlog_weight_body_fat"
 
 
 def upgrade() -> None:
+    context = op.get_context()
+    if context.as_sql or any(column["name"] == "body_fat_pct" for column in sa.inspect(op.get_bind()).get_columns(TABLE)):
+        return
     if op.get_context().dialect.name == "sqlite":
         op.add_column(TABLE, sa.Column(
             "body_fat_pct", sa.Numeric(5, 2), sa.CheckConstraint("body_fat_pct > 0 AND body_fat_pct < 100", name=CHECK),

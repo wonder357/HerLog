@@ -104,7 +104,7 @@ def test_period_crud_updates_history_and_prediction(client: TestClient, monkeypa
     assert edited.status_code == 200
     listing = client.get("/api/v1/c/herlog/periods", headers=headers).json()["data"]
     assert listing["prediction"]["ovulatory_window"] == {
-        "start_day": "2026-12-13", "estimated_day": "2026-12-15", "end_day": "2026-12-17",
+        "start_day": "2026-12-10", "estimated_day": "2026-12-15", "end_day": "2026-12-16",
     }
 
 

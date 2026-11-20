@@ -38,9 +38,11 @@
   background: var(--hr-surface);
   border: 1px solid var(--hr-line); box-shadow: var(--hr-shadow); color: var(--hr-ink);
 }
-.hero-copy { position: relative; z-index: 1; }
+.hero-copy { position: relative; z-index: 1; display: grid; gap: 2px; }
+.hero-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
 .date-line { color: var(--hr-rose-deep); font-family: var(--hr-font); font-size: 15px; }
 .hero-title { margin: 5px 0 7px; font: 650 22px/28px var(--hr-font); }
+.hero-mascot { justify-self: end; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 17px; }
 .photo-examples { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; margin-bottom: 12px; }
 .hero-button { flex: 1 1 120px; width: auto; transition: transform 150ms ease; }
@@ -140,3 +142,11 @@
   box-sizing: border-box; width: 100%; min-height: 62px; height: 62px; margin-top: 9px; padding: 8px;
   border: 1px solid var(--hr-line-strong); border-radius: 12px; color: var(--hr-ink); background: #fff; font-size: 14px;
 }
+
+/* 拍照示例：按部位展示取景与光线参考 */
+.sample-panel { gap: 10px; }
+.sample-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sample-item { display: grid; gap: 5px; min-width: 0; }
+.sample-photo { display: block; width: 100%; height: auto; aspect-ratio: 1 / 1; border-radius: 13px; border: 1px solid var(--hr-line); background: var(--hr-paper); }
+.sample-meta { font-size: 11px; line-height: 1.45; color: var(--hr-ink-2); overflow-wrap: anywhere; }
+.sample-meta strong { display: block; font-size: 13px; font-weight: 600; color: var(--hr-ink); }

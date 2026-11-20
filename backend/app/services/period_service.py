@@ -82,9 +82,12 @@ def list_periods(session: Session, customer_id: str) -> dict:
             if item["end_day"] is not None and item["end_day"] <= today
         ))
     if expected and latest and latest.end_day:
-        start, end = period_logic.ovulatory_window(expected)
+        start, end = period_logic.fertile_window(expected)
         if start > latest.end_day:
-            ovulatory_window = {"start_day": start, "end_day": end, "estimated_day": start + timedelta(days=2)}
+            ovulatory_window = {"start_day": start, "end_day": end, "estimated_day": period_logic.ovulation_day(expected)}
+    overdue_days = (today - (latest.start_day + timedelta(days=prediction.estimate_days))).days if (
+        prediction.status == period_logic.OVERDUE and latest and prediction.estimate_days
+    ) else 0
     return {
         "items": [_to_out(row, by_id) for row in rows],
         "prediction": {
@@ -95,6 +98,12 @@ def list_periods(session: Session, customer_id: str) -> dict:
             "cycle_count": prediction.cycle_count,
             "starts_used": prediction.starts_used,
             "ovulatory_window": ovulatory_window,
+            "duration_days": (expected_end - expected).days + 1 if expected_end and expected else None,
+            "predicted_range": {"start_day": expected, "end_day": expected_end} if expected_end else None,
+            "ovulation_day": ovulatory_window["estimated_day"] if ovulatory_window else None,
+            "overdue_days": overdue_days,
+            "fertile_window": {key: ovulatory_window[key] for key in ("start_day", "end_day")}
+            if ovulatory_window else None,
             "message": prediction.message,
         },
         "status": _current_status(rows, today, prediction.status == period_logic.OVERDUE),

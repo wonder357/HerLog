@@ -1,4 +1,8 @@
+import base64
+import io
 from datetime import timedelta
+
+from PIL import Image
 
 from app.core.clock import local_today
 from app.core.config import settings
@@ -6,6 +10,10 @@ from tests.conftest import auth_headers, register_and_login
 
 ROOT = "/api/v1/c/herlog/exercise"
 POSTS = ROOT + "/discussion/posts"
+
+POST_FIELDS = {"saved","public_id", "title", "body", "category", "activity", "visibility", "author",
+               "published_at", "mine", "reply_count", "like_count", "liked", "image_ids"}
+REPLY_FIELDS = {"public_id", "published_at", "mine", "body", "visibility", "author", "like_count", "liked"}
 
 
 def member(client, username):
@@ -30,6 +38,12 @@ def checkin(client, headers):
     return response.json()["data"]["id"]
 
 
+def png_payload(size=12, color=(210, 140, 160)):
+    buffer = io.BytesIO()
+    Image.new("RGB", (size, size), color).save(buffer, "PNG")
+    return {"mime": "image/png", "image_base64": base64.b64encode(buffer.getvalue()).decode()}
+
+
 def test_public_posts_are_opt_in_and_legacy_shares_stay_private(client, monkeypatch):
     monkeypatch.setattr(settings, "HERLOG_GROUP_INVITE_CODE", "private-test-invite")
     owner, _ = member(client, "exercise_poster")
@@ -52,10 +66,7 @@ def test_public_posts_are_opt_in_and_legacy_shares_stay_private(client, monkeypa
     assert publish(client, owner, category="checkin", checkin_id=own_checkin, body="另一条记录").status_code == 409
     feed = client.get(POSTS, headers=viewer, params={"category": "checkin"}).json()["data"]["items"]
     assert feed == [{**post, "mine": False}]
-    assert set(feed[0]) == {
-        "public_id", "title", "body", "category", "activity", "published_at", "mine", "reply_count",
-        "like_count", "liked", "saved",
-    }
+    assert set(feed[0]) == POST_FIELDS
     assert feed[0]["activity"] == "散步"
     assert client.get(POSTS, headers=viewer, params={"category": "question"}).json()["data"]["items"] == []
     assert client.delete(f"{POSTS}/{post['public_id']}", headers=viewer).status_code == 404
@@ -80,7 +91,8 @@ def test_discussion_text_limits_and_anonymous_reply_reporting(client, monkeypatc
     assert posted.status_code == 200
     item = posted.json()["data"]
     assert client.post(replies, headers=viewer, json=payload).json()["data"] == item
-    assert set(item) == {"public_id", "published_at", "mine", "body"}
+    assert set(item) == REPLY_FIELDS
+    assert item["visibility"] == "anonymous" and item["author"] is None
     assert client.get(replies, headers=owner).json()["data"]["items"] == [{**item, "mine": False}]
     assert client.get(POSTS, headers=owner).json()["data"]["items"][0]["reply_count"] == 1
     target = f"{replies}/{item['public_id']}"
@@ -160,3 +172,73 @@ def test_discussion_edit_is_owned_and_preserves_private_attachment_boundary(clie
     assert {**post, **payload, "mine": False} == result
     assert client.delete(path, headers=owner).status_code == 200
     assert client.put(path, headers=owner, json=payload).status_code == 404
+
+def test_visibility_images_and_likes(client):
+    owner, _ = member(client, "social_author")
+    reader, _ = member(client, "social_reader")
+
+    public = publish(client, owner, visibility="public", title="公开的运动小结", client_key="social-public",
+                     images=[png_payload(), png_payload(color=(120, 170, 200))])
+    assert public.status_code == 200, public.text
+    post = public.json()["data"]
+    assert post["visibility"] == "public"
+    assert post["author"] == "social_author"
+    assert post["mine"] is True
+    assert len(post["image_ids"]) == 2
+
+    anonymous = publish(client, owner, title="匿名的运动小结", client_key="social-anon").json()["data"]
+    assert anonymous["visibility"] == "anonymous" and anonymous["author"] is None
+
+    # 图片：登录后可读，未登录 401，错误的图片 id 404
+    post_path = f"{POSTS}/{post['public_id']}"
+    image_path = f"{post_path}/images/{post['image_ids'][0]}"
+    image = client.get(image_path, headers=reader)
+    assert image.status_code == 200 and image.headers["content-type"] == "image/jpeg"
+    assert image.content[:2] == b"\xff\xd8"
+    assert client.get(image_path).status_code == 401
+    assert client.get(f"{post_path}/images/999999", headers=reader).status_code == 404
+
+    # 点赞：幂等、计数正确、按账号区分 liked
+    assert client.post(post_path + "/like", headers=reader).json()["data"] == {"liked": True, "like_count": 1}
+    assert client.post(post_path + "/like", headers=reader).json()["data"] == {"liked": True, "like_count": 1}
+    author_view = next(item for item in client.get(POSTS, headers=owner).json()["data"]["items"]
+                       if item["public_id"] == post["public_id"])
+    reader_view = next(item for item in client.get(POSTS, headers=reader).json()["data"]["items"]
+                       if item["public_id"] == post["public_id"])
+    assert author_view["like_count"] == 1 and author_view["liked"] is False
+    assert reader_view["liked"] is True
+    assert client.delete(post_path + "/like", headers=reader).json()["data"] == {"liked": False, "like_count": 0}
+
+    # 回复：公开回复展示昵称，回复点赞独立计数
+    reply_path = post_path + "/replies"
+    named = client.post(reply_path, headers=reader, json={
+        "body": "我也喜欢这样的路线。", "client_key": "social-reply-1", "visibility": "public",
+    }).json()["data"]
+    assert named["author"] == "social_reader" and named["visibility"] == "public"
+    reply_like = f"{reply_path}/{named['public_id']}/like"
+    assert client.post(reply_like, headers=owner).json()["data"] == {"liked": True, "like_count": 1}
+    listed = client.get(reply_path, headers=reader).json()["data"]["items"][0]
+    assert listed["like_count"] == 1 and listed["liked"] is False
+    assert client.delete(reply_like, headers=owner).json()["data"] == {"liked": False, "like_count": 0}
+
+
+def test_popular_sort_and_my_posts_scope(client):
+    first, _ = member(client, "sort_first")
+    second, _ = member(client, "sort_second")
+    reader, _ = member(client, "sort_reader")
+
+    older = publish(client, first, title="最早的一条", client_key="sort-one").json()["data"]
+    middle = publish(client, first, title="中间的一条", client_key="sort-two").json()["data"]
+    newest = publish(client, second, title="最新的一条", client_key="sort-three").json()["data"]
+
+    assert [item["public_id"] for item in client.get(POSTS, headers=reader).json()["data"]["items"]] == [
+        newest["public_id"], middle["public_id"], older["public_id"],
+    ]
+    client.post(f"{POSTS}/{older['public_id']}/like", headers=reader)
+    popular = client.get(POSTS, headers=reader, params={"sort": "popular"}).json()["data"]
+    assert popular["items"][0]["public_id"] == older["public_id"]
+    assert set(popular) == {"items", "next_cursor"}
+
+    mine = client.get(POSTS, headers=first, params={"scope": "mine"}).json()["data"]["items"]
+    assert {item["public_id"] for item in mine} == {older["public_id"], middle["public_id"]}
+    assert all(item["mine"] for item in mine)

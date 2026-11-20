@@ -44,29 +44,43 @@
     var(--hr-paper);
 }
 
-.home-page { --hr-page-tint: #ffeadf; --hr-page-glow: #ffeaf3; }
+.home-page { --hr-page-tint: #ffeadf; --hr-page-glow: #ffeaf3; --hr-page-art: url('/static/backgrounds/bg-silhouette.webp'); }
 .cycle-page { --hr-page-tint: #ffcfdc; --hr-page-glow: #ffe9ed; }
 .weight-page, .detail-page { --hr-page-tint: #fbd2e9; --hr-page-glow: #ebe1fb; }
 .herlog-skin { --hr-page-tint: #ffeaf3; --hr-page-glow: #e9f5ee; }
-.profile-page { --hr-page-tint: #ffdfcb; --hr-page-glow: #f9e6ef; }
+.profile-page { --hr-page-tint: #ffdfcb; --hr-page-glow: #f9e6ef; --hr-page-art: url('/static/backgrounds/bg-woman-hat.webp'); --hr-page-art-opacity: .42; }
 
-html::-webkit-scrollbar { width: 8px; }
-html::-webkit-scrollbar-track { background: transparent; }
-html::-webkit-scrollbar-thumb { border-radius: 999px; background: #c4a7ae; }
-html::-webkit-scrollbar-thumb:hover { background: #9d747f; }
-html::-webkit-scrollbar-button { display: none; }
-
-@media (max-width: 600px) {
-  html::-webkit-scrollbar { width: 4px; }
-}
+/*
+ * 滚动条：全站统一成细线，默认贴近底色，指针悬停才加深一点。
+ * Windows 默认的 15px 灰槽会把版面和内容硬生生切断，这是要避免的“突兀”。
+ */
+* { scrollbar-width: thin; scrollbar-color: #e6d0d8 transparent; }
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner { background: transparent; }
+*::-webkit-scrollbar-thumb { border-radius: 999px; background: #e6d0d8; }
+*:hover::-webkit-scrollbar-thumb { background: #cfa9b6; }
+*::-webkit-scrollbar-button { display: none; }
 
 @supports not selector(::-webkit-scrollbar) {
-  html { scrollbar-width: thin; scrollbar-color: #c4a7ae transparent; }
+  *:hover { scrollbar-color: #cfa9b6 transparent; }
 }
 
 @media (forced-colors: active) {
-  html::-webkit-scrollbar-thumb, html::-webkit-scrollbar-thumb:hover { background: ButtonText; }
+  *::-webkit-scrollbar-thumb, *::-webkit-scrollbar-thumb:hover { background: ButtonText; }
 }
+
+/*
+ * 横向滑动条（部位筛选、周期日期等）：不显示滚动条，右缘 26px 渐隐，
+ * 让“还能继续滑”由内容本身表达，而不是一条横在中间的灰条。
+ * 某个滑动条如果需要可见的滚动条，去掉 hr-rail 即可。
+ */
+.hr-rail {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent 100%);
+  mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent 100%);
+}
+.hr-rail .uni-scroll-view { -ms-overflow-style: none; scrollbar-width: none; }
+.hr-rail .uni-scroll-view::-webkit-scrollbar { display: none; width: 0; height: 0; }
 
 html, body, page, uni-page-body {
   background-color: var(--hr-paper);
@@ -81,11 +95,32 @@ uni-tabbar { display: none !important; }
 
 .hr-page {
   box-sizing: border-box;
+  position: relative;
+  isolation: isolate;
   min-height: 100vh;
   min-height: 100dvh;
   padding: calc(16px + env(safe-area-inset-top)) max(18px, calc((100% - var(--hr-shell-width)) / 2))
     calc(24px + env(safe-area-inset-bottom));
   background: var(--hr-wash);
+}
+
+/*
+ * 素材库背景装饰层（static/backgrounds）。
+ * 只做氛围，不承载语义：把 --hr-page-art 删掉，页面信息完全不变。
+ */
+.hr-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--hr-page-art, none) right bottom / auto min(320px, 42vh) no-repeat;
+  opacity: var(--hr-page-art-opacity, .38);
+  mix-blend-mode: multiply;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hr-page::before { transition: opacity 200ms ease-out; }
 }
 
 .hr-page.hr-tab-page {
@@ -179,6 +214,8 @@ uni-tabbar { display: none !important; }
   margin-bottom: 12px;
 }
 .muted { color: var(--hr-ink-2); font-size: 13px; overflow-wrap: anywhere; }
+/* 空状态里的小胭：形象 + 一句话；形象自身已 flex:none */
+.hr-empty-note { display: flex; align-items: center; gap: 10px; }
 .hr-action {
   display: inline-flex;
   align-items: center;

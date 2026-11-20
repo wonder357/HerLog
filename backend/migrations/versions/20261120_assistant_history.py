@@ -10,7 +10,7 @@ branch_labels = None
 depends_on = None
 
 HOME = "qwhealth_herlog_home_preference"
-CHAT = "qwhealth_herlog_assistant_chat"
+CHAT = "qwhealth_herlog_assistant_conversation"
 TURN = "qwhealth_herlog_assistant_turn"
 MOMENT = sa.DateTime().with_variant(mysql.DATETIME(fsp=3), "mysql")
 

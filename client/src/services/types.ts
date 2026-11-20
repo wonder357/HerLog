@@ -42,6 +42,39 @@ export interface PeriodPrediction {
   starts_used: number
   message: string
   ovulatory_window?: { start_day: string; end_day: string; estimated_day?: string } | null
+
+  /** 预测经期长度（天），按最近几段完整记录估算。 */
+  duration_days?: number | null
+  /** 预测经期区间，日历按它整段高亮；已过预计日却未补记时从今天起算。 */
+  predicted_range?: { start_day: string; end_day: string } | null
+  /** 顺延天数，0 表示尚未到期。 */
+  overdue_days?: number | null
+  /** 预测排卵日，日历用花朵标记。 */
+  ovulation_day?: string | null
+  /** 预测易孕期区间（与 home 的周期阶段共用同一套窗口）。 */
+  fertile_window?: { start_day: string; end_day: string } | null
+}
+
+export interface InsightGroup {
+  key: 'diet' | 'exercise' | 'wellbeing'
+  title: string
+  items: string[]
+}
+
+/** 经期页的周期小结：事实由服务端算，模型只做解释。 */
+export interface CycleInsight {
+  day: string
+  phase: 'menstrual' | 'follicular' | 'ovulatory' | 'luteal' | 'unknown'
+  phase_label: string
+  basis: 'recorded' | 'estimated' | 'unknown'
+  headline: string
+  summary: string
+  groups: InsightGroup[]
+  cautions: string[]
+  model_id: string
+  demo_sample: boolean
+  degraded: boolean
+  generated_at: string
 }
 
 export interface PeriodStatus {

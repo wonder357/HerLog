@@ -14,10 +14,12 @@ from starlette.concurrency import run_in_threadpool
 
 from app.api.deps import get_current_user, own_account
 from app.db.session import get_session
+from app.models.assistant import AssistantConversation
 from app.schemas.assistant import ConversationTitleIn, HistoryPreferenceIn
+from app.schemas.assistant_chat import ChatRenameIn, summary_out
 from app.schemas.common import ApiResponse
 from app.schemas.herlog import AssistantAnswerOut, AssistantQueryIn, AssistantStreamIn
-from app.services import assistant_history, assistant_service, assistant_stream
+from app.services import assistant_chat, assistant_history, assistant_service, assistant_stream
 from app.services.auth_service import CurrentUser
 
 router = APIRouter(prefix="/herlog/assistant", tags=["assistant"], dependencies=[Depends(own_account)])
@@ -29,6 +31,10 @@ logger = logging.getLogger(__name__)
 class HistorySearchIn(BaseModel):
     q: str = Field(max_length=24)
     cursor: str | None = Field(default=None, pattern=r"^[0-9a-f]{32}$")
+
+
+class LegacyStreamIn(AssistantStreamIn):
+    chat_id: int | None = Field(default=None, ge=1)
 
 
 @router.get("/history-preference")
@@ -66,6 +72,68 @@ def rename_history(conversation_id: str, payload: ConversationTitleIn, db: Db, u
 def delete_history(conversation_id: str, db: Db, user: User):
     assistant_history.remove(db, user.customer_id, conversation_id)
     return ApiResponse(data=None)
+
+
+@router.get("/chats")
+def list_legacy_chats(db: Db, user: User):
+    return ApiResponse(data=assistant_chat.list_chats(db, user.customer_id))
+
+
+@router.get("/chats/{chat_id}")
+def read_legacy_chat(chat_id: int, db: Db, user: User):
+    return ApiResponse(data=assistant_chat.chat_detail(db, user.customer_id, chat_id))
+
+
+@router.patch("/chats/{chat_id}")
+def rename_legacy_chat(chat_id: int, payload: ChatRenameIn, db: Db, user: User):
+    chat = assistant_chat.rename_chat(db, user.customer_id, chat_id, payload.title)
+    migrated = db.get(AssistantConversation, f"1e9ac00000000000{chat_id:016x}")
+    if migrated is not None and migrated.customer_id == user.customer_id and not migrated.deleted_at:
+        migrated.title = chat.title[:24]
+    total = assistant_chat.message_count(db, user.customer_id, chat_id)
+    db.commit()
+    return ApiResponse(data=summary_out(chat.id, chat.title, total, chat.updated_at))
+
+
+@router.delete("/chats/{chat_id}")
+def delete_legacy_chat(chat_id: int, db: Db, user: User):
+    assistant_chat.get_chat(db, user.customer_id, chat_id)
+    migrated = db.get(AssistantConversation, f"1e9ac00000000000{chat_id:016x}")
+    if migrated is not None and migrated.customer_id == user.customer_id and not migrated.deleted_at:
+        assistant_history.remove(db, user.customer_id, migrated.id)
+    else:
+        assistant_chat.delete_chat(db, user.customer_id, chat_id)
+        db.commit()
+    return ApiResponse(data=None)
+
+
+@router.post("/chats/stream", response_class=StreamingResponse)
+def stream_legacy(payload: LegacyStreamIn, db: Db, user: User):
+    if payload.chat_id is not None:
+        assistant_chat.get_chat(db, user.customer_id, payload.chat_id)
+    record_answer = (assistant_service.answer_question(db, user.customer_id, payload.question, payload.follow_up_topic)
+                     if payload.mode == "records" else None)
+    factory = sessionmaker(bind=db.get_bind())
+    db.rollback()
+
+    def save(answer: str, source: str) -> int:
+        with factory.begin() as session:
+            return assistant_chat.append_exchange(
+                session, user.customer_id, payload.question, answer, source, payload.chat_id,
+            ).id
+
+    async def events():
+        source = "fixture"
+        async with aclosing(assistant_stream.stream_assistant(payload, record_answer)) as packets:
+            async for packet in packets:
+                if packet["type"] == "source":
+                    source = packet["source"]
+                elif packet["type"] == "complete":
+                    packet["chat_id"] = await run_in_threadpool(save, packet["answer"]["answer"], source)
+                yield assistant_stream.encode_event(packet)
+
+    return StreamingResponse(events(), media_type="text/event-stream",
+                             headers={"Cache-Control": "private, no-store", "X-Accel-Buffering": "no"})
 
 
 @router.post("/query", response_model=ApiResponse[AssistantAnswerOut])

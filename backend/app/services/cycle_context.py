@@ -18,6 +18,13 @@ def cycle_records(session: Session, customer_id: str) -> list[Period]:
 
 
 def phase_for(day: date, records: list[Period], today: date) -> CycleDayOut:
+    """阶段与月历的排卵日、易孕期共用同一套窗口，避免两处口径不一致。
+
+    - 月经期：已记录的实际区间
+    - 易孕期（ovulatory）：排卵日前 5 天到排卵日后 1 天
+    - 易孕期之前为卵泡期，之后为黄体期
+    """
+
     previous = [row for row in records if row.start_day <= day]
     unknown = CycleDayOut(day=day, phase="unknown", basis="unknown")
     if not previous or day > today:
@@ -31,18 +38,16 @@ def phase_for(day: date, records: list[Period], today: date) -> CycleDayOut:
     next_start = next((row.start_day for row in records if day < row.start_day <= today), None)
     if next_start is None:
         prediction = period_logic.predict_next_start([row.start_day for row in previous], today)
-        if prediction.status != period_logic.UPCOMING:
+        if prediction.status not in (period_logic.UPCOMING, period_logic.OVERDUE):
             return unknown
         next_start = prediction.expected_start
-    if next_start is None or day >= next_start:
+    if next_start is None:
         return unknown
 
-    start, end = period_logic.ovulatory_window(next_start)
-    if start <= last.end_day:
-        return unknown
-    if day < start:
+    fertile_start, fertile_end = period_logic.fertile_window(next_start)
+    if day < fertile_start:
         return CycleDayOut(day=day, phase="follicular", basis="estimated")
-    if day <= end:
+    if day <= fertile_end:
         return CycleDayOut(day=day, phase="ovulatory", basis="estimated")
     return CycleDayOut(day=day, phase="luteal", basis="estimated")
 

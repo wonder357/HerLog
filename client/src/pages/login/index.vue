@@ -7,6 +7,7 @@
           <img class="brand-mark" src="/static/herlog-icon.svg" alt="" />
           <span>她记 HerLog</span>
         </div>
+        <HerlogMascot class="auth-mascot" :pose="registering ? 'write' : 'hi'" :size="64" />
         <h1 id="auth-title">{{ registering ? '创建账号' : '欢迎回来' }}</h1>
         <p>{{ registering ? '开始记录自己的身体变化。' : '登录后继续查看你的健康记录。' }}</p>
       </header>
@@ -87,6 +88,7 @@ import H5Button from '../../components/H5Button'
 import H5Form, { H5Label } from '../../components/H5Form'
 import H5Input from '../../components/H5Input'
 import HerlogSheet from '../../components/HerlogSheet.vue'
+import HerlogMascot from '../../components/HerlogMascot.vue'
 import PhoneVerificationFields from '../../components/PhoneVerificationFields.vue'
 import { useAuthStore } from '../../stores/auth'
 import { fetchAuthOptions } from '../../services/authService'
@@ -216,6 +218,7 @@ async function submit() {
 </script>
 
 <style scoped>
+.auth-mascot { margin-inline:auto; }
 .auth-page { padding-top: calc(clamp(20px, 5vh, 52px) + env(safe-area-inset-top)); }
 .auth-shell { width: min(100%, 410px); margin: 0 auto; }
 .auth-header { position: relative; isolation: isolate; overflow: hidden; margin-bottom: 12px; padding: 14px 15px 13px; border: 1px solid var(--hr-line); border-radius: var(--hr-radius-lg); background: linear-gradient(125deg, var(--hr-peach), var(--hr-rose-soft)); }

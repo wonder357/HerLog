@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -201,8 +201,34 @@ class WeightPointOut(BaseModel):
     day: date
     grams: int
     kg: float
+    body_fat_pct: float | None = None
     weight_id: int
     measured_at: str
+
+
+class InsightGroupOut(BaseModel):
+    """一段分组建议，key 用于前端配图标。"""
+
+    key: Literal["diet", "exercise", "wellbeing"]
+    title: str
+    items: list[str] = Field(default_factory=list)
+
+
+class CycleInsightOut(BaseModel):
+    """经期页的周期小结与日常建议，事实由服务端算，模型只做解释。"""
+
+    day: date
+    phase: Literal["menstrual", "follicular", "ovulatory", "luteal", "unknown"]
+    phase_label: str
+    basis: Literal["recorded", "estimated", "unknown"]
+    headline: str
+    summary: str
+    groups: list[InsightGroupOut] = Field(default_factory=list)
+    cautions: list[str] = Field(default_factory=list)
+    model_id: str
+    demo_sample: bool = False
+    degraded: bool = False
+    generated_at: datetime
 
 
 class MetricSlot(BaseModel):
@@ -223,6 +249,18 @@ class MetricPointOut(BaseModel):
 class MetricTrendOut(BaseModel):
     points: list[MetricPointOut] = Field(default_factory=list)
     delta: float | None = None
+
+class TrendMetricOut(BaseModel):
+    """一段时间的指标变化：体重、BMI、体脂率共用同一口径（每天取最后一次）。"""
+
+    key: Literal["weight", "bmi", "body_fat_pct"]
+    label: str
+    unit: str
+    status: Literal["available", "missing_height", "no_data"]
+    first: float | None = None
+    last: float | None = None
+    delta: float | None = None
+    points: list[float] = Field(default_factory=list)
 
 
 class CycleDayOut(BaseModel):
@@ -246,6 +284,8 @@ class WeightSummaryOut(BaseModel):
     record_days: int = 0
     metrics: dict[str, MetricSlot] = Field(default_factory=dict)
     metric_trends: dict[str, MetricTrendOut] = Field(default_factory=dict)
+
+    trends: list[TrendMetricOut] = Field(default_factory=list)
     cycle_context: list[CycleDayOut] | None = None
 
 
@@ -382,6 +422,7 @@ class AssistantStreamIn(AssistantQueryIn):
         return self
 
 
+
 class RecordRef(BaseModel):
     type: Literal["weight", "period", "feeling", "skin", "profile"]
     id: str
@@ -410,11 +451,11 @@ def weight_out(row: Any, has_photo: bool = False) -> WeightOut:
         client_key=row.client_key,
         grams=row.grams,
         kg=round(row.grams / 1000, 3),
-        body_fat_pct=row.body_fat_pct,
         measured_at=_as_utc_iso(row.measured_at),
         tag=row.tag,
         note=row.note,
         feeling_tags=row.feeling_tags or [],
+        body_fat_pct=None if row.body_fat_pct is None else float(row.body_fat_pct),
         source=row.source,
         device_id=row.device_id,
         has_photo=has_photo,

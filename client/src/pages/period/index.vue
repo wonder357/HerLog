@@ -57,6 +57,8 @@
         <H5Button v-if="filter" class="hr-action" @click="filter = null">清除筛选</H5Button>
       </CycleCalendar>
 
+      <CycleInsightCard v-if="overview && pageVisible" :key="auth.member?.customer_id" :signature="insightSignature" />
+
       <section ref="dayCard" class="card day-card" aria-labelledby="day-title" tabindex="-1">
         <div class="section-head">
           <h2 id="day-title" class="hr-section-title">{{ formatDayLabel(selected) }}</h2>
@@ -142,6 +144,7 @@ import PeriodForm from '../../components/PeriodForm.vue'
 import FeelingForm from '../../components/FeelingForm.vue'
 import CycleReminder from './CycleReminder.vue'
 import CycleCalendar from './CycleCalendar.vue'
+import CycleInsightCard from './CycleInsightCard.vue'
 import CycleMonthPicker from './CycleMonthPicker.vue'
 import CycleReview from './CycleReview.vue'
 import PeriodPredictionCard from './PeriodPredictionCard.vue'
@@ -230,6 +233,7 @@ const predictionProps = computed(() => ({
   failed: overviewError.value,
   reminderAvailable: Boolean(predictedDay.value && reminderDay(predictedDay.value, 0, new Date().toISOString()))
 }))
+const insightSignature = computed(() => JSON.stringify([today.value, items.value.map(({ start_day, end_day }) => [start_day, end_day])]))
 const selectedPeriod = computed(() => periodOnDay(items.value, selected.value))
 const openPeriod = computed(() => openPeriodOnDay(items.value, selected.value))
 const periodAction = computed(() => selectedPeriod.value ? '更正经期' : openPeriod.value ? '补记结束' : '记录经期')

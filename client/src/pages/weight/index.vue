@@ -19,7 +19,8 @@
           <div>
             <div class="weight-eyebrow">最近一次体重</div>
             <div v-if="summary?.latest_grams != null" class="weight-value">{{ formatKg(summary.latest_grams) }} <small>kg</small></div>
-            <div v-else class="weight-value empty">{{ loading ? '正在读取…' : '开始记录体重' }}</div>
+            <HerlogMascot v-if="!loading && summary?.latest_grams == null" pose="sleep" :size="56" />
+            <div v-if="summary?.latest_grams == null" class="weight-value empty">{{ loading ? '正在读取…' : '开始记录体重' }}</div>
             <div v-if="summary?.latest_measured_at" class="weight-muted">{{ formatMoment(summary.latest_measured_at) }} 测量</div>
           </div>
           <div class="weight-actions">

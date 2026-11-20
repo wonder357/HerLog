@@ -24,17 +24,24 @@
         </template>
       </HerlogHeading>
 
-      <view v-if="comparing" class="skin-panel skin-block">
-        <view class="skin-subtitle">{{ selected.length === 0 ? '选第一条记录' : selected.length === 1 ? '选同部位的第二条记录' : '确认要对比的记录' }}</view>
+      <view v-if="comparing" class="skin-panel pick-panel skin-block">
+        <view class="pick-head">
+          <view class="skin-subtitle">{{ selected.length === 0 ? '选第一条记录' : selected.length === 1 ? '选同部位的第二条记录' : '确认要对比的记录' }}</view>
+          <view class="pick-progress" :class="{ done: selected.length === 2 }">{{ selected.length }} / 2</view>
+        </view>
+        <view class="pick-hint skin-muted">
+          {{ selected.length === 2 ? '确认后会并排显示两张照片和观察。' : '同一部位、不同日期的两条记录才能对比。' }}
+        </view>
         <view v-for="(row, index) in selected" :key="row.id" class="selection-line">
-          <text>{{ index === 0 ? '第一条' : '第二条' }} {{ row.site }} {{ skinMoment(row.captured_at) }}</text>
-          <SkinButton class="skin-button skin-link" @click="removePick(row.id)">移除</SkinButton>
+          <text class="selection-label">{{ index === 0 ? '第一条' : '第二条' }}</text>
+          <text class="selection-value">{{ row.site }} {{ skinMoment(row.captured_at) }}</text>
+          <SkinButton class="skin-button skin-link selection-remove" @click="removePick(row.id)">移除</SkinButton>
         </view>
         <view v-if="conflict" class="skin-alert skin-alert-error" role="alert">{{ conflict }}</view>
-        <SkinButton v-if="selected.length === 2" class="skin-button skin-primary skin-wide" @click="openPair">查看对比</SkinButton>
+        <SkinButton v-if="selected.length === 2" class="skin-button skin-primary skin-wide pick-confirm" @click="openPair">查看对比</SkinButton>
       </view>
 
-      <scroll-view v-if="comparing" scroll-x class="site-scroll skin-block">
+      <scroll-view v-if="comparing" scroll-x :show-scrollbar="false" class="site-scroll hr-rail skin-block">
         <view class="site-filters">
           <SkinButton
             v-for="item in sites" :key="item"
@@ -43,16 +50,16 @@
           >{{ item || '全部部位' }}</SkinButton>
         </view>
       </scroll-view>
-      <view v-if="comparing" class="skin-actions skin-block">
+      <view v-if="comparing" class="mode-switch skin-block" role="group" aria-label="记录展示方式">
         <SkinButton class="skin-button" :class="{ 'skin-selected': mode === 'list' }" :aria-pressed="mode === 'list'" @click="mode = 'list'">列表</SkinButton>
         <SkinButton class="skin-button" :class="{ 'skin-selected': mode === 'calendar' }" :aria-pressed="mode === 'calendar'" @click="mode = 'calendar'">日历</SkinButton>
       </view>
       <view class="month-toolbar">
-        <SkinButton class="skin-button skin-link" aria-label="上个月" @click="moveMonth(-1)">‹</SkinButton>
+        <SkinButton class="skin-button month-arrow" aria-label="上个月" @click="moveMonth(-1)">‹</SkinButton>
         <picker mode="date" :value="selectedDay || month" :end="today" @change="jumpToDay">
-          <SkinButton class="skin-button skin-link month-label" aria-label="选择日期">{{ formatMonthLabel(month) }}</SkinButton>
+          <SkinButton class="skin-button month-label" aria-label="选择日期">{{ formatMonthLabel(month) }}</SkinButton>
         </picker>
-        <SkinButton class="skin-button skin-link" aria-label="下个月" :disabled="month >= startOfMonth(today)" @click="moveMonth(1)">›</SkinButton>
+        <SkinButton class="skin-button month-arrow" aria-label="下个月" :disabled="month >= startOfMonth(today)" @click="moveMonth(1)">›</SkinButton>
       </view>
       <view v-if="mode === 'calendar'" class="calendar skin-block">
         <view v-for="day in weekdays" :key="day" class="weekday">{{ day }}</view>
@@ -82,8 +89,10 @@
         <view>历史记录没有加载成功</view>
         <SkinButton class="skin-button skin-link" @click="loadMonth()">重试</SkinButton>
       </view>
-      <view v-else-if="!visibleRows.length" class="skin-panel skin-muted">
-        {{ selectedDay ? '这一天还没有记录' : '这个月还没有符合条件的记录' }}
+      <view v-else-if="!visibleRows.length" class="skin-panel skin-empty">
+        <HerlogMascot pose="oops" :size="58" alt="" style="margin:0 auto 6px" />
+        <view class="empty-title">{{ selectedDay ? '这一天还没有记录' : '这个月还没有符合条件的记录' }}</view>
+        <view class="skin-muted">{{ selectedDay ? '换一天，或者看整个月的记录。' : '换个月份或部位试试，也可以先去拍一张。' }}</view>
       </view>
       <view v-for="row in visibleRows" v-else :key="row.id" class="record-row">
         <figure v-if="!comparing" class="photo-history-item">
@@ -114,6 +123,7 @@
 <script setup lang="ts">
 import SkinButton from '../../components/H5Button'
 import HerlogHeading from '../../components/HerlogHeading.vue'
+import HerlogMascot from '../../components/HerlogMascot.vue'
 import HerlogSheet from '../../components/HerlogSheet.vue'
 import { computed, ref, watch } from 'vue'
 import { onHide, onLoad, onShow, onUnload } from '@dcloudio/uni-app'
@@ -351,39 +361,105 @@ onUnload(() => {
 </script>
 
 <style scoped>
+/* ---- 记录卡片与照片 ---- */
 .photo-history-item { width: 100%; margin: 0; }
-.photo-history-item :deep(.skin-photo) { max-height: 240px; }
-.photo-history-item figcaption { margin-top: 6px; font-size: 13px; color: var(--hr-ink-2); }
-.site-filters { display: flex; width: max-content; gap: 6px; }
-.month-toolbar { display: flex; justify-content: space-between; align-items: center; }
-.month-label { font-family: var(--hr-font); font-size: 16px; }
-.calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 8px 0; }
-.weekday { text-align: center; color: var(--skin-muted); font-size: 13px; }
+.photo-history-item :deep(.skin-photo) { max-height: 240px; border-radius: 14px; }
+.photo-history-item figcaption { margin-top: 8px; font-size: 12.5px; color: var(--skin-muted); }
+.record-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  margin-bottom: 10px; padding: 12px 12px 12px 14px;
+  border: 1px solid var(--skin-line); border-radius: 16px; background: var(--skin-surface);
+}
+.record-row > .photo-history-item { grid-column: 1 / -1; }
+.record-link {
+  min-width: 0; margin: 0; padding: 0; border: 0; text-align: start;
+  background: transparent; color: var(--skin-ink); font-size: 14px; line-height: 1.5;
+}
+.record-link::after, .day-cell::after { border: 0; }
+.record-link:focus-visible, .day-cell:focus-visible { outline: 2px solid var(--skin-rose); outline-offset: -2px; }
+.record-row .skin-date { margin-left: 4px; font-size: 12.5px; }
+
+/* ---- 对比选择 ---- */
+.pick-panel { padding: 14px 14px 16px; }
+.pick-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pick-progress {
+  flex: 0 0 auto; padding: 2px 10px; border-radius: 999px;
+  color: var(--skin-rose-deep); background: var(--skin-rose-soft);
+  font-size: 12.5px; font-weight: 650; font-variant-numeric: tabular-nums;
+}
+.pick-progress.done { color: #fff; background: var(--skin-rose); }
+.pick-hint { margin-top: 5px; font-size: 12.5px; line-height: 1.5; }
+.selection-line {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 10px; padding: 4px 4px 4px 12px;
+  border-radius: 12px; background: var(--skin-rose-soft); font-size: 13px;
+}
+.selection-label { flex: 0 0 auto; color: var(--skin-rose-deep); font-weight: 650; }
+.selection-value { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.herlog-skin .selection-remove { flex: 0 0 auto; min-height: 36px; padding: 4px 10px; font-size: 12.5px; }
+.herlog-skin .pick-confirm { margin-top: 12px; }
+
+/* ---- 部位筛选：横向滑动，不露滚动条（滚动条与渐隐见 .hr-rail） ---- */
+.site-filters { display: flex; width: max-content; gap: 8px; padding: 2px 30px 2px 0; }
+.herlog-skin .site-filters .skin-button { min-height: 40px; padding: 6px 14px; font-size: 13.5px; white-space: nowrap; }
+.herlog-skin .site-filters .skin-selected {
+  border-color: var(--skin-rose); background: var(--skin-rose-soft);
+  color: var(--skin-rose-deep); font-weight: 650;
+}
+
+/* ---- 列表 / 日历分段控件 ---- */
+.herlog-skin .mode-switch {
+  display: flex; align-items: center; gap: 2px; padding: 3px;
+  border: 1px solid var(--skin-line); border-radius: 999px; background: var(--skin-surface);
+}
+.herlog-skin .mode-switch > .skin-button {
+  flex: 1; min-width: 0; min-height: 40px; padding: 6px 10px;
+  border-color: transparent; background: transparent; color: var(--skin-muted); font-size: 13.5px;
+}
+.herlog-skin .mode-switch > .skin-selected {
+  border-color: transparent; background: var(--skin-rose-soft);
+  color: var(--skin-rose-deep); font-weight: 650;
+}
+
+/* ---- 月份切换 ---- */
+.month-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
+.herlog-skin .month-arrow {
+  display: grid; place-items: center; width: 40px; min-width: 40px; min-height: 40px; padding: 0;
+  border-color: transparent; border-radius: 50%; background: var(--skin-rose-soft);
+  color: var(--skin-rose-deep); font-size: 17px; line-height: 1;
+}
+.herlog-skin .month-arrow[disabled] { color: #dcc4cd; background: var(--skin-surface); opacity: 1; }
+.herlog-skin .month-label {
+  min-height: 40px; padding: 4px 16px; border-color: var(--skin-line); border-radius: 999px;
+  background: var(--skin-surface); color: var(--skin-ink);
+  font-family: var(--hr-font); font-size: 16px; font-weight: 650;
+}
+
+/* ---- 日历 ---- */
+.calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 10px 0 4px; }
+.weekday { padding-bottom: 6px; text-align: center; color: var(--skin-muted); font-size: 12.5px; }
 .day-cell {
   display: grid; place-items: center; width: 100%; min-height: 44px; padding: 0; margin: 0;
   border: 0; color: var(--skin-ink); background: transparent;
 }
-.day-cell::after, .record-link::after { border: 0; }
 .day-cell[disabled] { color: var(--skin-muted); opacity: .45; background: transparent; }
-.day-cell:focus-visible, .record-link:focus-visible { outline: 2px solid var(--skin-rose); outline-offset: -2px; }
 .day-core {
-  position: relative; display: grid; place-items: center; width: 34px; height: 34px;
-  border: 1px solid transparent; border-radius: 12px;
-  font: 15px var(--hr-font);
+  position: relative; display: grid; place-items: center; width: 36px; height: 36px;
+  border: 1px solid transparent; border-radius: 12px; font: 15px var(--hr-font);
 }
-.day-current .day-core { border-color: var(--skin-ink); background: var(--skin-rose-soft); }
+.day-current .day-core { border-color: var(--skin-rose); color: var(--skin-rose-deep); background: var(--skin-rose-soft); }
 .day-dot, .key-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--skin-rose); }
-.day-dot { position: absolute; bottom: 4px; }
+.day-dot { position: absolute; bottom: 5px; }
 .key-dot { display: inline-block; margin-right: 4px; }
-.calendar-key { grid-column: 1 / -1; }
-.day-heading { margin-bottom: 4px; }
-.record-row, .selection-line { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--skin-line); }
-.record-row { padding: 8px 0; }
-.selection-line { justify-content: space-between; padding: 4px 0; font-size: 13px; }
-.record-link {
-  flex: 1; min-width: 0; margin: 0; padding: 4px 2px; border: 0; text-align: start;
-  background: transparent; color: var(--skin-ink); font-size: 14px; line-height: 1.55;
-}
+.calendar-key { grid-column: 1 / -1; padding-top: 8px; font-size: 12.5px; }
+
+/* ---- 空状态 ---- */
+.herlog-skin .skin-empty { padding: 26px 18px; text-align: center; border-style: dashed; }
+.skin-empty .empty-title { font-size: 15px; font-weight: 600; color: var(--skin-ink); }
+.skin-empty .skin-muted { margin-top: 6px; font-size: 12.5px; line-height: 1.55; }
+
+/* ---- 日筛选与对比视图 ---- */
+.herlog-skin .day-heading { margin-bottom: 10px; }
 .compare-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-items: start; }
 .compare-column { min-width: 0; padding: 10px; }
 </style>

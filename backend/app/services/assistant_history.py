@@ -10,10 +10,11 @@ from sqlalchemy.orm import Session
 
 from app.core.clock import utc_now
 from app.core.errors import conflict, not_found
-from app.models.assistant import AssistantConversation, AssistantTurn
+from app.models.assistant import AssistantChat, AssistantConversation, AssistantTurn
 from app.models.home import HomePreference
 from app.schemas.assistant import ConversationOut, TurnOut
 from app.schemas.herlog import AssistantExchange, AssistantStreamIn
+from app.services import assistant_chat
 from app.services.home_service import update_preferences
 from app.services.period_service import lock_member
 
@@ -93,6 +94,11 @@ def rename(session: Session, customer_id: str, conversation_id: str, title: str)
 
 def remove(session: Session, customer_id: str, conversation_id: str) -> None:
     row = _owned(session, customer_id, conversation_id, lock=True)
+    if conversation_id.startswith("1e9ac00000000000"):
+        legacy_id = int(conversation_id[16:], 16)
+        legacy = session.get(AssistantChat, legacy_id)
+        if legacy is not None and legacy.customer_id == customer_id:
+            assistant_chat.delete_chat(session, customer_id, legacy_id)
     session.execute(delete(AssistantTurn).where(AssistantTurn.conversation_id == row.id))
     # Keep only the key and owner so a late retry cannot recreate a deleted chat.
     row.title = ""

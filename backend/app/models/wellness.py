@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 
 import sqlalchemy as sa
+from sqlalchemy.dialects import mysql
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -100,6 +101,8 @@ class DiscussionReply(Base):
     customer_id: Mapped[str] = mapped_column(sa.String(32), sa.ForeignKey(MEMBER), nullable=False)
     client_key: Mapped[str] = mapped_column(sa.String(36), nullable=False)
     body: Mapped[str] = mapped_column(sa.String(300), nullable=False)
+    visibility: Mapped[str | None] = mapped_column(sa.String(12), nullable=True)
+    author: Mapped[str | None] = mapped_column(sa.String(32), nullable=True)
     status: Mapped[str] = mapped_column(sa.String(12), nullable=False)
     published_at: Mapped[datetime] = mapped_column(_MOMENT, nullable=False)
 
@@ -107,6 +110,42 @@ class DiscussionReply(Base):
         sa.UniqueConstraint("share_id", "customer_id", "client_key", name="uq_herlog_discussion_reply_key"),
         sa.Index("ix_herlog_discussion_replies", "share_id", "status", "id"),
     )
+
+
+class DiscussionLike(Base):
+    __tablename__ = PREFIX + "discussion_like"
+
+    share_id: Mapped[int] = mapped_column(
+        _ROW_ID, sa.ForeignKey(f"{GroupShare.__tablename__}.id", ondelete="CASCADE"), primary_key=True
+    )
+    customer_id: Mapped[str] = mapped_column(sa.String(32), sa.ForeignKey(MEMBER), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(_MOMENT, nullable=False)
+
+
+class DiscussionReplyLike(Base):
+    __tablename__ = PREFIX + "discussion_reply_like"
+
+    reply_id: Mapped[int] = mapped_column(
+        _ROW_ID, sa.ForeignKey(f"{DiscussionReply.__tablename__}.id", ondelete="CASCADE"), primary_key=True
+    )
+    customer_id: Mapped[str] = mapped_column(sa.String(32), sa.ForeignKey(MEMBER), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(_MOMENT, nullable=False)
+
+
+class DiscussionImage(Base):
+    __tablename__ = PREFIX + "discussion_image"
+
+    id: Mapped[int] = mapped_column(_ROW_ID, primary_key=True, autoincrement=True)
+    share_id: Mapped[int] = mapped_column(
+        _ROW_ID, sa.ForeignKey(f"{GroupShare.__tablename__}.id", ondelete="CASCADE"), nullable=False
+    )
+    position: Mapped[int] = mapped_column(nullable=False)
+    image_bytes: Mapped[bytes] = mapped_column(
+        sa.LargeBinary().with_variant(mysql.MEDIUMBLOB(), "mysql"), nullable=False, deferred=True
+    )
+    digest: Mapped[str] = mapped_column(sa.String(64), nullable=False)
+
+    __table_args__ = (sa.UniqueConstraint("share_id", "position", name="uq_herlog_discussion_image"),)
 
 
 class DiscussionReplyReport(Base):
