@@ -37,9 +37,20 @@
             <HerlogIcon name="sparkle" /><span>{{ question }}</span><i aria-hidden="true" />
           </H5Button>
         </section>
-        <slot name="shortcuts" />
+        <section class="quick-section" aria-labelledby="quick-title">
+          <header class="quick-header">
+            <h2 id="quick-title" class="hr-section-title">快捷记录</h2>
+            <H5Button class="hr-action" aria-haspopup="dialog" @click="emit('todayRecords')">今日记录 ›</H5Button>
+          </header>
+          <div class="shortcuts">
+            <H5Button v-for="item in shortcuts" :key="item.key" class="shortcut" :class="item.key"
+              :disabled="item.key === 'feeling' && feelingLoading" @click="emit('shortcut', item.key)">
+              <span class="shortcut-symbol"><HerlogIcon :name="item.icon" /></span><span>{{ item.label }}</span>
+            </H5Button>
+          </div>
+        </section>
       </div>
-      <div v-else class="messages" role="log" aria-label="智能体对话消息" aria-live="off">
+      <div v-else :key="chat.id" class="messages" role="log" aria-label="智能体对话消息" aria-live="off">
         <template v-for="turn in chat.turns" :key="turn.id">
           <div class="message user">
             <p class="bubble">{{ turn.question }}</p>
@@ -171,11 +182,12 @@ import { ask, getConversation, getHistoryPreference, removeConversation, renameC
 import type { AssistantConversation, AssistantMode, AssistantSource, AssistantTopic, SavedAssistantTurn } from '../../services/assistantService'
 import { ApiRequestError, currentEpoch } from '../../services/httpClient'
 import type { AssistantAnswer, RecordRef } from '../../services/types'
-import { assistantTitle } from '../../shared/home'
+import { assistantTitle, homeShortcuts as shortcuts } from '../../shared/home'
+import type { HomeShortcut } from '../../shared/home'
 import { suggestFollowUps } from '../../shared/followUps'
 
-const props = defineProps<{ dateLabel: string; starters: string[]; recordQuestions: string[]; showQuestions: boolean; visible: boolean }>()
-const emit = defineEmits<{ reference: [item: RecordRef]; keyboard: [open: boolean] }>()
+const props = defineProps<{ dateLabel: string; starters: string[]; recordQuestions: string[]; showQuestions: boolean; visible: boolean; feelingLoading: boolean }>()
+const emit = defineEmits<{ reference: [item: RecordRef]; keyboard: [open: boolean]; shortcut: [kind: HomeShortcut]; todayRecords: [] }>()
 interface Turn {
   id: string
   question: string
@@ -611,6 +623,17 @@ const actionRefs = (answer: AssistantAnswer) => answer.record_refs.filter(ref =>
 .thread-title i { flex:0 0 5px; height:5px; border:solid var(--hr-ink-2); border-width:0 1.5px 1.5px 0; transform:rotate(45deg); margin-top:-3px; }
 .assistant-workspace { min-height:0; overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; scroll-padding-block:10px; }
 .welcome { display:grid; gap:14px; padding:12px 17px 15px; }
+.quick-section { padding:3px 9px 8px; border:1px solid var(--hr-line); border-radius:17px; background:var(--hr-surface); }
+.quick-header { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:44px; padding-inline:3px; }
+.quick-header h2 { margin:0; font:700 15px var(--hr-font); }
+.quick-header .hr-action { padding-inline:4px; font-size:13px; }
+.shortcuts { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:5px; }
+.shortcut { display:grid; justify-items:center; align-items:center; min-height:56px; gap:3px; padding:3px 2px; border:0; border-radius:10px; background:transparent; color:var(--hr-ink); font:13px/1.3 var(--hr-font); }
+.shortcut-symbol { display:grid; place-items:center; width:33px; height:33px; border-radius:11px; background:var(--hr-rose-soft); color:var(--hr-rose-deep); }
+.shortcut-symbol svg { width:18px; height:18px; }
+.shortcut.weight .shortcut-symbol { background:var(--hr-peach); color:var(--hr-peach-ink); }
+.shortcut.skin .shortcut-symbol { background:var(--hr-plum-soft); color:var(--hr-plum); }
+.shortcut.feeling .shortcut-symbol { background:var(--hr-taupe-soft); color:var(--hr-taupe); }
 .welcome-panel { position:relative; isolation:isolate; min-height:207px; overflow:hidden; border:1px solid var(--hr-line-strong); border-radius:22px; background:radial-gradient(ellipse at 93% 23%, var(--hr-rose-soft), transparent 68%), linear-gradient(115deg, var(--hr-peach), var(--hr-rose-soft)); }
 .welcome-panel::after { position:absolute; z-index:-1; inset:0; content:''; background:linear-gradient(90deg, var(--hr-peach), transparent 72%); }
 .welcome-bloom { position:absolute; z-index:-2; right:-77px; bottom:-18px; width:317px; opacity:.95; pointer-events:none; }

@@ -4,22 +4,8 @@
     <div v-if="auth.isLoggedIn" v-show="!captureVisible">
       <AssistantChat ref="assistant" :key="assistantKey" :record-questions="recordQuestions" :starters="starters"
         :show-questions="preferences.show_questions" :date-label="dateLabel" :visible="pageVisible && !captureVisible"
-        @reference="openRef" @keyboard="keyboardOpen = $event">
-        <template #shortcuts>
-          <section class="quick-section" aria-labelledby="quick-title">
-            <header class="quick-header">
-              <h2 id="quick-title" class="hr-section-title">快捷记录</h2>
-              <H5Button class="hr-action" aria-haspopup="dialog" @click="recordsVisible = true">今日记录 ›</H5Button>
-            </header>
-            <div class="shortcuts">
-              <H5Button v-for="item in shortcuts" :key="item.key" class="shortcut" :class="item.key"
-                :disabled="item.key === 'feeling' && feelingLoading" @click="runShortcut(item.key)">
-                <span class="shortcut-symbol"><HerlogIcon :name="item.icon" /></span><span>{{ item.label }}</span>
-              </H5Button>
-            </div>
-          </section>
-        </template>
-      </AssistantChat>
+        @reference="openRef" @keyboard="keyboardOpen = $event"
+        @shortcut="runShortcut" @today-records="recordsVisible = true" :feeling-loading="feelingLoading" />
 
       <HerlogSheet v-if="recordsVisible" title="今日记录" :context="dateLabel" @close="recordsVisible = false">
         <div class="summary-header">
@@ -87,7 +73,8 @@ import RecordCalendar from './RecordCalendar.vue'
 import AssistantChat from './AssistantChat.vue'
 import SkinCapture from '../skin/SkinCapture.vue'
 import { TIME_ZONE, todayString } from '../../shared/dates'
-import { assistantStarters, suggestedQuestions } from '../../shared/home'
+import { assistantStarters, homeShortcuts as shortcuts, suggestedQuestions } from '../../shared/home'
+import type { HomeShortcut } from '../../shared/home'
 import { useAuthStore } from '../../stores/auth'
 import { ApiRequestError, currentEpoch } from '../../services/httpClient'
 import { fetchHome, fetchRecordingPreferences, recordingDefaults } from '../../services/homeService'
@@ -126,13 +113,6 @@ let settingsSequence = 0
 let captureScroll = 0
 let captureFocus: HTMLElement | null = null
 
-const shortcuts = [
-  { key: 'period', label: '记经期', short: '经期', icon: 'period' },
-  { key: 'feeling', label: '记感受', short: '感受', icon: 'rest' },
-  { key: 'weight', label: '记体重', short: '体重', icon: 'weight' },
-  { key: 'skin', label: '拍皮肤', short: '皮肤', icon: 'camera' }
-] as const
-type Shortcut = typeof shortcuts[number]['key']
 type Tab = 'period' | 'weight' | 'skin'
 const focusCopy = {
   review_today: '今天已有记录，可以回看当天摘要。',
@@ -244,7 +224,7 @@ function runFocus() {
   else openCalendar(today.value)
 }
 
-function runShortcut(kind: Shortcut) {
+function runShortcut(kind: HomeShortcut) {
   recordsVisible.value = false
   if (kind === 'period') periodVisible.value = true
   else if (kind === 'weight') weightVisible.value = true
@@ -356,17 +336,6 @@ onShow(() => {
 .focus p { margin:0; font-size:15px; overflow-wrap:anywhere; }
 .focus-action { justify-self:start; padding-left:0; }
 .focus-close { display:grid; place-items:center; min-height:44px; background:transparent; color:var(--hr-ink-2); border:0; border-radius:12px; }
-.quick-section { padding:3px 9px 8px; border:1px solid var(--hr-line); border-radius:17px; background:var(--hr-surface); }
-.quick-header { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:44px; padding-inline:3px; }
-.quick-header h2 { margin:0; font:700 15px var(--hr-font); }
-.quick-header .hr-action { padding-inline:4px; font-size:13px; }
-.shortcuts { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:5px; }
-.shortcut { display:grid; justify-items:center; align-items:center; min-height:56px; gap:3px; padding:3px 2px; border:0; border-radius:10px; background:transparent; color:var(--hr-ink); font:13px/1.3 var(--hr-font); }
-.shortcut-symbol { display:grid; place-items:center; width:33px; height:33px; border-radius:11px; background:var(--hr-rose-soft); color:var(--hr-rose-deep); }
-.shortcut-symbol svg { width:18px; height:18px; }
-.shortcut.weight .shortcut-symbol { background:var(--hr-peach); color:var(--hr-peach-ink); }
-.shortcut.skin .shortcut-symbol { background:var(--hr-plum-soft); color:var(--hr-plum); }
-.shortcut.feeling .shortcut-symbol { background:var(--hr-taupe-soft); color:var(--hr-taupe); }
 .checkin-items { display:grid; width:100%; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin-bottom:10px; }
 .checkin-items button { gap:5px; font-size:13px; }
 .checkin-items span { color:var(--hr-ink-2); }

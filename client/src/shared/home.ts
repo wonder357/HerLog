@@ -49,3 +49,11 @@ export function assistantTitle(question: string, mode: 'general' | 'records'): s
   ]
   return rules.find(([pattern]) => pattern.test(question))?.[1] ?? (mode === 'records' ? '健康记录查询' : '日常健康对话')
 }
+
+export const homeShortcuts = [
+  { key: 'period', label: '记经期', short: '经期', icon: 'period' },
+  { key: 'feeling', label: '记感受', short: '感受', icon: 'rest' },
+  { key: 'weight', label: '记体重', short: '体重', icon: 'weight' },
+  { key: 'skin', label: '拍皮肤', short: '皮肤', icon: 'camera' }
+] as const
+export type HomeShortcut = typeof homeShortcuts[number]['key']
