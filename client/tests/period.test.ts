@@ -5,9 +5,16 @@ import { addDays, diffDays, formatMoment, monthGrid, shanghaiDayKey, toZonedIso 
 import {
   buildHistory,
   currentStatus,
+  cycleDayRole,
   durationDays,
   estimateCycleDays,
+  estimateDurationDays,
+  fertileWindow,
+  inRange,
+  ovulationDay,
   predictNextStart,
+  predictedRange,
+  scheduleRange,
   createReminderCalendar,
   matchesFeeling,
   openPeriodOnDay,
@@ -140,4 +147,66 @@ test('日历提醒处理跨月和过期，文件只含通用提示与正确的 U
   assert.match(file, /DTSTAMP:20261128T034112Z\r\n/)
   assert.match(file, /SUMMARY:个人日程提醒\r\nCLASS:PRIVATE/)
   assert.doesNotMatch(file, /经期|20261201/)
+})
+
+test('预测经期区间、排卵日与易孕期按同一套规则推导', () => {
+  assert.equal(ovulationDay('2027-01-04'), '2026-12-21')
+  assert.deepEqual(fertileWindow('2027-01-04'), { start_day: '2026-12-16', end_day: '2026-12-22' })
+  assert.deepEqual(predictedRange('2027-01-04', 5), { start_day: '2027-01-04', end_day: '2027-01-08' })
+  // 持续天数夹在 2–10 天
+  assert.deepEqual(predictedRange('2027-01-04', 0), { start_day: '2027-01-04', end_day: '2027-01-05' })
+  assert.deepEqual(predictedRange('2027-01-04', 42), { start_day: '2027-01-04', end_day: '2027-01-13' })
+})
+
+test('未记录且已过预计日时，预测区间从今天起顺延', () => {
+  assert.deepEqual(scheduleRange('2027-01-04', '2027-01-01', 5),
+    { start_day: '2027-01-04', end_day: '2027-01-08', overdue_days: 0 })
+  assert.deepEqual(scheduleRange('2027-01-04', '2027-01-04', 5),
+    { start_day: '2027-01-04', end_day: '2027-01-08', overdue_days: 0 })
+  assert.deepEqual(scheduleRange('2027-01-04', '2027-01-09', 5),
+    { start_day: '2027-01-09', end_day: '2027-01-13', overdue_days: 5 })
+  // 顺延后永远不早于今天
+  const late = scheduleRange('2026-12-29', '2027-02-10', 5)
+  assert.equal(late.start_day, '2027-02-10')
+  assert.equal(late.overdue_days, 43)
+})
+
+test('持续天数只取最近四段完整记录，缺省 5 天', () => {
+  assert.equal(estimateDurationDays([]), 5)
+  assert.equal(estimateDurationDays([{ startDay: '2026-11-01', endDay: null }]), 5)
+  assert.equal(estimateDurationDays([
+    { startDay: '2026-11-01', endDay: '2026-11-04' },
+    { startDay: '2026-10-03', endDay: '2026-10-08' }
+  ]), 5)
+  assert.equal(estimateDurationDays([
+    { startDay: '2027-01-01', endDay: '2027-01-07' },
+    { startDay: '2026-12-01', endDay: '2026-12-02' },
+    { startDay: '2026-11-01', endDay: '2026-11-03' },
+    { startDay: '2026-10-01', endDay: '2026-10-06' },
+    { startDay: '2026-09-01', endDay: '2026-09-20' }
+  ]), 5)
+  assert.equal(estimateDurationDays([
+    { startDay: '2026-11-01', endDay: '2026-11-01' },
+    { startDay: '2026-10-01', endDay: '2026-10-01' }
+  ]), 2)
+})
+
+test('日历高亮优先级：经期 > 预测经期 > 排卵日 > 易孕期', () => {
+  const periods = [{ start_day: '2026-12-02', end_day: '2026-12-04' }]
+  const ctx = {
+    today: '2026-12-10',
+    periods,
+    predictedRange: predictedRange('2027-01-04', 5),
+    ovulationDay: ovulationDay('2027-01-04'),
+    fertileWindow: fertileWindow('2027-01-04')
+  }
+  assert.equal(cycleDayRole('2026-12-03', ctx), 'actual')
+  assert.equal(cycleDayRole('2027-01-05', ctx), 'predicted')
+  assert.equal(cycleDayRole('2026-12-21', ctx), 'ovulation')
+  assert.equal(cycleDayRole('2026-12-18', ctx), 'fertile')
+  assert.equal(cycleDayRole('2026-12-25', ctx), '')
+  // 未来日期不算实际经期
+  assert.equal(cycleDayRole('2026-12-20', { ...ctx, periods: [{ start_day: '2026-12-20', end_day: null }] }), 'fertile')
+  assert.equal(inRange('2027-01-08', predictedRange('2027-01-04', 5)), true)
+  assert.equal(inRange('2027-01-09', predictedRange('2027-01-04', 5)), false)
 })

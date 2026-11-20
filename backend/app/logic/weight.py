@@ -22,6 +22,7 @@ class WeightRow:
     measured_at: datetime
     tag: str | None = None
     note: str | None = None
+    body_fat_pct: float | None = None
 
 
 @dataclass(frozen=True)
@@ -30,6 +31,7 @@ class WeightPoint:
     grams: int
     weight_id: int
     measured_at: datetime
+    body_fat_pct: float | None = None
 
 
 @dataclass(frozen=True)
@@ -75,12 +77,15 @@ def format_kg(grams: int | None) -> str | None:
 
 
 def daily_points(rows: list[WeightRow]) -> list[WeightPoint]:
-    """同一自然日只保留最后一次测量；按日期升序返回。"""
+    """同一自然日只保留最后一次测量；按日期升序返回。
+
+    体脂率取同一次测量的值，不与另一笔的体重拼接，避免出现「晚上的体重 + 早上的体脂」。
+    """
 
     latest: dict[date, WeightPoint] = {}
     for row in rows:
         day = to_local(row.measured_at).date()
-        candidate = WeightPoint(day, row.grams, row.id, row.measured_at)
+        candidate = WeightPoint(day, row.grams, row.id, row.measured_at, row.body_fat_pct)
         current = latest.get(day)
         if current is None or (candidate.measured_at, candidate.weight_id) > (
             current.measured_at,
@@ -126,3 +131,42 @@ def suggestion(summary: WeightSummary) -> str | None:
 
 def range_start(days: int, today: date) -> date:
     return today - timedelta(days=days - 1)
+
+
+@dataclass(frozen=True)
+class MetricChange:
+    """一段时间的首值、末值与变化量；不足两个点时不给变化量。"""
+
+    first: float | None = None
+    last: float | None = None
+    delta: float | None = None
+
+
+def metric_change(values: list[float]) -> MetricChange:
+    if not values:
+        return MetricChange()
+    first, last = round(values[0], 3), round(values[-1], 3)
+    return MetricChange(
+        first=first,
+        last=last,
+        delta=None if len(values) < 2 else round(last - first, 3),
+    )
+
+
+def body_fat_points(points: list[WeightPoint]) -> list[tuple[date, float]]:
+    """只保留真正记录过体脂率的那几天，不插值、不拿相邻日补齐。"""
+
+    return [
+        (point.day, round(point.body_fat_pct, 1))
+        for point in points
+        if point.body_fat_pct is not None
+    ]
+
+
+def fat_mass_kg(grams: int, body_fat_pct: float | None) -> float | None:
+    """体脂量 = 体重 × 体脂率；体脂率缺失时返回 None，不猜。"""
+
+    if body_fat_pct is None:
+        return None
+    return round(grams / 1000 * body_fat_pct / 100, 2)
+

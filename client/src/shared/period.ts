@@ -9,6 +9,14 @@ export const MAX_STARTS = 4
 export const MIN_STARTS = 3
 export const MAX_SPREAD_DAYS = 7
 
+/** 日历高亮用：预测经期长度、排卵日与易孕期，与后端 `app/logic/period.py` 同一套规则。 */
+export const DEFAULT_DURATION_DAYS = 5
+export const MIN_DURATION_DAYS = 2
+export const MAX_DURATION_DAYS = 10
+export const LUTEAL_DAYS = 14
+export const FERTILE_BEFORE_OVULATION = 5
+export const FERTILE_AFTER_OVULATION = 1
+
 export type PredictionStatus = 'insufficient' | 'irregular' | 'upcoming' | 'overdue'
 
 export interface Prediction {
@@ -134,6 +142,94 @@ export function estimateCycleDays(starts: string[]): { estimate: number | null; 
   }
   const average = intervals.reduce((sum, value) => sum + value, 0) / intervals.length
   return { estimate: Math.round(average), intervals }
+}
+
+export interface DayRange {
+  start_day: string
+  end_day: string
+}
+
+export type CycleDayRole = 'actual' | 'predicted' | 'ovulation' | 'fertile' | ''
+
+export function clampDuration(days: number): number {
+  return Math.min(MAX_DURATION_DAYS, Math.max(MIN_DURATION_DAYS, days))
+}
+
+/** 最近至多 4 段完整经期的平均持续天数，四舍五入后夹在 2–10 天。 */
+export function estimateDurationDays(rows: { startDay: string; endDay: string | null }[]): number {
+  const ordered = [...rows].sort((a, b) => (a.startDay < b.startDay ? 1 : a.startDay > b.startDay ? -1 : 0))
+  const values = ordered
+    .filter(row => row.endDay !== null)
+    .slice(0, MAX_STARTS)
+    .map(row => diffDays(row.endDay as string, row.startDay) + 1)
+    .filter(value => value > 0)
+  if (!values.length) {
+    return DEFAULT_DURATION_DAYS
+  }
+  return clampDuration(Math.round(values.reduce((sum, value) => sum + value, 0) / values.length))
+}
+
+/** 预测经期区间：开始日到开始日 + 持续天数 - 1。 */
+export function predictedRange(expectedStart: string, duration = DEFAULT_DURATION_DAYS): DayRange {
+  return { start_day: expectedStart, end_day: addDays(expectedStart, clampDuration(duration) - 1) }
+}
+
+/** 排卵日：按黄体期 14 天从下次经期开始日回推。 */
+export function ovulationDay(expectedStart: string): string {
+  return addDays(expectedStart, -LUTEAL_DAYS)
+}
+
+/**
+ * 日历上真正高亮的预测经期区间。
+ * 已过预计开始日却还没记录新的经期时，区间从今天起算并逐日顺延，
+ * 不能把高亮留在过去。返回顺延天数，供文案提示「推迟 N 天」。
+ */
+export function scheduleRange(
+  expectedStart: string,
+  today: string,
+  duration = DEFAULT_DURATION_DAYS
+): DayRange & { overdue_days: number } {
+  const overdueDays = Math.max(0, diffDays(today, expectedStart))
+  const start = addDays(expectedStart, overdueDays)
+  return {
+    start_day: start,
+    end_day: addDays(start, clampDuration(duration) - 1),
+    overdue_days: overdueDays
+  }
+}
+
+/** 易孕期：排卵日前 5 天到排卵日后 1 天。 */
+export function fertileWindow(expectedStart: string): DayRange {
+  const day = ovulationDay(expectedStart)
+  return {
+    start_day: addDays(day, -FERTILE_BEFORE_OVULATION),
+    end_day: addDays(day, FERTILE_AFTER_OVULATION)
+  }
+}
+
+export function inRange(day: string, range: DayRange | null | undefined): boolean {
+  return Boolean(range && day >= range.start_day && day <= range.end_day)
+}
+
+/**
+ * 某一天在月历上的角色，优先级：已记录经期 > 预测经期 > 排卵日 > 易孕期。
+ * 已记录只认今天及以前的日期，避免把未来日期显示成实际记录。
+ */
+export function cycleDayRole(
+  day: string,
+  ctx: {
+    today: string
+    periods: { start_day: string; end_day: string | null }[]
+    predictedRange?: DayRange | null
+    ovulationDay?: string | null
+    fertileWindow?: DayRange | null
+  }
+): CycleDayRole {
+  if (day <= ctx.today && periodOnDay(ctx.periods, day)) return 'actual'
+  if (inRange(day, ctx.predictedRange)) return 'predicted'
+  if (ctx.ovulationDay === day) return 'ovulation'
+  if (inRange(day, ctx.fertileWindow)) return 'fertile'
+  return ''
 }
 
 export function messageFor(status: PredictionStatus, expectedStart: string | null): string {

@@ -40,19 +40,30 @@
             <view v-if="summary?.delta_grams != null"><strong>{{ formatDelta(summary.delta_grams) }}</strong><text>首尾变化</text></view>
           </view>
           <p class="weight-muted trend-note">每天取最后一次测量，缺测日期留空。</p>
-          <H5Button class="weight-secondary" @click="showCycle = !showCycle; load()">{{ showCycle ? '关闭周期背景' : '显示周期背景' }}</H5Button>
-          <template v-if="showCycle && summary?.cycle_context">
-            <view class="weight-muted">阶段按记录估算，仅供回看，不用于诊断或避孕。</view>
-            <scroll-view scroll-x class="weight-cycle">
-              <view class="cycle-row">
-                <H5Button v-for="item in summary.cycle_context" :key="item.day" class="cycle-day"
-                 :class="[item.phase, { chosen: activeDay === item.day }]" @click="activeDay = item.day">{{ Number(item.day.slice(-2)) }}</H5Button>
+          <H5Button class="weight-secondary" :aria-expanded="showCycle" @click="toggleCycle">{{ showCycle ? '关闭周期背景' : '显示周期背景' }}</H5Button>
+          <template v-if="showCycle">
+            <view v-if="!cycleReady" class="weight-muted" role="status">正在读取周期背景…</view>
+            <template v-else-if="hasCyclePhases">
+              <view class="weight-muted">阶段按记录估算，仅供回看，不用于诊断或避孕。</view>
+              <view class="cycle-legend">
+                <text v-for="phase in legendPhases" :key="phase" class="cycle-key" :class="phase">{{ phaseNames[phase] }}</text>
               </view>
-            </scroll-view>
-            <view v-if="selectedPhase" class="weight-muted">
-              {{ formatDayLabel(selectedPhase.day) }} · {{ phaseNames[selectedPhase.phase] }}{{ selectedPhase.basis === 'estimated' ? '（估算）' : selectedPhase.basis === 'recorded' ? '（已记录）' : '' }}
+              <scroll-view scroll-x class="weight-cycle" :scroll-left="cycleScrollLeft" scroll-with-animation>
+                <view class="cycle-row">
+                  <H5Button v-for="item in cycleDays" :key="item.day" class="cycle-day"
+                    :class="[item.phase, { chosen: activeDay === item.day, today: item.day === today }]"
+                    :aria-label="`${formatDayLabel(item.day)} ${phaseNames[item.phase]}`"
+                    :aria-pressed="activeDay === item.day" @click="activeDay = item.day">{{ Number(item.day.slice(-2)) }}</H5Button>
+                </view>
+              </scroll-view>
+              <view v-if="selectedPhase" class="weight-muted">
+                {{ formatDayLabel(selectedPhase.day) }} · {{ phaseNames[selectedPhase.phase] }}{{ selectedPhase.basis === 'estimated' ? '（估算）' : selectedPhase.basis === 'recorded' ? '（已记录）' : '' }}
+              </view>
+              <view v-if="selectedPhase?.note" class="weight-note">{{ selectedPhase.note }}</view>
+            </template>
+            <view v-else class="weight-muted">
+              这段时间还没有可估算的经期记录。在「经期」页记录一次经期后，这里会显示阶段背景。
             </view>
-            <view v-if="selectedPhase?.note" class="weight-note">{{ selectedPhase.note }}</view>
           </template>
         </section>
         <view class="weight-panel">
@@ -102,11 +113,13 @@ import { currentEpoch } from '../../services/httpClient'
 import { getComparison, getSummary } from '../../services/weightService'
 import type { WeightSummary } from '../../services/types'
 import { phaseNames } from '../../services/wellnessService'
+import type { Phase } from '../../services/wellnessService'
 import type { ShareReference } from '../../services/wellnessService'
 import { useAuthStore } from '../../stores/auth'
 
 const tabs = [{ code: 'overview', label: '体重记录' }, { code: 'movement', label: '运动专区' }, { code: 'discussion', label: '运动讨论' }] as const
 const intervals = [7, 30] as const
+const phaseOrder: Phase[] = ['menstrual', 'follicular', 'ovulatory', 'luteal']
 type Section = typeof tabs[number]['code']
 const section = ref<Section>('overview')
 const days = ref<7 | 30>(30)
@@ -116,6 +129,7 @@ const comparison = ref<Awaited<ReturnType<typeof getComparison>> | null>(null)
 const comparisonDays = ref<7 | 30>(30)
 const comparisonLoading = ref(false)
 const showCycle = ref(false)
+const cycleReady = ref(false)
 const activeDay = ref('')
 const comparing = ref(false)
 const loading = ref(false)
@@ -127,8 +141,18 @@ const shareReference = ref<ShareReference | null>(null)
 const auth = useAuthStore()
 let summaryVersion = 0
 let comparisonVersion = 0
+let fetchedWithCycle = false
 const trendStart = computed(() => rangeStart(summary.value?.days ?? days.value, today.value))
+const cycleDays = computed(() => summary.value?.cycle_context ?? [])
+const hasCyclePhases = computed(() => cycleDays.value.some(item => item.phase !== 'unknown'))
+const legendPhases = computed(() => phaseOrder.filter(phase => cycleDays.value.some(item => item.phase === phase)))
 const selectedPhase = computed(() => summary.value?.cycle_context?.find(item => item.day === activeDay.value))
+/** 日条按 44px 胶囊 + 4px 间距排布，选中日滚到可视区中间。 */
+const cycleScrollLeft = computed(() => {
+  const index = cycleDays.value.findIndex(item => item.day === activeDay.value)
+  if (index < 0) return 0
+  return Math.max(0, index * 48 - 96)
+})
 watch(() => auth.token, () => {
   summaryVersion += 1
   comparisonVersion += 1
@@ -139,26 +163,44 @@ watch(() => auth.token, () => {
   shareReference.value = null
   formVisible.value = false
   section.value = 'overview'
+  showCycle.value = false
+  cycleReady.value = false
+  fetchedWithCycle = false
+  activeDay.value = ''
   if (auth.token) void load()
 })
 async function load() {
   const version = ++summaryVersion
   const epoch = currentEpoch()
+  const includeCycle = showCycle.value || fetchedWithCycle
   error.value = ''
   today.value = todayString()
   loading.value = true
   try {
-    const data = await getSummary(days.value, showCycle.value)
+    const data = await getSummary(days.value, includeCycle)
     if (version === summaryVersion && epoch === currentEpoch()) {
       summary.value = data
-      activeDay.value = data.cycle_context?.some(item => item.day === activeDay.value)
-        ? activeDay.value : data.cycle_context?.at(-1)?.day ?? ''
+      fetchedWithCycle = includeCycle && Boolean(data.cycle_context)
+      cycleReady.value = fetchedWithCycle
+      const context = data.cycle_context ?? []
+      const keepDay = context.some(item => item.day === activeDay.value) ? activeDay.value : ''
+      activeDay.value = keepDay || (context.some(item => item.day === today.value)
+        ? today.value : context.at(-1)?.day ?? '')
     }
   } catch {
     if (version === summaryVersion && epoch === currentEpoch()) error.value = '体重数据没有加载成功'
   } finally {
     if (version === summaryVersion) loading.value = false
   }
+}
+function toggleCycle() {
+  showCycle.value = !showCycle.value
+  if (!showCycle.value) return
+  if (fetchedWithCycle) {
+    if (!activeDay.value) activeDay.value = today.value || cycleDays.value.at(-1)?.day || ''
+    return
+  }
+  void load()
 }
 async function loadComparison() {
   const version = ++comparisonVersion
@@ -234,7 +276,7 @@ onHide(() => { formVisible.value = false; pageVisible.value = false; shareRefere
 .weight-actions { margin-top: 8px; }
 .weight-secondary { justify-self: start; flex-shrink: 0; }
 .weight-panel {
-  display: grid; gap: 10px; padding: 16px; min-width: 0;
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 16px; min-width: 0;
   border: 1px solid var(--hr-line); border-radius: var(--hr-radius); background: var(--hr-surface);
 }
 .weight-header { justify-content: space-between; flex-wrap: wrap; }
@@ -249,6 +291,14 @@ onHide(() => { formVisible.value = false; pageVisible.value = false; shareRefere
 .weight-stats strong { color: var(--hr-rose-deep); font: 20px var(--hr-font); overflow-wrap: anywhere; }
 .compare-columns > view,.compare-columns > uni-view { padding: 9px; border-radius: 10px; background: var(--hr-paper); font-size: 13px; }
 .cycle-row { display: flex; gap: 4px; width: max-content; }
+.weight-cycle { display: block; width: 100%; max-width: 100%; min-width: 0; overflow: hidden; }
+.cycle-legend { display: flex; flex-wrap: wrap; gap: 6px; }
+.cycle-key { padding: 2px 9px; border-radius: 999px; font-size: 12px; color: var(--hr-ink-2); border: 1px solid var(--hr-line); }
+.cycle-key.menstrual { background: var(--hr-rose-soft); }
+.cycle-key.follicular { background: var(--hr-follicular); }
+.cycle-key.ovulatory { background: var(--hr-peach); }
+.cycle-key.luteal { background: var(--hr-plum-soft); }
+.cycle-day.today { font-weight: 700; box-shadow: inset 0 0 0 1px var(--hr-line-strong); }
 .cycle-day { min-width: 44px; min-height: 44px; padding: 7px 10px; }
 .cycle-day.menstrual { background: var(--hr-rose-soft); }
 .cycle-day.follicular { background: var(--hr-follicular); }

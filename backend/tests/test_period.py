@@ -92,7 +92,12 @@ def test_period_crud_updates_history_and_prediction(client: TestClient, monkeypa
     listing = client.get("/api/v1/c/herlog/periods", headers=headers).json()["data"]
     assert listing["prediction"]["status"] == "upcoming"
     assert listing["prediction"]["estimate_days"] == 29
-    assert listing["prediction"]["ovulatory_window"] is None
+    assert "ovulatory_window" not in listing["prediction"]
+    # 日历高亮：未记录结束的那段不参与持续天数估算，沿用唯一一段完整记录的 5 天
+    assert listing["prediction"]["duration_days"] == 5
+    assert listing["prediction"]["predicted_range"] == {"start_day": "2026-12-29", "end_day": "2027-01-02"}
+    assert listing["prediction"]["ovulation_day"] == "2026-12-15"
+    assert listing["prediction"]["fertile_window"] == {"start_day": "2026-12-10", "end_day": "2026-12-16"}
 
     latest = listing["items"][0]
     edited = client.put(
@@ -102,7 +107,92 @@ def test_period_crud_updates_history_and_prediction(client: TestClient, monkeypa
     )
     assert edited.status_code == 200
     listing = client.get("/api/v1/c/herlog/periods", headers=headers).json()["data"]
-    assert listing["prediction"]["ovulatory_window"] == {"start_day": "2026-12-13", "end_day": "2026-12-17"}
+    # 排卵日与易孕期只跟预计开始日有关，不随经期长度变化
+    assert listing["prediction"]["ovulation_day"] == "2026-12-15"
+    assert listing["prediction"]["fertile_window"] == {"start_day": "2026-12-10", "end_day": "2026-12-16"}
+    # 两段完整记录（5 天、1 天）平均 3 天，预测经期随之收窄
+    assert listing["prediction"]["duration_days"] == 3
+    assert listing["prediction"]["predicted_range"] == {"start_day": "2026-12-29", "end_day": "2026-12-31"}
+
+
+def test_derived_windows_for_calendar_highlight() -> None:
+    next_start = date(2027, 1, 4)
+    assert period_logic.ovulation_day(next_start) == date(2026, 12, 21)
+    assert period_logic.fertile_window(next_start) == (date(2026, 12, 16), date(2026, 12, 22))
+    assert period_logic.predicted_range(next_start, 5) == (date(2027, 1, 4), date(2027, 1, 8))
+    # 持续天数夹在 2–10 天
+    assert period_logic.predicted_range(next_start, 0) == (date(2027, 1, 4), date(2027, 1, 5))
+    assert period_logic.predicted_range(next_start, 42) == (date(2027, 1, 4), date(2027, 1, 13))
+
+    assert period_logic.estimate_duration_days([]) == 5
+    assert period_logic.estimate_duration_days([4, 6]) == 5
+    assert period_logic.estimate_duration_days([5, 5, 5, 5, 9]) == 5
+    assert period_logic.estimate_duration_days([1, 1]) == 2
+    assert period_logic.estimate_duration_days([30]) == 10
+
+    rows = [
+        (date(2026, 11, 1), date(2026, 11, 5)),
+        (date(2026, 10, 3), None),
+        (date(2026, 9, 5), date(2026, 9, 9)),
+    ]
+    assert period_logic.recent_durations(rows) == [5, 5]
+
+
+def test_schedule_range_rolls_forward_until_recorded() -> None:
+    expected = date(2026, 12, 29)
+    # 未到期：区间就是预计那几天
+    assert period_logic.schedule_range(expected, date(2026, 12, 20), 5) == (
+        date(2026, 12, 29),
+        date(2027, 1, 2),
+        0,
+    )
+    # 到期当天：仍从今天开始，不算推迟
+    assert period_logic.schedule_range(expected, date(2026, 12, 29), 5) == (
+        date(2026, 12, 29),
+        date(2027, 1, 2),
+        0,
+    )
+    # 过期未记录：区间跟着今天走，逐日顺延
+    assert period_logic.schedule_range(expected, date(2027, 1, 3), 5) == (
+        date(2027, 1, 3),
+        date(2027, 1, 7),
+        5,
+    )
+    assert period_logic.schedule_range(expected, date(2027, 2, 10), 5) == (
+        date(2027, 2, 10),
+        date(2027, 2, 14),
+        43,
+    )
+
+
+def test_overdue_prediction_never_highlights_the_past(
+    client: TestClient, monkeypatch: MonkeyPatch
+) -> None:
+    monkeypatch.setattr("app.services.period_service.local_today", lambda: date(2027, 1, 3))
+    headers = auth_headers(register_and_login(client))
+    _create_period(client, headers, "2026-10-03", "2026-10-07")
+    _create_period(client, headers, "2026-11-01", "2026-11-05")
+    _create_period(client, headers, "2026-11-30", "2026-12-04")
+
+    prediction = client.get("/api/v1/c/herlog/periods", headers=headers).json()["data"]["prediction"]
+    assert prediction["status"] == "overdue"
+    assert prediction["expected_start"] == "2026-12-29"
+    assert prediction["duration_days"] == 5
+    assert prediction["overdue_days"] == 5
+    assert prediction["predicted_range"] == {"start_day": "2027-01-03", "end_day": "2027-01-07"}
+
+    # 再往后一天，高亮区间跟着往后挪
+    monkeypatch.setattr("app.services.period_service.local_today", lambda: date(2027, 1, 6))
+    prediction = client.get("/api/v1/c/herlog/periods", headers=headers).json()["data"]["prediction"]
+    assert prediction["overdue_days"] == 8
+    assert prediction["predicted_range"] == {"start_day": "2027-01-06", "end_day": "2027-01-10"}
+
+    # 补记实际开始日后回到 upcoming，区间重新按新周期算
+    _create_period(client, headers, "2027-01-05", "2027-01-09")
+    prediction = client.get("/api/v1/c/herlog/periods", headers=headers).json()["data"]["prediction"]
+    assert prediction["overdue_days"] == 0
+    assert prediction["status"] == "upcoming"
+    assert prediction["predicted_range"] == {"start_day": "2027-02-03", "end_day": "2027-02-07"}
 
 
 def test_overlapping_period_is_rejected_with_the_conflicting_date(client: TestClient) -> None:

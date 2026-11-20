@@ -83,6 +83,8 @@ class Weight(Base):
     tag: Mapped[str | None] = mapped_column(sa.String(32), nullable=True)
     note: Mapped[str | None] = mapped_column(sa.String(500), nullable=True)
     feeling_tags: Mapped[list[str] | None] = mapped_column(sa.JSON, nullable=True)
+    # 体脂率由家用体脂秤或手动填写，与体重同一笔记录保存，用于体成分趋势。
+    body_fat_pct: Mapped[Decimal | None] = mapped_column(sa.Numeric(4, 1), nullable=True)
     source: Mapped[str] = mapped_column(sa.String(12), nullable=False, server_default="manual")
     device_id: Mapped[int | None] = mapped_column(_ROW_ID, nullable=True)
     source_record_id: Mapped[str | None] = mapped_column(sa.String(128), nullable=True)
@@ -91,6 +93,10 @@ class Weight(Base):
         sa.UniqueConstraint("customer_id", "client_key", name="uq_herlog_weight_key"),
         sa.UniqueConstraint("customer_id", "device_id", "source_record_id", name="uq_herlog_weight_source"),
         sa.CheckConstraint("grams > 0", name="ck_herlog_positive_weight"),
+        sa.CheckConstraint(
+            "body_fat_pct IS NULL OR (body_fat_pct > 0 AND body_fat_pct < 75)",
+            name="ck_herlog_body_fat_range",
+        ),
         sa.Index("ix_herlog_weight_time", "customer_id", "measured_at", "id"),
     )
 
