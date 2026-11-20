@@ -14,7 +14,7 @@
         </template>
       </HerlogHeading>
 
-      <AssistantChat ref="assistant" :key="assistantKey" :examples="examples" :show-questions="preferences.show_questions"
+      <AssistantChat ref="assistant" :key="assistantKey" :record-questions="recordQuestions" :starters="starters" :show-questions="preferences.show_questions"
         @reference="openRef" />
 
       <section v-if="data && preferences.show_focus && !focusClosed" class="focus card" aria-labelledby="focus-title">
@@ -87,7 +87,7 @@ import RecordCalendar from './RecordCalendar.vue'
 import AssistantChat from './AssistantChat.vue'
 import SkinCapture from '../skin/SkinCapture.vue'
 import { TIME_ZONE, todayString } from '../../shared/dates'
-import { suggestedQuestions } from '../../shared/home'
+import { assistantStarters, suggestedQuestions } from '../../shared/home'
 import { useAuthStore } from '../../stores/auth'
 import { ApiRequestError, currentEpoch } from '../../services/httpClient'
 import { fetchHome, fetchRecordingPreferences, recordingDefaults } from '../../services/homeService'
@@ -157,8 +157,10 @@ const statusBasis = computed(() => {
   if (data.value.active_mode === 'trying_to_conceive') return '查看实际记录'
   return { recorded: '已记录', estimated: '日期估算', unknown: '查看经期' }[data.value.cycle_context.basis]
 })
-const examples = computed(() => suggestedQuestions(data.value?.active_mode === 'trying_to_conceive'
+const recordQuestions = computed(() => suggestedQuestions(data.value?.active_mode === 'trying_to_conceive'
   ? 'follicular' : data.value?.cycle_context.phase ?? 'unknown', !!data.value?.week.has_weight, !!data.value?.week.has_skin))
+const starters = computed(() => assistantStarters(data.value?.active_mode === 'trying_to_conceive'
+  ? 'unknown' : data.value?.cycle_context.phase ?? 'unknown', !!data.value?.week.has_weight, !!data.value?.week.has_skin))
 const summaryItems = computed<Array<{ page: Tab; text: string }>>(() => [
   { page: 'period', text: !data.value ? '查看经期' : data.value.has_period_history ? '已有经期记录' : '还没有经期记录' },
   { page: 'weight', text: !data.value ? '查看体重' : data.value.week.has_weight ? '本周有体重记录' : '本周暂无体重记录' },

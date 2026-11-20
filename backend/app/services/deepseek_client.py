@@ -41,6 +41,7 @@ class StreamChunk:
     reasoning: str = ""
     usage: dict[str, Any] | None = None
     done: bool = False
+    model_id: str | None = None
 
 
 def endpoint() -> str:
@@ -227,6 +228,7 @@ async def chat_stream(
                         text=delta.get("content") or "",
                         reasoning=delta.get("reasoning_content") or "",
                         usage=event.get("usage"),
+                        model_id=event.get("model"),
                     )
                     if chunk.text or chunk.reasoning or chunk.usage:
                         yield chunk
@@ -252,11 +254,11 @@ async def _post(payload: dict[str, Any]) -> dict[str, Any]:
 def _model_error(status: int, body: str) -> ApiError:
     """把上游状态码翻成前端可展示的文案，原始细节留在 data 里便于排查。"""
 
-    detail = body[:500]
+    details = {"status": status, "detail": body[:500]}
     if status in (401, 403):
-        return ApiError(500, "模型服务鉴权失败，请检查 HERLOG_MODEL_API_KEY", {"detail": detail})
+        return ApiError(500, "模型服务鉴权失败，请检查 HERLOG_MODEL_API_KEY", details)
     if status == 429:
-        return ApiError(503, "模型服务繁忙，请稍后重试", {"detail": detail})
+        return ApiError(503, "模型服务繁忙，请稍后重试", details)
     if status >= 500:
-        return ApiError(503, "模型服务暂时不可用，请稍后重试", {"detail": detail})
-    return ApiError(502, "模型请求被拒绝，请重试", {"status": status, "detail": detail})
+        return ApiError(503, "模型服务暂时不可用，请稍后重试", details)
+    return ApiError(502, "模型请求被拒绝，请重试", details)

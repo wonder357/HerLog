@@ -157,6 +157,8 @@ def health() -> dict:
         "redis": redis_state,
         "model_mode": settings.HERLOG_MODEL_MODE,
         "skin_model_mode": settings.skin_model_mode,
+        "assistant_model_mode": settings.assistant_model_mode,
+        "assistant_key_configured": bool(settings.HERLOG_MODEL_API_KEY.strip()),
     }
 
 

@@ -4,14 +4,14 @@
       <span class="agent-mark"><HerlogIcon name="message" /></span>
       <div class="entry-copy">
         <h2 id="agent-title">她记智能体</h2>
-        <p>聊日常健康，也能查个人记录</p>
+        <p>DeepSeek 对话 · 按需查个人记录</p>
       </div>
     </header>
     <H5Button class="entry-action" aria-label="开始对话 ›" aria-haspopup="dialog" @click="open()">
       <span>问问她记…</span><span class="entry-arrow"><HerlogIcon name="send" /></span>
     </H5Button>
-    <div v-if="showQuestions" class="agent-chips home-chips" aria-label="查询个人记录">
-      <H5Button v-for="question in examples" :key="question" class="agent-chip" @click="open(question)">
+    <div v-if="showQuestions" class="agent-chips home-chips" aria-label="DeepSeek 推荐问题">
+      <H5Button v-for="question in starters" :key="question" class="agent-chip" @click="open(question)">
         {{ question }}
       </H5Button>
     </div>
@@ -42,7 +42,7 @@
           <div class="message agent">
             <span class="agent-mark small"><HerlogIcon name="chat" /></span>
             <div class="message-content">
-              <span class="speaker">{{ turn.source === 'deepseek' ? 'DeepSeek · AI 回答' : turn.source === 'fixture'
+              <span class="speaker">{{ turn.source === 'deepseek' ? 'DeepSeek · ' + (turn.answer?.model_id || 'AI 回答') : turn.source === 'fixture'
                 ? '演示样例' : turn.source === 'records' ? '她记 · 记录摘要' : '她记' }}</span>
               <div v-if="turn.answer" class="bubble">
                 <p>{{ turn.answer.answer }}</p>
@@ -95,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import H5Button from '../../components/H5Button'
 import H5Form from '../../components/H5Form'
 import H5Input from '../../components/H5Input'
@@ -106,7 +106,7 @@ import type { AssistantMode, AssistantSource, AssistantTopic } from '../../servi
 import { ApiRequestError, currentEpoch } from '../../services/httpClient'
 import type { AssistantAnswer, RecordRef } from '../../services/types'
 
-const props = defineProps<{ examples: string[]; showQuestions: boolean }>()
+const props = defineProps<{ starters: string[]; recordQuestions: string[]; showQuestions: boolean }>()
 const emit = defineEmits<{ reference: [item: RecordRef] }>()
 interface Turn {
   id: number
@@ -122,11 +122,14 @@ interface Turn {
 const opened = ref(false)
 const mode = ref<AssistantMode>('general')
 const modes = [
-  { value: 'general', label: '问助手' },
+  { value: 'general', label: 'DeepSeek 对话' },
   { value: 'records', label: '查记录' }
 ] as const
-const generalQuestions = ['怎么开始记录经期？', '怎样记录体重变化？', '肤质观察可以记哪些内容？']
-const draft = ref('')
+const drafts = reactive<Record<AssistantMode, string>>({ general: '', records: '' })
+const draft = computed({
+  get: () => drafts[mode.value],
+  set: value => { drafts[mode.value] = value }
+})
 const turns = ref<Turn[]>([])
 const tail = ref<HTMLElement | null>(null)
 const composerInput = ref<{ focus(): void } | null>(null)
@@ -155,8 +158,8 @@ const topic = computed<AssistantTopic | undefined>(() => {
 })
 const suggestions = computed(() => {
   if (pending.value || !props.showQuestions) return []
-  if (mode.value === 'general') return turns.value.length ? [] : generalQuestions
-  if (!latestAnswer.value) return [...new Set([...props.examples, '最近的皮肤观察是什么？'])].slice(0, 3)
+  if (mode.value === 'general') return turns.value.some(turn => turn.mode === 'general') ? [] : props.starters
+  if (!latestAnswer.value) return [...new Set([...props.recordQuestions, '最近的皮肤观察是什么？'])].slice(0, 3)
   if (topic.value === 'weight') return [latestAnswer.value?.range.days === 30 ? '那近 7 天呢？' : '那近 30 天呢？']
   if (topic.value === 'period') return [latestAnswer.value?.range.label === '最近一次实际经期' ? '那下次呢？' : '那上次呢？']
   return []
@@ -196,11 +199,9 @@ watch(opened, visible => {
 })
 
 function open(question?: string) {
-  if (question) {
-    stopGeneration()
-    mode.value = 'records'
-    draft.value = question
-  }
+  stopGeneration()
+  mode.value = 'general'
+  if (question) draft.value = question
   opened.value = true
 }
 
@@ -214,7 +215,7 @@ function newChat() {
   running?.controller.abort()
   running = null
   turns.value = []
-  draft.value = ''
+  drafts.general = drafts.records = ''
   void nextTick(() => composerInput.value?.focus())
 }
 

@@ -24,3 +24,17 @@ export function suggestedQuestions(phase: string, hasWeight: boolean, hasSkin: b
     hasWeight ? '近 7 天有哪些体重记录？' : hasSkin ? '最近的皮肤观察是什么？' : ''
   ].filter(Boolean)
 }
+
+const cycleStarters: Record<string, string> = {
+  menstrual: '经期感受适合记哪些内容？',
+  follicular: '月历上的实际日期和估算有什么区别？',
+  ovulatory: '月历上的周期阶段估算该怎么理解？',
+  luteal: '回看经期估算时要留意什么？'
+}
+
+export function assistantStarters(phase: string, hasWeight: boolean, hasSkin: boolean): string[] {
+  return [
+    cycleStarters[phase] ?? '怎样开始记录经期？',
+    hasWeight ? '怎样读懂体重趋势？' : hasSkin ? '怎样对比同一部位的皮肤观察？' : '肤质观察可以记哪些内容？'
+  ]
+}

@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from collections.abc import AsyncIterator
 
 from app.core.config import settings
 from app.core.errors import ApiError
 from app.schemas.herlog import AssistantAnswerOut, AssistantRange, AssistantStreamIn
 from app.services.deepseek_client import chat_stream
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """你是「她记」的女性健康记录助手，用简明中文回答一般的健康记录和日常护理问题。
 你只能看到用户在本次对话输入的文字，无法读取或写入账号记录。需要查询记录时提示切换「查记录」。
@@ -32,9 +35,8 @@ async def stream_assistant(
         yield completed(record_answer)
         return
 
-    live = settings.assistant_model_mode == "live"
-    yield event("source", source="deepseek" if live else "fixture")
-    if not live:
+    if settings.assistant_model_mode == "fixture":
+        yield event("source", source="fixture")
         example = ("可以从一项容易坚持的记录开始。", "例如记下日期和当时的感受，之后再按需要补充。")
         for part in example:
             yield event("delta", text=part)
@@ -42,6 +44,9 @@ async def stream_assistant(
             answer="".join(example),
             domain="general", range=AssistantRange(label="未指定范围"),
         ))
+        return
+    if not settings.HERLOG_MODEL_API_KEY.strip():
+        yield event("error", message="首页助手尚未配置 DeepSeek API 密钥。")
         return
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
@@ -53,16 +58,32 @@ async def stream_assistant(
     messages.append({"role": "user", "content": payload.question})
     parts: list[str] = []
     finished = False
+    model_id = settings.HERLOG_MODEL_ID
     try:
         async with asyncio.timeout(settings.HERLOG_MODEL_TIMEOUT_SECONDS):
             async for chunk in chat_stream(messages, thinking=False, max_tokens=1000):
+                if chunk.model_id:
+                    model_id = chunk.model_id
                 if chunk.text:
+                    if not parts:
+                        yield event("source", source="deepseek")
                     parts.append(chunk.text)
                     yield event("delta", text=chunk.text)
                 if chunk.done:
                     finished = True
-    except (ApiError, TimeoutError):
-        yield event("error", message="暂时未能完成回答，请重试。")
+    except ApiError as failure:
+        upstream = failure.data.get("status") if isinstance(failure.data, dict) else None
+        logger.warning("assistant DeepSeek request failed: upstream=%s status=%s", upstream, failure.status_code)
+        message = {
+            401: "DeepSeek 密钥验证失败，请检查服务端配置。",
+            402: "DeepSeek API 账户余额不足。",
+            403: "DeepSeek 拒绝了当前服务端凭据。",
+            429: "DeepSeek 请求较多，请稍后重试。",
+        }.get(upstream, "暂时未能完成 DeepSeek 回答，请重试。")
+        yield event("error", message=message)
+        return
+    except TimeoutError:
+        yield event("error", message="DeepSeek 回答超时，请重试。")
         return
 
     answer = "".join(parts).strip()
@@ -71,5 +92,5 @@ async def stream_assistant(
         return
     yield completed(AssistantAnswerOut(
         answer=answer, domain="general", range=AssistantRange(label="未指定范围"),
-        model_id=settings.HERLOG_MODEL_ID,
+        model_id=model_id,
     ))

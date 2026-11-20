@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { calendarMarks, suggestedQuestions } from '../src/shared/home.ts'
+import { assistantStarters, calendarMarks, suggestedQuestions } from '../src/shared/home.ts'
 
 test('日历以固定顺序提供四类组合标记，0 次皮肤不出标记', () => {
   assert.deepEqual(calendarMarks(true, { weight_kg: '58.2', skin_observation_count: 1, feeling_tags: ['平静'] }),
@@ -14,4 +14,11 @@ test('建议问题跟随阶段，至多两枚且只使用已有数据类别', ()
   assert.match(luteal[1], /皮肤/)
   assert.equal(suggestedQuestions('unknown', false, false).length, 1)
   assert.notEqual(suggestedQuestions('menstrual', true, true)[0], luteal[0])
+})
+
+test('首页 DeepSeek 建议问题使用通用主题，对应阶段并与查记录的文案独立', () => {
+  const prompts = assistantStarters('luteal', true, false)
+  assert.deepEqual(prompts, ['回看经期估算时要留意什么？', '怎样读懂体重趋势？'])
+  assert.notEqual(assistantStarters('menstrual', true, false)[0], prompts[0])
+  assert.notEqual(prompts[0], suggestedQuestions('luteal', true, false)[0])
 })

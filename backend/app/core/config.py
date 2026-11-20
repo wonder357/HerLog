@@ -53,7 +53,7 @@ class Settings(BaseSettings):
 
     @property
     def assistant_model_mode(self) -> Literal["fixture", "live"]:
-        return self.HERLOG_ASSISTANT_MODEL_MODE or self.HERLOG_MODEL_MODE
+        return self.HERLOG_ASSISTANT_MODEL_MODE or "live"
 
     @property
     def database_url(self) -> str:
