@@ -40,20 +40,27 @@
       @retry="loadOverview" @remind="reminderVisible = true" />
 
     <CycleCalendar :month="month" :selected="selected" :today="today" :predicted-day="predictedDay"
-      :ovulatory-window="ovulatoryWindow"
+      :predicted-range="predictedRange" :ovulation-day="ovulationDay" :fertile-window="fertileWindow"
       :periods="items" :marked-days="markedDays" :mark-label="filter ? filter.label : '有感受'" @select="selectDate">
       <H5Button v-if="filter" class="hr-action" @click="filter = null">清除筛选</H5Button>
     </CycleCalendar>
+
+    <CycleInsightCard v-if="overview" :signature="insightSignature" />
 
     <section ref="dayCard" class="card day-card" aria-labelledby="day-title">
       <view class="section-head">
         <h2 id="day-title" class="hr-section-title">{{ formatDayLabel(selected) }}</h2>
         <text v-if="selected === today" class="today-tag">今天</text>
       </view>
-      <view v-if="selected === predictedDay && !selectedPeriod" class="muted">
-        {{ selected > today ? '这是预计开始日。实际日期可能不同，请在当天或之后补记。' : '今天是预计开始日，实际日期可能不同。' }}
+      <view v-if="selectedPredictedDayIndex && !selectedPeriod" class="muted">
+        预计经期第 {{ selectedPredictedDayIndex }} 天 · 按周期估算，实际可能不同，可到时补记。
       </view>
-      <view v-else-if="selectedInOvulatoryWindow" class="muted">排卵相关阶段估算 · 根据经期日期推算，仅供记录参考。</view>
+      <view v-else-if="selected === ovulationDay" class="muted">
+        预计排卵日 · 按周期回推，仅供记录参考，不作为避孕或备孕依据。
+      </view>
+      <view v-else-if="selectedInFertileWindow" class="muted">
+        预计易孕期 · 根据经期日期推算，仅供记录参考。
+      </view>
       <view v-else-if="selected > today" class="muted">这一天还没到，可以回到今天继续记录。</view>
       <template v-if="selected <= today">
         <view v-if="selectedPeriod" class="day-record">
@@ -81,7 +88,7 @@
           </view>
           <H5Button class="hr-action" @click="removeFeeling(selected)">删除感受</H5Button>
         </view>
-        <view v-else-if="overview && !selectedPeriod && !openPeriod && selected !== predictedDay && !selectedInOvulatoryWindow" class="muted">这一天还没有记录。</view>
+        <view v-else-if="overview && !selectedPeriod && !openPeriod && !selectedPredictedDayIndex && selected !== ovulationDay && !selectedInFertileWindow" class="muted">这一天还没有记录。</view>
         <view class="day-actions">
           <H5Button class="primary" :disabled="!overview" @click="openPeriodForm(selectedPeriod)">
             {{ periodAction }}
@@ -187,6 +194,7 @@ import PeriodForm from '../../components/PeriodForm.vue'
 import FeelingForm from '../../components/FeelingForm.vue'
 import CycleReminder from './CycleReminder.vue'
 import CycleCalendar from './CycleCalendar.vue'
+import CycleInsightCard from './CycleInsightCard.vue'
 import PeriodPredictionCard from './PeriodPredictionCard.vue'
 import CycleModeSheet from './CycleModeSheet.vue'
 import FertilityJournal from './FertilityJournal.vue'
@@ -194,9 +202,11 @@ import {
   daysInMonth, diffDays, formatDayLabel, startOfMonth, todayString
 } from '../../shared/dates'
 import {
-  matchesFeeling, openPeriodOnDay, periodOnDay, recentCycleStats, reminderDay, summarizeDiary
+  estimateDurationDays, fertileWindow as fertileWindowOf, inRange, matchesFeeling, openPeriodOnDay,
+  ovulationDay as ovulationDayOf, periodOnDay, recentCycleStats, reminderDay, scheduleRange,
+  summarizeDiary
 } from '../../shared/period'
-import type { FeelingFilter } from '../../shared/period'
+import type { DayRange, FeelingFilter } from '../../shared/period'
 import { ApiRequestError, currentEpoch, StaleSessionError } from '../../services/httpClient'
 import { deleteFeeling, deletePeriod, getOverview, listFeelings } from '../../services/periodService'
 import { fetchCycleContext } from '../../services/homeService'
@@ -223,7 +233,8 @@ const activePhase = ref<CycleDay | null>(null)
 const phaseLabel = computed(() => {
   const phase = activePhase.value
   if (phase?.basis !== 'estimated') return ''
-  return '当前阶段估算 · ' + (phase.phase === 'ovulatory' ? '排卵相关阶段' : phaseNames[phase.phase])
+  // 与月历图例同名，避免「排卵期」与「易孕期」看起来像两段区间
+  return '当前阶段估算 · ' + (phase.phase === 'ovulatory' ? '易孕期' : phaseNames[phase.phase])
 })
 const feelingsLoading = ref(true)
 const overviewError = ref(false)
@@ -242,22 +253,51 @@ let epoch = currentEpoch()
 
 const items = computed(() => overview.value?.items ?? [])
 const prediction = computed(() => !overviewError.value && !overviewLoading.value ? overview.value?.prediction ?? null : null)
-const predictedDay = computed(() =>
-  prediction.value?.status === 'upcoming' ? prediction.value.expected_start : null
+const predictionDuration = computed(() => prediction.value?.duration_days ?? estimateDurationDays(items.value))
+const predictedRange = computed<DayRange | null>(() => {
+  const value = prediction.value
+  if (!value) return null
+  if (value.predicted_range) return value.predicted_range
+  return value.expected_start
+    ? scheduleRange(value.expected_start, today.value, predictionDuration.value)
+    : null
+})
+const predictedDay = computed(() => predictedRange.value?.start_day ?? null)
+const overdueDays = computed(() =>
+  prediction.value?.overdue_days ?? Math.max(0, predictedRange.value ? diffDays(predictedRange.value.start_day, today.value) : 0)
 )
-const ovulatoryWindow = computed(() => prediction.value?.ovulatory_window ?? null)
-const selectedInOvulatoryWindow = computed(() => {
-  const range = ovulatoryWindow.value
-  return range && !selectedPeriod.value && selected.value >= range.start_day && selected.value <= range.end_day
+const ovulationDay = computed(() => {
+  const value = prediction.value
+  if (value?.ovulation_day) return value.ovulation_day
+  return value?.expected_start ? ovulationDayOf(value.expected_start) : null
+})
+const fertileWindow = computed<DayRange | null>(() => {
+  const value = prediction.value
+  if (value?.fertile_window) return value.fertile_window
+  return value?.expected_start ? fertileWindowOf(value.expected_start) : null
+})
+const selectedPredictedDayIndex = computed(() => {
+  const range = predictedRange.value
+  if (!range || selectedPeriod.value || !inRange(selected.value, range)) return null
+  return diffDays(selected.value, range.start_day) + 1
+})
+const selectedInFertileWindow = computed(() => {
+  const range = fertileWindow.value
+  return Boolean(range && !selectedPeriod.value && inRange(selected.value, range))
 })
 const predictionProps = computed(() => ({
   prediction: prediction.value,
   day: predictedDay.value,
   today: today.value,
+  overdueDays: overdueDays.value,
   loading: overviewLoading.value,
   failed: overviewError.value,
   reminderAvailable: Boolean(predictedDay.value && reminderDay(predictedDay.value, 0, new Date().toISOString()))
 }))
+/** 记录或日期变化时重新取小结；服务端另有一层 6 小时缓存。 */
+const insightSignature = computed(() =>
+  [today.value, items.value.length, items.value[0]?.start_day ?? '', items.value[0]?.end_day ?? ''].join('|')
+)
 const selectedPeriod = computed(() => periodOnDay(items.value, selected.value))
 const openPeriod = computed(() => openPeriodOnDay(items.value, selected.value))
 const periodAction = computed(() => selectedPeriod.value ? '更正经期' : openPeriod.value ? '补记结束' : '记录经期')

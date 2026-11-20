@@ -142,3 +142,11 @@
   box-sizing: border-box; width: 100%; min-height: 62px; height: 62px; margin-top: 9px; padding: 8px;
   border: 1px solid var(--hr-line-strong); border-radius: 12px; color: var(--hr-ink); background: #fff; font-size: 14px;
 }
+
+/* 拍照示例：按部位展示取景与光线参考 */
+.sample-panel { gap: 10px; }
+.sample-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sample-item { display: grid; gap: 5px; min-width: 0; }
+.sample-photo { display: block; width: 100%; height: auto; aspect-ratio: 1 / 1; border-radius: 13px; border: 1px solid var(--hr-line); background: var(--hr-paper); }
+.sample-meta { font-size: 11px; line-height: 1.45; color: var(--hr-ink-2); overflow-wrap: anywhere; }
+.sample-meta strong { display: block; font-size: 13px; font-weight: 600; color: var(--hr-ink); }

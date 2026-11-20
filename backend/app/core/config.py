@@ -1,17 +1,23 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 from urllib.parse import quote_plus
 from zoneinfo import ZoneInfo
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# 环境文件固定在 backend/.env（已被 .gitignore 的 backend/.env* 覆盖），与启动目录无关。
+ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
+
 
 class Settings(BaseSettings):
-    """运行期配置。字段名与比赛环境文件中的键一致。"""
+    """运行期配置。字段名与比赛环境文件中的键一致；进程环境变量优先于环境文件。"""
 
-    model_config = SettingsConfigDict(extra="ignore", case_sensitive=True)
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILE, env_file_encoding="utf-8", extra="ignore", case_sensitive=True
+    )
 
     ENV: str = "local"
     DEBUG: bool = False

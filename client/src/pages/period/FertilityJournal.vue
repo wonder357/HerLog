@@ -11,6 +11,7 @@
   <slot name="prediction" />
 
   <CycleCalendar :month="month" :selected="selected" :today="today" :predicted-day="predictedDay"
+    :predicted-range="predictedRange" :ovulation-day="ovulationDay" :fertile-window="fertileWindow"
     :periods="items" :marked-days="markedDays" mark-label="有备孕记录" @select="emit('select', $event)" />
 
   <section ref="dayCard" class="card day-card" aria-labelledby="fertility-day">
@@ -86,6 +87,10 @@ const refresh = ref(0)
 const dayCard = ref<HTMLElement | null>(null)
 const month = computed(() => startOfMonth(props.selected))
 const items = computed(() => props.overview?.items ?? [])
+const prediction = computed(() => props.overview?.prediction ?? null)
+const predictedRange = computed(() => prediction.value?.predicted_range ?? null)
+const ovulationDay = computed(() => prediction.value?.ovulation_day ?? null)
+const fertileWindow = computed(() => prediction.value?.fertile_window ?? null)
 const recentRange = computed(() => ({ from: addDays(props.today, -29), to: props.today }))
 
 const { rows: monthRows, loading: monthLoading, error: monthError, retry: retryMonth } = useFertilityRange(

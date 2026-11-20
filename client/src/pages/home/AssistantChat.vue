@@ -18,15 +18,55 @@
   </section>
 
   <div v-if="opened" class="agent-workspace" :style="viewportStyle">
-    <HerlogSheet title="她记小助手-小胭" @close="close">
+    <HerlogSheet :title="view === 'history' ? '历史对话' : '她记小助手-小胭'"
+      :context="view === 'chat' && chatTitle ? chatTitle : undefined" @close="close">
       <div class="chat-toolbar">
-        <div class="mode-switch" role="group" aria-label="提问方式">
-          <H5Button v-for="item in modes" :key="item.value" class="mode-option"
-            :aria-pressed="mode === item.value" :disabled="pending" @click="mode = item.value">{{ item.label }}</H5Button>
-        </div>
-        <H5Button class="hr-action" :disabled="!turns.length && !draft" @click="newChat">新建对话</H5Button>
+        <template v-if="view === 'history'">
+          <view class="chat-view-title">共 {{ chats.length }} 段对话</view>
+          <H5Button class="hr-action" @click="view = 'chat'">返回对话</H5Button>
+        </template>
+        <template v-else>
+          <div class="mode-switch" role="group" aria-label="提问方式">
+            <H5Button v-for="item in modes" :key="item.value" class="mode-option"
+              :aria-pressed="mode === item.value" :disabled="pending" @click="mode = item.value">{{ item.label }}</H5Button>
+          </div>
+          <div class="toolbar-actions">
+            <H5Button class="hr-action" @click="openHistory">历史对话</H5Button>
+            <H5Button class="hr-action" :disabled="pending || (!turns.length && !draft)" @click="newChat">新建对话</H5Button>
+          </div>
+        </template>
       </div>
 
+      <template v-if="view === 'history'">
+        <section class="chat-history" aria-label="历史对话列表">
+          <view v-if="historyError" class="chat-alert" role="alert">{{ historyError }}
+            <H5Button class="hr-action" @click="loadChats">重试</H5Button>
+          </view>
+          <view v-else-if="historyLoading" class="chat-muted" role="status">正在读取历史对话…</view>
+          <view v-else-if="!chats.length" class="chat-muted">
+            还没有保存的对话。问过第一个问题后，这段对话会自动出现在这里。
+          </view>
+          <ul v-else class="chat-list">
+            <li v-for="item in chats" :key="item.id" class="chat-row">
+              <view class="chat-row-main">
+                <H5Button class="chat-open" :class="{ current: item.id === chatId }" @click="openChat(item.id)">
+                  <strong>{{ item.title }}</strong>
+                  <small>{{ formatMoment(item.updated_at) }} · {{ Math.ceil(item.message_count / 2) }} 轮对话</small>
+                </H5Button>
+                <H5Button class="hr-action" @click="startRename(item)">改名</H5Button>
+                <H5Button class="hr-action danger" :disabled="removing" @click="removeChat(item)">删除</H5Button>
+              </view>
+              <view v-if="renamingId === item.id" class="chat-rename">
+                <H5Input v-model="renameDraft" aria-label="对话标题" maxlength="60" placeholder="给这段对话起个名字" />
+                <H5Button class="hr-action" :disabled="!renameDraft.trim() || renaming" @click="submitRename">保存</H5Button>
+                <H5Button class="hr-action" @click="cancelRename">取消</H5Button>
+              </view>
+            </li>
+          </ul>
+        </section>
+      </template>
+
+      <template v-else>
       <section v-if="!turns.length" class="chat-welcome" aria-labelledby="chat-welcome-title">
         <HerlogMascot class="chat-art" pose="idle" :size="96" />
         <h3 id="chat-welcome-title">想聊些什么？</h3>
@@ -70,14 +110,18 @@
         </template>
       </div>
 
-      <div v-if="suggestions.length" class="agent-chips follow-ups" :class="{ starters: !turns.length }" aria-label="建议问题">
-        <H5Button v-for="question in suggestions" :key="question" class="agent-chip" @click="chooseQuestion(question)">
-          {{ question }}
-        </H5Button>
+      <div v-if="suggestions.length" class="follow-up-block" :class="{ starters: !turns.length }">
+        <span v-if="turns.length" class="follow-up-title">猜你想问</span>
+        <div class="agent-chips follow-ups" aria-label="猜你想问的问题">
+          <H5Button v-for="question in suggestions" :key="question" class="agent-chip" @click="chooseQuestion(question)">
+            {{ question }}
+          </H5Button>
+        </div>
       </div>
       <div ref="tail" class="chat-tail" aria-hidden="true" />
+      </template>
       <template #actions>
-        <div class="composer-area">
+        <div v-if="view === 'chat'" class="composer-area">
           <H5Form class="composer" @submit.prevent="send">
             <H5Input ref="composerInput" v-model="draft" class="field" aria-label="问题"
               :placeholder="mode === 'records' ? '查一查已保存的记录…' : '输入想聊的问题…'"
@@ -102,9 +146,16 @@ import H5Input from '../../components/H5Input'
 import HerlogIcon from '../../components/HerlogIcon.vue'
 import HerlogMascot from '../../components/HerlogMascot.vue'
 import HerlogSheet from '../../components/HerlogSheet.vue'
-import { ask } from '../../services/assistantService'
-import type { AssistantMode, AssistantSource, AssistantTopic } from '../../services/assistantService'
+import { ask, deleteChat, getChat, listChats, renameChat } from '../../services/assistantService'
+import type {
+  AssistantChatSummary,
+  AssistantMode,
+  AssistantSource,
+  AssistantTopic
+} from '../../services/assistantService'
 import { ApiRequestError, currentEpoch } from '../../services/httpClient'
+import { formatMoment } from '../../shared/dates'
+import { suggestFollowUps } from '../../shared/followUps'
 import type { AssistantAnswer, RecordRef } from '../../services/types'
 
 const props = defineProps<{ examples: string[]; showQuestions: boolean }>()
@@ -121,6 +172,7 @@ interface Turn {
 }
 
 const opened = ref(false)
+const view = ref<'chat' | 'history'>('chat')
 const mode = ref<AssistantMode>('general')
 const modes = [
   { value: 'general', label: '问助手' },
@@ -129,6 +181,15 @@ const modes = [
 const generalQuestions = ['怎么开始记录经期？', '怎样记录体重变化？', '肤质观察可以记哪些内容？']
 const draft = ref('')
 const turns = ref<Turn[]>([])
+const chatId = ref<number | null>(null)
+const chatTitle = ref('')
+const chats = ref<AssistantChatSummary[]>([])
+const historyLoading = ref(false)
+const historyError = ref('')
+const renamingId = ref<number | null>(null)
+const renameDraft = ref('')
+const renaming = ref(false)
+const removing = ref(false)
 const tail = ref<HTMLElement | null>(null)
 const composerInput = ref<{ focus(): void } | null>(null)
 const keyboardGap = ref(0)
@@ -156,7 +217,16 @@ const topic = computed<AssistantTopic | undefined>(() => {
 })
 const suggestions = computed(() => {
   if (pending.value || !props.showQuestions) return []
-  if (mode.value === 'general') return turns.value.length ? [] : generalQuestions
+  if (mode.value === 'general') {
+    if (!turns.value.length) return generalQuestions
+    const latest = [...turns.value].reverse().find(turn => turn.mode === 'general' && turn.answer)
+    if (!latest?.answer) return []
+    return suggestFollowUps({
+      question: latest.question,
+      answer: latest.answer.answer,
+      asked: turns.value.map(turn => turn.question)
+    })
+  }
   if (!latestAnswer.value) return [...new Set([...props.examples, '最近的皮肤观察是什么？'])].slice(0, 3)
   if (topic.value === 'weight') return [latestAnswer.value?.range.days === 30 ? '那近 7 天呢？' : '那近 30 天呢？']
   if (topic.value === 'period') return [latestAnswer.value?.range.label === '最近一次实际经期' ? '那下次呢？' : '那上次呢？']
@@ -202,12 +272,14 @@ function open(question?: string) {
     mode.value = 'records'
     draft.value = question
   }
+  view.value = 'chat'
   opened.value = true
 }
 
 function close() {
   stopGeneration()
   opened.value = false
+  view.value = 'chat'
 }
 
 function newChat() {
@@ -216,7 +288,130 @@ function newChat() {
   running = null
   turns.value = []
   draft.value = ''
+  chatId.value = null
+  chatTitle.value = ''
+  view.value = 'chat'
+  renamingId.value = null
   void nextTick(() => composerInput.value?.focus())
+}
+
+async function loadChats() {
+  historyLoading.value = true
+  historyError.value = ''
+  try {
+    chats.value = await listChats()
+  } catch (failure) {
+    historyError.value = failure instanceof ApiRequestError ? failure.message : '历史对话没有读取成功。'
+  } finally {
+    historyLoading.value = false
+  }
+}
+
+function openHistory() {
+  view.value = 'history'
+  renamingId.value = null
+  void loadChats()
+}
+
+async function syncChatTitle(id: number) {
+  try {
+    chats.value = await listChats()
+  } catch {
+    return
+  }
+  const current = chats.value.find(item => item.id === id)
+  if (current && chatId.value === id) chatTitle.value = current.title
+}
+
+function toTurns(rows: { role: 'user' | 'assistant'; content: string; source: AssistantSource | null }[]): Turn[] {
+  const result: Turn[] = []
+  for (const row of rows) {
+    if (row.role === 'user') {
+      result.push({ id: ++nextId, question: row.content, mode: 'general' })
+      continue
+    }
+    const last = result[result.length - 1]
+    if (!last) continue
+    last.source = row.source ?? 'deepseek'
+    last.answer = {
+      answer: row.content,
+      domain: 'general',
+      range: { label: '未指定范围', date_from: null, date_to: null, days: null },
+      record_refs: [],
+      model_id: null
+    }
+  }
+  return result
+}
+
+async function openChat(id: number) {
+  generation += 1
+  running?.controller.abort()
+  running = null
+  historyError.value = ''
+  try {
+    const detail = await getChat(id)
+    chatId.value = detail.id
+    chatTitle.value = detail.title
+    turns.value = toTurns(detail.messages)
+    view.value = 'chat'
+    renamingId.value = null
+    scrollToTail()
+  } catch (failure) {
+    historyError.value = failure instanceof ApiRequestError ? failure.message : '这段对话没有读取成功。'
+  }
+}
+
+function startRename(item: AssistantChatSummary) {
+  renamingId.value = item.id
+  renameDraft.value = item.title
+}
+
+function cancelRename() {
+  renamingId.value = null
+  renameDraft.value = ''
+}
+
+async function submitRename() {
+  const id = renamingId.value
+  const title = renameDraft.value.trim()
+  if (id === null || !title || renaming.value) return
+  renaming.value = true
+  try {
+    const updated = await renameChat(id, title)
+    chats.value = chats.value.map(item => item.id === updated.id ? updated : item)
+    if (chatId.value === updated.id) chatTitle.value = updated.title
+    cancelRename()
+  } catch (failure) {
+    historyError.value = failure instanceof ApiRequestError ? failure.message : '标题没有保存成功。'
+  } finally {
+    renaming.value = false
+  }
+}
+
+function removeChat(item: AssistantChatSummary) {
+  uni.showModal({
+    title: '删除对话',
+    content: `删除「${item.title}」后不能恢复。`,
+    confirmText: '删除',
+    cancelText: '保留',
+    success: (result) => {
+      if (result.confirm) void doRemove(item)
+    }
+  })
+}
+
+async function doRemove(item: AssistantChatSummary) {
+  removing.value = true
+  try {
+    await deleteChat(item.id)
+    chats.value = chats.value.filter(chat => chat.id !== item.id)
+    if (chatId.value === item.id) newChat()
+  } catch (failure) {
+    historyError.value = failure instanceof ApiRequestError ? failure.message : '删除没有成功，请重试。'
+  } finally {
+    removing.value = false
+  }
 }
 
 function chooseQuestion(question: string) {
@@ -243,8 +438,8 @@ async function requestAnswer(turn: Turn) {
   scrollToTail()
   let partial = ''
   try {
-    const answer = await ask(turn.question, {
-      mode: turn.mode, topic: turn.topic, history, signal: controller.signal,
+    const reply = await ask(turn.question, {
+      mode: turn.mode, topic: turn.topic, chatId: chatId.value, history, signal: controller.signal,
       onSource(source) { if (active()) patchTurn(turn.id, { source }) },
       onDelta(text) {
         if (!active()) return
@@ -253,7 +448,13 @@ async function requestAnswer(turn: Turn) {
         scrollToTail()
       }
     })
-    if (active()) patchTurn(turn.id, { answer, partial: undefined })
+    if (active()) {
+      patchTurn(turn.id, { answer: reply.answer, partial: undefined })
+      if (reply.chatId !== null && reply.chatId !== chatId.value) {
+        chatId.value = reply.chatId
+        void syncChatTitle(reply.chatId)
+      }
+    }
   } catch (failure) {
     if (active()) patchTurn(turn.id, { error: failure instanceof ApiRequestError
       ? failure.message : '暂时没有收到回答，可以重试。' })
@@ -324,6 +525,21 @@ defineExpose({ close })
 .agent-workspace :deep(.dialog-actions) { flex:none; }
 .chat-toolbar { position:sticky; top:0; z-index:1; display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:48px; background:var(--hr-paper); border-bottom:1px solid var(--hr-line); margin-bottom:12px; }
 .chat-toolbar .hr-action { padding-inline:0; font-size:13px; }
+.toolbar-actions { display:flex; align-items:center; gap:10px; flex:none; }
+.chat-view-title { color:var(--hr-ink-2); font-size:13px; }
+.chat-history { display:grid; gap:8px; }
+.chat-muted { color:var(--hr-ink-2); font-size:13px; line-height:1.55; }
+.chat-alert { display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:13px; background:var(--hr-danger-soft); color:var(--hr-danger); font-size:13px; }
+.chat-list { display:grid; gap:8px; margin:0; padding:0; list-style:none; }
+.chat-row { display:grid; gap:6px; padding:10px 12px; border:1px solid var(--hr-line); border-radius:15px; background:var(--hr-surface); }
+.chat-row-main { display:flex; align-items:center; gap:8px; min-width:0; }
+.chat-open { flex:1; min-width:0; display:grid; gap:2px; padding:0; border:0; background:transparent; text-align:start; color:var(--hr-ink); }
+.chat-open strong { font-size:14px; font-weight:600; overflow-wrap:anywhere; }
+.chat-open small { color:var(--hr-ink-2); font-size:12px; }
+.chat-open.current strong { color:var(--hr-rose-deep); }
+.chat-rename { display:flex; align-items:center; gap:8px; }
+.chat-rename :deep(.field) { flex:1; min-width:0; margin:0; }
+.hr-action.danger { color:var(--hr-danger); }
 .mode-switch { display:flex; gap:3px; padding:2px; border-radius:20px; background:var(--hr-paper-deep); }
 .mode-option { min-height:44px; border:0; border-radius:18px; padding:5px 12px; color:var(--hr-ink-2); background:transparent; font-size:13px; }
 .mode-option[aria-pressed='true'] { color:var(--hr-rose-deep); background:var(--hr-surface); font-weight:650; }
@@ -348,8 +564,11 @@ defineExpose({ close })
 .sources { margin-top:6px; border-top:1px solid var(--hr-line); font-size:13px; }
 .sources summary { color:var(--hr-rose-deep); min-height:44px; padding-top:10px; cursor:pointer; box-sizing:border-box; }
 .source { display:flex; width:100%; justify-content:space-between; padding-inline:0; text-align:left; white-space:normal; font-size:13px; border-top:1px solid var(--hr-line); border-radius:0; }
-.follow-ups { margin:10px 0 0 39px; }
-.follow-ups.starters { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,142px),1fr)); margin-left:0; }
+.follow-up-block { display:grid; gap:6px; margin:10px 0 0 39px; }
+.follow-up-block.starters { margin-left:0; }
+.follow-up-title { color:var(--hr-rose-deep); font-size:12px; font-weight:600; }
+.follow-ups { margin:0; }
+.follow-ups.starters { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,142px),1fr)); }
 .chat-tail { min-height:1px; }
 .composer-area { width:100%; min-width:0; }
 .composer { display:grid; grid-template-columns:minmax(0,1fr) 44px; align-items:center; gap:8px; }

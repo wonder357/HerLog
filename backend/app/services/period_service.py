@@ -72,12 +72,21 @@ def list_periods(session: Session, customer_id: str) -> dict:
     today = local_today()
     starts = [row.start_day for row in rows if row.start_day <= today]
     prediction = period_logic.predict_next_start(starts, today)
-    ovulatory_window = None
-    latest = next((row for row in rows if row.start_day <= today), None)
-    if prediction.status == period_logic.UPCOMING and prediction.expected_start and latest and latest.end_day:
-        start, end = period_logic.ovulatory_window(prediction.expected_start)
-        if start > latest.end_day:
-            ovulatory_window = {"start_day": start, "end_day": end}
+    duration = period_logic.estimate_duration_days(
+        period_logic.recent_durations([(row.start_day, row.end_day) for row in rows])
+    )
+    predicted_range = None
+    ovulation_day = None
+    fertile_window = None
+    overdue_days = 0
+    if prediction.expected_start:
+        start, end, overdue_days = period_logic.schedule_range(
+            prediction.expected_start, today, duration
+        )
+        predicted_range = {"start_day": start, "end_day": end}
+        ovulation_day = period_logic.ovulation_day(prediction.expected_start)
+        fertile_start, fertile_end = period_logic.fertile_window(prediction.expected_start)
+        fertile_window = {"start_day": fertile_start, "end_day": fertile_end}
     return {
         "items": [_to_out(row, by_id) for row in rows],
         "prediction": {
@@ -86,7 +95,11 @@ def list_periods(session: Session, customer_id: str) -> dict:
             "estimate_days": prediction.estimate_days,
             "cycle_count": prediction.cycle_count,
             "starts_used": prediction.starts_used,
-            "ovulatory_window": ovulatory_window,
+            "duration_days": duration,
+            "predicted_range": predicted_range,
+            "overdue_days": overdue_days,
+            "ovulation_day": ovulation_day,
+            "fertile_window": fertile_window,
             "message": prediction.message,
         },
         "status": _current_status(rows, today, prediction.status == period_logic.OVERDUE),
