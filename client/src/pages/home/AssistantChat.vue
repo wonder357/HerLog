@@ -1,9 +1,9 @@
 <template>
   <section class="card agent-entry" aria-labelledby="agent-title">
     <header class="entry-header">
-      <span class="agent-mark"><HerlogIcon name="message" /></span>
+      <span class="agent-mark"><HerlogMascot pose="hi" :size="46" /></span>
       <div class="entry-copy">
-        <h2 id="agent-title">她记智能体</h2>
+        <h2 id="agent-title">她记小助手-小胭</h2>
         <p>聊日常健康，也能查个人记录</p>
       </div>
     </header>
@@ -18,7 +18,7 @@
   </section>
 
   <div v-if="opened" class="agent-workspace" :style="viewportStyle">
-    <HerlogSheet title="她记智能体" @close="close">
+    <HerlogSheet title="她记小助手-小胭" @close="close">
       <div class="chat-toolbar">
         <div class="mode-switch" role="group" aria-label="提问方式">
           <H5Button v-for="item in modes" :key="item.value" class="mode-option"
@@ -28,7 +28,7 @@
       </div>
 
       <section v-if="!turns.length" class="chat-welcome" aria-labelledby="chat-welcome-title">
-        <img class="chat-art" src="/static/home-cosmos.png" alt="" />
+        <HerlogMascot class="chat-art" pose="idle" :size="96" />
         <h3 id="chat-welcome-title">想聊些什么？</h3>
         <p>{{ mode === 'general' ? '可以聊日常护理，或问问怎样记录自己的健康变化。' : '可以查看已保存的经期、体重和皮肤记录。' }}</p>
       </section>
@@ -100,6 +100,7 @@ import H5Button from '../../components/H5Button'
 import H5Form from '../../components/H5Form'
 import H5Input from '../../components/H5Input'
 import HerlogIcon from '../../components/HerlogIcon.vue'
+import HerlogMascot from '../../components/HerlogMascot.vue'
 import HerlogSheet from '../../components/HerlogSheet.vue'
 import { ask } from '../../services/assistantService'
 import type { AssistantMode, AssistantSource, AssistantTopic } from '../../services/assistantService'
@@ -307,9 +308,8 @@ defineExpose({ close })
 .entry-copy { flex:1; min-width:0; }
 .entry-copy h2 { margin:0; font-size:16px; line-height:1.35; }
 .entry-copy p { margin:3px 0 0; color:var(--hr-ink-2); font-size:12px; }
-.agent-mark { display:grid; place-items:center; width:40px; height:40px; flex:none; border:1px solid var(--hr-line); border-radius:13px; color:var(--hr-rose-deep); background:var(--hr-rose-soft); }
-.agent-mark svg { width:22px; height:22px; }
-.agent-mark.small { width:32px; height:32px; border-radius:10px; }
+.agent-mark { display:grid; place-items:center; width:46px; height:46px; flex:none; }
+.agent-mark.small { width:32px; height:32px; border:1px solid var(--hr-line); border-radius:10px; color:var(--hr-rose-deep); background:var(--hr-rose-soft); }
 .agent-mark.small svg { width:18px; height:18px; }
 .entry-action { display:flex; align-items:center; justify-content:space-between; min-height:48px; width:100%; margin-top:10px; padding:5px 6px 5px 13px; border:1px solid var(--hr-line-strong); border-radius:24px; background:var(--hr-surface); color:var(--hr-ink-2); font-size:14px; }
 .entry-arrow { display:grid; place-items:center; width:34px; height:34px; border-radius:50%; background:var(--hr-action-fill); color:white; }
@@ -330,7 +330,7 @@ defineExpose({ close })
 .chat-welcome { padding:16px 14px; border-radius:var(--hr-radius-lg); background:linear-gradient(135deg,var(--hr-rose-soft),var(--hr-peach)); }
 .chat-welcome h3 { margin:2px 0 5px; font:650 26px/1.3 var(--hr-serif); color:var(--hr-ink); }
 .chat-welcome p { max-width:24em; margin:0; color:var(--hr-ink-2); font-size:14px; }
-.chat-art { display:block; width:72px; height:72px; object-fit:contain; }
+.chat-art { margin-bottom:2px; }
 .messages { display:grid; gap:12px; }
 .message { display:flex; gap:7px; align-items:flex-start; }
 .message.user { justify-content:flex-end; }

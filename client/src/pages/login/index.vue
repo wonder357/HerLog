@@ -36,7 +36,7 @@
       <H5Button class="hr-action mode-switch" :disabled="submitting" @click="switchMode">
         {{ mode === 'login' ? '还没有账号？注册' : '已有账号？去登录' }}
       </H5Button>
-      <view class="auth-decoration" aria-hidden="true" />
+      <HerlogMascot class="auth-decoration" pose="cheer" :size="120" />
     </view>
   </view>
 </template>
@@ -47,6 +47,7 @@ import H5Button from '../../components/H5Button'
 import H5Form, { H5Label } from '../../components/H5Form'
 import H5Input from '../../components/H5Input'
 import HerlogHeading from '../../components/HerlogHeading.vue'
+import HerlogMascot from '../../components/HerlogMascot.vue'
 import { useAuthStore } from '../../stores/auth'
 import { ApiRequestError } from '../../services/httpClient'
 
@@ -134,10 +135,9 @@ async function submit() {
 .password-help { margin-bottom: 6px; }
 .mode-switch { justify-self: center; }
 .auth-decoration {
-  height: clamp(88px, 24svh, 210px);
+  justify-self: center;
+  margin-top: 2px;
   pointer-events: none;
-  background: url('/static/home-cosmos.png') center / contain no-repeat;
-  filter: grayscale(1) sepia(1) saturate(1.4) hue-rotate(285deg);
-  opacity: .4;
+  opacity: .95;
 }
 </style>

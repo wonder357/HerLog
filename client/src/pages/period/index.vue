@@ -29,7 +29,7 @@
         <view v-if="heroNote" class="panel-note" :role="overviewError ? 'alert' : undefined">{{ heroNote }}</view>
         <view v-if="phaseLabel" class="panel-note">{{ phaseLabel }}</view>
       </view>
-      <view class="panel-icon"><HerlogIcon name="period" /></view>
+      <view class="panel-figure"><HerlogMascot pose="write" :size="52" alt="" /></view>
       <view class="panel-actions">
         <H5Button v-if="overview" class="primary" @click="recordToday">{{ todayAction }}</H5Button>
         <H5Button v-if="overviewError" class="ghost" @click="loadOverview">重新加载</H5Button>
@@ -181,7 +181,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { onHide, onShow } from '@dcloudio/uni-app'
 import H5Button from '../../components/H5Button'
 import HerlogHeading from '../../components/HerlogHeading.vue'
-import HerlogIcon from '../../components/HerlogIcon.vue'
+import HerlogMascot from '../../components/HerlogMascot.vue'
 import TabBar from '../../components/TabBar.vue'
 import PeriodForm from '../../components/PeriodForm.vue'
 import FeelingForm from '../../components/FeelingForm.vue'
@@ -510,11 +510,10 @@ function removeFeeling(day: string) {
 .cycle-panel h2 { margin: 4px 0 5px; font: 680 clamp(25px, 7vw, 34px)/1.2 var(--hr-serif); }
 .panel-label { font-size: 13px; font-weight: 650; }
 .panel-note { max-width: 35em; color: var(--hr-ink-2); font-size: 13px; line-height: 1.55; }
-.panel-icon {
-  display: grid; place-items: center; width: 46px; height: 46px; color: var(--hr-rose-deep);
+.panel-figure {
+  display: grid; place-items: center; align-self: start; width: 60px; height: 60px;
   border: 1px solid var(--hr-line); border-radius: 50%; background: var(--hr-surface);
 }
-.panel-icon svg { width: 24px; height: 24px; }
 .panel-actions, .day-actions {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 132px), 1fr)); gap: 8px;
 }

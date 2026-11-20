@@ -38,9 +38,11 @@
   background: var(--hr-surface);
   border: 1px solid var(--hr-line); box-shadow: var(--hr-shadow); color: var(--hr-ink);
 }
-.hero-copy { position: relative; z-index: 1; }
+.hero-copy { position: relative; z-index: 1; display: grid; gap: 2px; }
+.hero-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
 .date-line { color: var(--hr-rose-deep); font-family: var(--hr-font); font-size: 15px; }
 .hero-title { margin: 5px 0 7px; font: 650 22px/28px var(--hr-font); }
+.hero-mascot { justify-self: end; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 17px; }
 .photo-examples { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; margin-bottom: 12px; }
 .hero-button { flex: 1 1 120px; width: auto; transition: transform 150ms ease; }

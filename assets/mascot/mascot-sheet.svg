@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1600 1280" width="1600" height="1280">
+  <title>她记 · 小胭 卡通形象设定</title>
+  <rect width="1600" height="1280" fill="#FBF6F3"/>
+
+  <!-- 标题 -->
+  <text x="96" y="150" font-family="SimSun, Songti SC, Source Han Serif SC, Georgia, serif" font-size="54" fill="#2B2229">她记</text>
+  <text x="262" y="150" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="22" fill="#6B5F66">小胭 · 卡通形象设定</text>
+  <text x="1504" y="150" text-anchor="end" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="13" fill="#9A8E93">V1.0 · 2026-11-19</text>
+  <text x="96" y="196" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="15" fill="#6B5F66">一张会替你记住事情的纸。她身上的每一处，都来自产品里已经存在的东西。</text>
+  <line x1="96" y1="232" x2="1504" y2="232" stroke="#EBE0DC" stroke-width="1.5"/>
+
+  <!-- 主形象 -->
+  <ellipse cx="458" cy="712" rx="200" ry="20" fill="#EFE4E0"/>
+  <svg x="100" y="160" width="720" height="720" viewBox="0 0 1024 1024">
+
+  <title id="m-title">她记 · 小胭（主形象）</title>
+  <desc id="m-desc">纸页精灵「小胭」：一张折起一角的粉色记事纸，肩头一支胭脂花，胸前一颗记录心。</desc>
+  <g id="m-rou" stroke-linejoin="round" stroke-linecap="round">
+    <!-- 脚 -->
+    <ellipse cx="430" cy="732" rx="50" ry="28" fill="#F9DEE4" stroke="#4A2331" stroke-width="10"/>
+    <ellipse cx="594" cy="732" rx="50" ry="28" fill="#F9DEE4" stroke="#4A2331" stroke-width="10"/>
+    <!-- 手臂 -->
+    <path d="M 348 566 C 302 580 270 604 256 630" fill="none" stroke="#4A2331" stroke-width="58"/>
+    <path d="M 676 548 C 720 538 752 508 762 478" fill="none" stroke="#4A2331" stroke-width="58"/>
+    <path d="M 348 566 C 302 580 270 604 256 630" fill="none" stroke="#F9DEE4" stroke-width="40"/>
+    <path d="M 676 548 C 720 538 752 508 762 478" fill="none" stroke="#F9DEE4" stroke-width="40"/>
+    <!-- 身体：折起一角的记事纸 -->
+    <path d="M 492 330 H 592 L 702 440 V 640 A 90 90 0 0 1 612 730 H 412 A 90 90 0 0 1 322 640 V 500 A 170 170 0 0 1 492 330 Z" fill="#F9DEE4" stroke="#4A2331" stroke-width="10"/>
+    <path d="M 592 330 L 702 440 L 592 440 Z" fill="#E9A6BA" stroke="#4A2331" stroke-width="10"/>
+    <!-- 肩上胭脂花 -->
+    <g transform="translate(470,350)">
+      <g transform="rotate(-52)"><ellipse cx="0" cy="-44" rx="26" ry="46" fill="#EEA9BD" stroke="#4A2331" stroke-width="10"/></g>
+      <g transform="rotate(26)"><ellipse cx="0" cy="-42" rx="25" ry="44" fill="#EEA9BD" stroke="#4A2331" stroke-width="10"/></g>
+      <g transform="rotate(-12)"><ellipse cx="0" cy="-54" rx="29" ry="54" fill="#F5C8D4" stroke="#4A2331" stroke-width="10"/></g>
+      <circle cx="6" cy="-56" r="11" fill="#B23A55"/>
+    </g>
+    <!-- 胭脂 -->
+    <ellipse cx="396" cy="536" rx="29" ry="17" fill="#EF9FB2"/>
+    <ellipse cx="628" cy="536" rx="27" ry="16" fill="#EF9FB2"/>
+    <!-- 记录心 -->
+    <path d="M 512 700 C 478 678 466 656 466 636 C 466 619 479 610 493 612 C 502 613 509 619 512 626 C 515 619 522 613 531 612 C 545 610 558 619 558 636 C 558 656 546 678 512 700 Z" fill="#C1445E" stroke="#4A2331" stroke-width="9"/>
+    <!-- 眼 -->
+    <ellipse cx="452" cy="498" rx="15" ry="19" fill="#3B1B28"/>
+    <ellipse cx="572" cy="498" rx="15" ry="19" fill="#3B1B28"/>
+    <circle cx="457" cy="490" r="5" fill="#FFF7F5"/>
+    <circle cx="577" cy="490" r="5" fill="#FFF7F5"/>
+    <!-- 嘴 -->
+    <path d="M 494 546 Q 512 568 530 546" fill="none" stroke="#3B1B28" stroke-width="9"/>
+  </g>
+
+  </svg>
+  <text x="458" y="800" text-anchor="middle" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="15" fill="#6B5F66">小胭 · 主形象</text>
+
+  <!-- 右侧说明 -->
+  <line x1="820" y1="290" x2="820" y2="800" stroke="#EBE0DC" stroke-width="1.5"/>
+
+  <text x="884" y="318" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="13" fill="#9A8E93">构成</text>
+
+    <circle cx="884" cy="367" r="4" fill="#B23A55"/>
+    <text x="912" y="372" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="16" fill="#2B2229">折角：一张被翻过、被记过的纸</text>
+    <circle cx="884" cy="419" r="4" fill="#B23A55"/>
+    <text x="912" y="424" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="16" fill="#2B2229">胭脂花：身体与周期，长在肩上</text>
+    <circle cx="884" cy="471" r="4" fill="#B23A55"/>
+    <text x="912" y="476" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="16" fill="#2B2229">记录心：今天记下的那一条</text>
+    <circle cx="884" cy="523" r="4" fill="#B23A55"/>
+    <text x="912" y="528" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="16" fill="#2B2229">10px 墨线 + 全圆头：纸与墨的手感</text>
+
+  <text x="884" y="594" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="13" fill="#9A8E93">色板</text>
+
+    <rect x="900" y="626" width="96" height="96" rx="20" fill="#FBF6F3" stroke="#EBE0DC" stroke-width="1.5"/>
+    <text x="900" y="748" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="13" fill="#6B5F66">纸底</text>
+    <text x="900" y="768" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="12" fill="#9A8E93">paper</text>
+    <rect x="1022" y="626" width="96" height="96" rx="20" fill="#F9DEE4" stroke="#EBE0DC" stroke-width="1.5"/>
+    <text x="1022" y="748" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="13" fill="#6B5F66">纸粉 · 主体</text>
+    <text x="1022" y="768" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="12" fill="#9A8E93">body</text>
+    <rect x="1144" y="626" width="96" height="96" rx="20" fill="#F5C8D4" stroke="#EBE0DC" stroke-width="1.5"/>
+    <text x="1144" y="748" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="13" fill="#6B5F66">胭脂花</text>
+    <text x="1144" y="768" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="12" fill="#9A8E93">petal</text>
+    <rect x="1266" y="626" width="96" height="96" rx="20" fill="#B23A55" stroke="#EBE0DC" stroke-width="1.5"/>
+    <text x="1266" y="748" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="13" fill="#6B5F66">胭脂 · 主色</text>
+    <text x="1266" y="768" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="12" fill="#9A8E93">rouge</text>
+    <rect x="1388" y="626" width="96" height="96" rx="20" fill="#4A2331" stroke="#EBE0DC" stroke-width="1.5"/>
+    <text x="1388" y="748" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="13" fill="#6B5F66">墨 · 轮廓</text>
+    <text x="1388" y="768" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="12" fill="#9A8E93">ink</text>
+  <text x="900" y="812" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="12" fill="#9A8E93">色值沿用《前端样式设计规范 V1.0》第 3.1 节，不引入高饱和粉紫与玻璃球高光。</text>
+
+  <!-- 表情 -->
+  <line x1="96" y1="856" x2="1504" y2="856" stroke="#EBE0DC" stroke-width="1.5"/>
+  <text x="96" y="902" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="13" fill="#9A8E93">表情 · 平常 / 记好了 / 关心 / 睡觉</text>
+  <svg x="96" y="918" width="1408" height="352" viewBox="0 0 2048 512">
+
+  <title>她记 · 小胭 表情组</title>
+  <defs>
+    <g id="p-base" stroke-linejoin="round" stroke-linecap="round">
+      <ellipse cx="430" cy="732" rx="50" ry="28" fill="#F9DEE4" stroke="#4A2331" stroke-width="10"/>
+      <ellipse cx="594" cy="732" rx="50" ry="28" fill="#F9DEE4" stroke="#4A2331" stroke-width="10"/>
+      <path d="M 348 566 C 302 580 270 604 256 630" fill="none" stroke="#4A2331" stroke-width="58"/>
+      <path d="M 676 548 C 720 538 752 508 762 478" fill="none" stroke="#4A2331" stroke-width="58"/>
+      <path d="M 348 566 C 302 580 270 604 256 630" fill="none" stroke="#F9DEE4" stroke-width="40"/>
+      <path d="M 676 548 C 720 538 752 508 762 478" fill="none" stroke="#F9DEE4" stroke-width="40"/>
+      <path d="M 492 330 H 592 L 702 440 V 640 A 90 90 0 0 1 612 730 H 412 A 90 90 0 0 1 322 640 V 500 A 170 170 0 0 1 492 330 Z" fill="#F9DEE4" stroke="#4A2331" stroke-width="10"/>
+      <path d="M 592 330 L 702 440 L 592 440 Z" fill="#E9A6BA" stroke="#4A2331" stroke-width="10"/>
+      <g transform="translate(470,350)">
+        <g transform="rotate(-52)"><ellipse cx="0" cy="-44" rx="26" ry="46" fill="#EEA9BD" stroke="#4A2331" stroke-width="10"/></g>
+        <g transform="rotate(26)"><ellipse cx="0" cy="-42" rx="25" ry="44" fill="#EEA9BD" stroke="#4A2331" stroke-width="10"/></g>
+        <g transform="rotate(-12)"><ellipse cx="0" cy="-54" rx="29" ry="54" fill="#F5C8D4" stroke="#4A2331" stroke-width="10"/></g>
+        <circle cx="6" cy="-56" r="11" fill="#B23A55"/>
+      </g>
+      <ellipse cx="396" cy="536" rx="29" ry="17" fill="#EF9FB2"/>
+      <ellipse cx="628" cy="536" rx="27" ry="16" fill="#EF9FB2"/>
+      <path d="M 512 700 C 478 678 466 656 466 636 C 466 619 479 610 493 612 C 502 613 509 619 512 626 C 515 619 522 613 531 612 C 545 610 558 619 558 636 C 558 656 546 678 512 700 Z" fill="#C1445E" stroke="#4A2331" stroke-width="9"/>
+    </g>
+    <path id="p-star" d="M 0 -22 L 5.5 -5.5 L 22 0 L 5.5 5.5 L 0 22 L -5.5 5.5 L -22 0 L -5.5 -5.5 Z"/>
+  </defs>
+
+  <!-- 1 平常 · 开心 -->
+  <g transform="translate(256,270) scale(0.54) translate(-512,-520)" stroke-linejoin="round" stroke-linecap="round">
+    <use xlink:href="#p-base"/>
+    <ellipse cx="452" cy="498" rx="15" ry="19" fill="#3B1B28"/>
+    <ellipse cx="572" cy="498" rx="15" ry="19" fill="#3B1B28"/>
+    <circle cx="457" cy="490" r="5" fill="#FFF7F5"/>
+    <circle cx="577" cy="490" r="5" fill="#FFF7F5"/>
+    <path d="M 494 546 Q 512 568 530 546" fill="none" stroke="#3B1B28" stroke-width="9"/>
+  </g>
+
+  <!-- 2 记好了 · 笑眼 + 星芒 -->
+  <g transform="translate(768,270) scale(0.54) translate(-512,-520)" stroke-linejoin="round" stroke-linecap="round">
+    <use xlink:href="#p-base"/>
+    <path d="M 436 506 Q 452 484 468 506" fill="none" stroke="#3B1B28" stroke-width="11"/>
+    <path d="M 556 506 Q 572 484 588 506" fill="none" stroke="#3B1B28" stroke-width="11"/>
+    <path d="M 492 542 Q 512 576 532 542 Z" fill="#3B1B28"/>
+    <g fill="#D9738C">
+      <use xlink:href="#p-star" transform="translate(752,438)"/>
+      <use xlink:href="#p-star" transform="translate(288,478) scale(0.62)"/>
+    </g>
+  </g>
+
+  <!-- 3 关心 · 眉心上扬 -->
+  <g transform="translate(1280,270) scale(0.54) translate(-512,-520)" stroke-linejoin="round" stroke-linecap="round">
+    <use xlink:href="#p-base"/>
+    <ellipse cx="452" cy="502" rx="15" ry="18" fill="#3B1B28"/>
+    <ellipse cx="572" cy="502" rx="15" ry="18" fill="#3B1B28"/>
+    <circle cx="457" cy="495" r="5" fill="#FFF7F5"/>
+    <circle cx="577" cy="495" r="5" fill="#FFF7F5"/>
+    <path d="M 440 470 L 466 464" fill="none" stroke="#4A2331" stroke-width="8"/>
+    <path d="M 584 470 L 558 464" fill="none" stroke="#4A2331" stroke-width="8"/>
+    <path d="M 502 552 Q 512 560 522 552" fill="none" stroke="#3B1B28" stroke-width="9"/>
+    <path d="M 780 436 C 766 426 754 440 760 454 C 766 468 780 476 780 476 C 780 476 794 468 800 454 C 806 440 794 426 780 436 Z" fill="#D9738C" stroke="#4A2331" stroke-width="7"/>
+  </g>
+
+  <!-- 4 睡觉 -->
+  <g transform="translate(1792,270) scale(0.54) translate(-512,-520)" stroke-linejoin="round" stroke-linecap="round">
+    <g transform="rotate(-5 512 540)">
+      <use xlink:href="#p-base"/>
+      <path d="M 438 496 Q 452 512 466 496" fill="none" stroke="#3B1B28" stroke-width="11"/>
+      <path d="M 558 496 Q 572 512 586 496" fill="none" stroke="#3B1B28" stroke-width="11"/>
+      <circle cx="512" cy="556" r="9" fill="none" stroke="#3B1B28" stroke-width="9"/>
+    </g>
+    <path d="M 690 424 H 726 L 690 462 H 726" fill="none" stroke="#6B5F66" stroke-width="9"/>
+    <path d="M 748 352 H 774 L 748 380 H 774" fill="none" stroke="#9A8E93" stroke-width="8"/>
+  </g>
+
+  </svg>
+  <text x="96" y="1252" font-family="Microsoft YaHei, PingFang SC, Helvetica, sans-serif" font-size="12" fill="#9A8E93">轮廓 10 · 圆头圆角 · 主体 #F9DEE4 · 胭脂 #B23A55 · 墨 #4A2331 · 画布 1024 × 1024</text>
+</svg>

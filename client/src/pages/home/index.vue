@@ -4,7 +4,6 @@
     <div v-show="!captureVisible">
       <HerlogHeading class="home-heading" :title="auth.username ? '你好，' + auth.username : '你好'" :eyebrow="dateLabel">
         <template #actions>
-          <img class="welcome-art" src="/static/home-cosmos.png" alt="" />
           <H5Button class="cycle-status" @click="go('period')">
             <span class="phase-ring" :class="{ known: statusBasis === '已记录', estimated: statusBasis === '日期估算' }" aria-hidden="true">
               <HerlogIcon name="period" />
@@ -335,7 +334,6 @@ onShow(() => {
 .home-heading :deep(.hr-heading-title) {
   display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;
 }
-.welcome-art { width:40px; height:40px; object-fit:contain; }
 .cycle-status { flex-shrink:0; min-height:49px; display:flex; align-items:center; gap:7px; text-align:left; border:0; background:transparent; padding:2px 0; color:var(--hr-ink); }
 .cycle-status strong,.cycle-status small { display:block; }
 .cycle-status strong { font-size:13px; }

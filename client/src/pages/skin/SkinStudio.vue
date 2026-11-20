@@ -12,7 +12,10 @@
       <view class="today-hero">
         <img class="photo-examples" src="/static/skin-photo-guide.png" alt="拍照示例：正面自然表情与微笑侧倾" />
         <view class="hero-copy">
-          <view class="date-line">{{ formatDayLabel(today) }}</view>
+          <view class="hero-top">
+            <view class="date-line">{{ formatDayLabel(today) }}</view>
+            <HerlogMascot class="hero-mascot" pose="care" :size="64" alt="" />
+          </view>
           <view class="hero-title">今天，皮肤感觉怎样？</view>
           <view class="hero-actions">
             <SkinButton class="primary hero-button" @click="emit('capture')"><HerlogIcon name="camera" />拍照记录</SkinButton>
@@ -58,7 +61,9 @@
         </view>
         <view v-else-if="photoLoading" class="studio-muted" role="status">正在读取照片观察…</view>
         <view v-else-if="photoError" class="studio-muted" role="alert">照片观察没有加载成功。<SkinButton class="studio-text" @click="emit('refresh-photo')">重试</SkinButton></view>
-        <view v-else class="studio-muted">保存一次照片观察后，可以在这里回看。</view>
+        <view v-else class="studio-muted">
+          <text>保存一次照片观察后，可以在这里回看。</text>
+        </view>
       </view>
     </template>
 
@@ -242,6 +247,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import SkinButton from '../../components/H5Button'
 import HerlogHeading from '../../components/HerlogHeading.vue'
 import HerlogIcon from '../../components/HerlogIcon.vue'
+import HerlogMascot from '../../components/HerlogMascot.vue'
 import HerlogSheet from '../../components/HerlogSheet.vue'
 import guideSource from './skin-care-guide.md?raw'
 import ObservationCopy from './ObservationCopy.vue'

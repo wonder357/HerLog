@@ -12,10 +12,16 @@
       </view>
       <template v-if="section === 'overview'">
         <view class="weight-hero">
-          <view class="weight-eyebrow">最近一次测量</view>
-          <view v-if="summary?.latest_grams != null" class="weight-value">{{ formatKg(summary.latest_grams) }} <text>kg</text></view>
-          <view v-else class="weight-value empty">{{ loading ? '正在读取…' : '开始记录体重' }}</view>
-          <view v-if="summary?.latest_measured_at" class="weight-muted">{{ formatMoment(summary.latest_measured_at) }} 测量</view>
+          <view class="hero-main">
+            <view class="weight-eyebrow">最近一次测量</view>
+            <view v-if="summary?.latest_grams != null" class="weight-value">{{ formatKg(summary.latest_grams) }} <text>kg</text></view>
+            <view v-else class="weight-empty">
+              <HerlogMascot v-if="!loading" pose="sleep" :size="64" alt="" />
+              <view class="weight-value empty">{{ loading ? '正在读取…' : '开始记录体重' }}</view>
+            </view>
+            <view v-if="summary?.latest_measured_at" class="weight-muted">{{ formatMoment(summary.latest_measured_at) }} 测量</view>
+          </view>
+          <HerlogMascot v-if="summary?.latest_grams != null && !loading" class="hero-mascot" pose="idle" :size="86" alt="" />
           <view class="weight-actions">
             <H5Button class="primary" @click="formVisible = true">记体重</H5Button>
           </view>
@@ -43,7 +49,7 @@
           <H5Button class="weight-secondary" @click="showCycle = !showCycle; load()">{{ showCycle ? '关闭周期背景' : '显示周期背景' }}</H5Button>
           <template v-if="showCycle && summary?.cycle_context">
             <view class="weight-muted">阶段按记录估算，仅供回看，不用于诊断或避孕。</view>
-            <scroll-view scroll-x class="weight-cycle">
+            <scroll-view scroll-x :show-scrollbar="false" class="weight-cycle hr-rail">
               <view class="cycle-row">
                 <H5Button v-for="item in summary.cycle_context" :key="item.day" class="cycle-day"
                  :class="[item.phase, { chosen: activeDay === item.day }]" @click="activeDay = item.day">{{ Number(item.day.slice(-2)) }}</H5Button>
@@ -89,6 +95,7 @@
 <script setup lang="ts">
 import H5Button from '../../components/H5Button'
 import HerlogHeading from '../../components/HerlogHeading.vue'
+import HerlogMascot from '../../components/HerlogMascot.vue'
 import { computed, ref, watch } from 'vue'
 import { onHide, onShow } from '@dcloudio/uni-app'
 import TabBar from '../../components/TabBar.vue'
@@ -223,18 +230,21 @@ onHide(() => { formVisible.value = false; pageVisible.value = false; shareRefere
 .weight-tab.chosen,.weight-range.chosen { background: var(--hr-rose-soft); color: var(--hr-rose-deep); font-weight: 650; }
 .weight-range { padding-inline: 10px; }
 .weight-hero {
-  display: grid; gap: 5px; padding: 16px;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 5px 8px; padding: 16px;
   border: 1px solid var(--hr-line); border-radius: var(--hr-radius); background: linear-gradient(150deg, #fff7f6, var(--hr-rose-soft)); box-shadow: var(--hr-shadow);
 }
+.hero-main { display: grid; gap: 5px; min-width: 0; }
+.hero-mascot { margin-top: -3px; justify-self: end; }
 .weight-eyebrow { color: var(--hr-ink-2); font-size: 14px; }
 .weight-value { font: 44px/46px var(--hr-font); font-variant-numeric: tabular-nums; color: var(--hr-ink); }
 .weight-value text { font: 16px var(--hr-font); color: var(--hr-ink-2); }
 .weight-value.empty { font: 650 22px/1.35 var(--hr-font); }
+.weight-empty { display: flex; align-items: center; gap: 10px; min-height: 62px; }
 .weight-muted { color: var(--hr-ink-2); font-size: 13px; line-height: 1.6; }
-.weight-actions { margin-top: 8px; }
+.weight-actions { grid-column: 1 / -1; margin-top: 8px; }
 .weight-secondary { justify-self: start; flex-shrink: 0; }
 .weight-panel {
-  display: grid; gap: 10px; padding: 16px; min-width: 0;
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 16px; min-width: 0;
   border: 1px solid var(--hr-line); border-radius: var(--hr-radius); background: var(--hr-surface);
 }
 .weight-header { justify-content: space-between; flex-wrap: wrap; }
@@ -248,7 +258,7 @@ onHide(() => { formVisible.value = false; pageVisible.value = false; shareRefere
 .weight-stats text,.weight-stats uni-text { font-size: 12px; color: var(--hr-ink-2); }
 .weight-stats strong { color: var(--hr-rose-deep); font: 20px var(--hr-font); overflow-wrap: anywhere; }
 .compare-columns > view,.compare-columns > uni-view { padding: 9px; border-radius: 10px; background: var(--hr-paper); font-size: 13px; }
-.cycle-row { display: flex; gap: 4px; width: max-content; }
+.cycle-row { display: flex; gap: 4px; width: max-content; padding-right: 26px; }
 .cycle-day { min-width: 44px; min-height: 44px; padding: 7px 10px; }
 .cycle-day.menstrual { background: var(--hr-rose-soft); }
 .cycle-day.follicular { background: var(--hr-follicular); }

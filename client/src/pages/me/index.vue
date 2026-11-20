@@ -16,7 +16,10 @@
     </section>
 
     <section class="card bmi-card" aria-labelledby="bmi-title">
-      <h2 id="bmi-title" class="hr-section-title">BMI 摘要</h2>
+      <view class="bmi-head">
+        <h2 id="bmi-title" class="hr-section-title">BMI 摘要</h2>
+        <HerlogMascot class="bmi-mascot" pose="done" :size="64" alt="" />
+      </view>
       <p v-if="summaryLoading" class="muted" role="status">正在读取摘要…</p>
       <div v-else-if="summaryError" class="inline-state" role="alert">
         <span>暂时无法读取摘要。</span><H5Button class="hr-action" @click="loadSummary">重试</H5Button>
@@ -155,6 +158,7 @@ import H5Form, { H5Label } from '../../components/H5Form'
 import H5Input from '../../components/H5Input'
 import HerlogHeading from '../../components/HerlogHeading.vue'
 import HerlogIcon from '../../components/HerlogIcon.vue'
+import HerlogMascot from '../../components/HerlogMascot.vue'
 import HerlogSheet from '../../components/HerlogSheet.vue'
 import TabBar from '../../components/TabBar.vue'
 import WeightForm from '../../components/WeightForm.vue'
@@ -470,6 +474,8 @@ onShow(() => {
 .identity-copy span { color:var(--hr-ink-2); font-size:13px; }
 .identity .hr-action { flex-shrink:0; padding-inline:0; }
 .bmi-card { background:linear-gradient(130deg,var(--hr-rose-soft),var(--hr-peach)); }
+.bmi-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.bmi-mascot { flex:none; }
 .profile-page h2 { margin:0 0 6px; }
 .bmi-value { display:block; margin:6px 0; color:var(--hr-ink); font:35px/1 var(--hr-serif); font-variant-numeric:tabular-nums; }
 .bmi-card .muted { margin:5px 0; }
