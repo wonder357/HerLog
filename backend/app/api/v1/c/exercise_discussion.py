@@ -1,0 +1,79 @@
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
+
+from app.api.deps import get_current_user
+from app.core.config import settings
+from app.core.errors import not_found
+from app.db.session import get_session
+from app.schemas.common import ApiResponse
+from app.schemas.discussion import Category, DiscussionPostIn, DiscussionReplyIn
+from app.schemas.wellness import ModerationIn, ReportIn
+from app.services import exercise_discussion as discussion
+from app.services.auth_service import CurrentUser
+
+router = APIRouter(prefix="/herlog/exercise/discussion", tags=["exercise discussion"])
+Db = Annotated[Session, Depends(get_session)]
+User = Annotated[CurrentUser, Depends(get_current_user)]
+Cursor = Annotated[int | None, Query(ge=1)]
+
+
+@router.get("/posts")
+def posts(db: Db, user: User, category: Category | None = None, cursor: Cursor = None):
+    return ApiResponse(data=discussion.list_posts(db, user.customer_id, category, cursor))
+
+
+@router.post("/posts")
+def post(payload: DiscussionPostIn, db: Db, user: User):
+    return ApiResponse(data=discussion.publish(db, user.customer_id, payload))
+
+
+@router.delete("/posts/{post_id}")
+def withdraw(post_id: str, db: Db, user: User):
+    discussion.remove_post(db, user.customer_id, post_id)
+    return ApiResponse(data=None)
+
+
+@router.post("/posts/{post_id}/reports")
+def report(post_id: str, payload: ReportIn, db: Db, user: User):
+    discussion.report_post(db, user.customer_id, post_id, payload.reason_code)
+    return ApiResponse(data=None)
+
+
+@router.get("/posts/{post_id}/replies")
+def replies(post_id: str, db: Db, user: User, cursor: Cursor = None):
+    return ApiResponse(data=discussion.list_replies(db, user.customer_id, post_id, cursor))
+
+
+@router.post("/posts/{post_id}/replies")
+def reply(post_id: str, payload: DiscussionReplyIn, db: Db, user: User):
+    return ApiResponse(data=discussion.reply(db, user.customer_id, post_id, payload))
+
+
+@router.delete("/posts/{post_id}/replies/{reply_id}")
+def withdraw_reply(post_id: str, reply_id: str, db: Db, user: User):
+    discussion.remove_reply(db, user.customer_id, post_id, reply_id)
+    return ApiResponse(data=None)
+
+
+@router.post("/posts/{post_id}/replies/{reply_id}/reports")
+def report_reply(post_id: str, reply_id: str, payload: ReportIn, db: Db, user: User):
+    discussion.report_reply(db, user.customer_id, post_id, reply_id, payload.reason_code)
+    return ApiResponse(data=None)
+
+
+@router.get("/moderation/reply-reports")
+def reply_reports(db: Db, user: User):
+    if user.customer_id != settings.HERLOG_GROUP_MODERATOR_ID:
+        raise not_found()
+    return ApiResponse(data=discussion.reported_replies(db))
+
+
+@router.put("/posts/{post_id}/replies/{reply_id}/moderation")
+def moderate_reply(post_id: str, reply_id: str, payload: ModerationIn, db: Db, user: User):
+    if user.customer_id != settings.HERLOG_GROUP_MODERATOR_ID:
+        raise not_found()
+    if payload.action == "hide":
+        discussion.hide_reply(db, post_id, reply_id)
+    return ApiResponse(data=None)

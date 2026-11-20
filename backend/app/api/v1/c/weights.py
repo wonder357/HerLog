@@ -2,14 +2,15 @@ from __future__ import annotations
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.db.session import get_session
 from app.schemas.common import ApiResponse
-from app.schemas.herlog import WeightIn, WeightListOut, WeightOut, WeightSummaryOut
-from app.services import weight_service
+from app.schemas.herlog import WeightIn, WeightListOut, WeightOut, WeightSummaryOut, weight_out
+from app.models.private_photo import WeightPhoto
+from app.services import private_photo, weight_service
 from app.services.auth_service import CurrentUser
 
 router = APIRouter(prefix="/herlog/weights", tags=["herlog"])
@@ -35,10 +36,11 @@ def list_weights(
 @router.get("/summary", response_model=ApiResponse[WeightSummaryOut])
 def weight_summary(
     days: int = Query(default=30, description="只支持 7 或 30"),
+    include_cycle: bool = False,
     session: Session = Depends(get_session),
     user: CurrentUser = Depends(get_current_user),
 ) -> ApiResponse[WeightSummaryOut]:
-    return ApiResponse(data=weight_service.summary(session, user.customer_id, days))
+    return ApiResponse(data=weight_service.summary(session, user.customer_id, days, include_cycle))
 
 
 @router.post("", response_model=ApiResponse[WeightOut])
@@ -59,6 +61,26 @@ def update_weight(
     user: CurrentUser = Depends(get_current_user),
 ) -> ApiResponse[WeightOut]:
     return ApiResponse(data=weight_service.update_weight(session, user.customer_id, weight_id, payload))
+
+
+@router.get("/{weight_id}", response_model=ApiResponse[WeightOut])
+def get_weight(
+    weight_id: int,
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+) -> ApiResponse[WeightOut]:
+    row = weight_service.owned_weight(session, user.customer_id, weight_id)
+    return ApiResponse(data=weight_out(row, private_photo.digest_for(session, WeightPhoto, row.id) is not None))
+
+
+@router.get("/{weight_id}/photo", response_class=Response)
+def get_weight_photo(
+    weight_id: int,
+    session: Session = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+) -> Response:
+    row = weight_service.owned_weight(session, user.customer_id, weight_id)
+    return private_photo.image_response(session, WeightPhoto, row.id)
 
 
 @router.delete("/{weight_id}", response_model=ApiResponse[None])

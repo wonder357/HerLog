@@ -1,19 +1,21 @@
 import { defineStore } from 'pinia'
 import { fetchMe, login as loginApi, logout as logoutApi, register as registerApi } from '../services/authService'
-import { clearSession, getMember, getToken, saveSession, touchMember } from '../services/httpClient'
+import { clearPrivateCache, clearSession, currentEpoch, getMember, getToken, saveSession, touchMember } from '../services/httpClient'
 import type { LoginResult, MemberInfo } from '../services/types'
 
 interface AuthState {
   token: string
   member: MemberInfo | null
   restoring: boolean
+  privateCacheRevision: number
 }
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     token: getToken(),
     member: getMember(),
-    restoring: false
+    restoring: false,
+    privateCacheRevision: 0
   }),
   getters: {
     isLoggedIn: (state) => Boolean(state.token),
@@ -60,14 +62,22 @@ export const useAuthStore = defineStore('auth', {
       return registerApi(username, password)
     },
     async logout() {
+      const epoch = currentEpoch()
       try {
         await logoutApi()
       } catch {
         // 退出以本地清除为准，网络失败不阻塞回到登录页。
       }
+      if (epoch === currentEpoch()) this.endLocalSession()
+    },
+    endLocalSession() {
       clearSession()
       this.token = ''
       this.member = null
+    },
+    resetPrivateCache() {
+      clearPrivateCache()
+      this.privateCacheRevision += 1
     }
   }
 })

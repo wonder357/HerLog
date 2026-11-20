@@ -39,8 +39,21 @@ class Settings(BaseSettings):
     HERLOG_MODEL_BASE_URL: str = "https://api.deepseek.com"
     HERLOG_MODEL_ID: str = "deepseek-flash"
     HERLOG_MODEL_API_KEY: str = ""
+    HERLOG_ASSISTANT_MODEL_MODE: Literal["fixture", "live"] | None = None
+    HERLOG_SKIN_MODEL_MODE: Literal["fixture", "live"] | None = None
+    HERLOG_SKIN_MODEL_API_KEY: str = ""
+    HERLOG_GROUP_INVITE_CODE: str = ""
+    HERLOG_GROUP_MODERATOR_ID: str = ""
     HERLOG_MODEL_TIMEOUT_SECONDS: float = 60.0
     HERLOG_PROMPT_VERSION: str = "v1"
+
+    @property
+    def skin_model_mode(self) -> Literal["fixture", "live"]:
+        return self.HERLOG_SKIN_MODEL_MODE or self.HERLOG_MODEL_MODE
+
+    @property
+    def assistant_model_mode(self) -> Literal["fixture", "live"]:
+        return self.HERLOG_ASSISTANT_MODEL_MODE or self.HERLOG_MODEL_MODE
 
     @property
     def database_url(self) -> str:

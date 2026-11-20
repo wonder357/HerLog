@@ -81,6 +81,11 @@ def predict_next_start(starts: Sequence[date], today: date) -> Prediction:
     )
 
 
+def ovulatory_window(next_start: date) -> tuple[date, date]:
+    """日期估算使用的阶段区间，供周期上下文与月历共用。"""
+    return next_start - timedelta(days=16), next_start - timedelta(days=12)
+
+
 def duration_days(start_day: date, end_day: date | None) -> int | None:
     """持续天数包含开始日和最后一天。"""
 

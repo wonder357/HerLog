@@ -6,11 +6,14 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from app.schemas.private_photo import PrivatePhotoIn
+
 SITES = ("面部", "额头", "下巴", "脸颊", "颈部", "背部", "胸口", "手臂", "其他")
 SKIN_MIME_TYPES = ("image/jpeg", "image/png")
 FLOWS = ("少量", "中等", "较多")
 SYMPTOMS = ("腹痛", "腹胀", "头痛", "疲惫", "情绪变化", "腰酸", "恶心", "乳房胀痛")
 IMPACTS = ("无影响", "轻微影响", "影响日常", "影响睡眠")
+Mood = Literal["轻松", "平静", "烦躁", "低落", "紧张"]
 
 
 def _as_utc_iso(moment: datetime) -> str:
@@ -30,12 +33,14 @@ class ProfileOut(BaseModel):
     birthday: date | None = None
     height_cm: Decimal | None = None
     contact_phone: str | None = None
+    has_avatar: bool = False
 
 
 class ProfileUpdate(BaseModel):
     birthday: date | None = None
-    height_cm: Decimal | None = None
+    height_cm: Decimal | None = Field(default=None, decimal_places=2)
     contact_phone: str | None = Field(default=None, max_length=32)
+    avatar: PrivatePhotoIn | None = None
 
     @field_validator("height_cm")
     @classmethod
@@ -87,6 +92,7 @@ class PeriodOut(BaseModel):
 
 class FeelingIn(BaseModel):
     flow: str | None = None
+    mood: Mood | None = None
     symptoms: list[str] = Field(default_factory=list, max_length=8)
     impact: str | None = None
     note: str | None = Field(default=None, max_length=500)
@@ -127,17 +133,17 @@ class FeelingIn(BaseModel):
             return None
         return value.strip() or None
 
-    @property
-    def is_empty(self) -> bool:
-        return not self.flow and not self.symptoms and not self.impact and not self.note
-
 
 class FeelingOut(BaseModel):
     day: date
     flow: str | None = None
+    mood: Mood | None = None
     symptoms: list[str] = Field(default_factory=list)
     impact: str | None = None
     note: str | None = None
+
+
+WeightFeeling = Literal["bloating", "puffy", "tired", "comfortable"]
 
 
 class WeightIn(BaseModel):
@@ -146,6 +152,8 @@ class WeightIn(BaseModel):
     measured_at: datetime
     tag: str | None = Field(default=None, max_length=32)
     note: str | None = Field(default=None, max_length=500)
+    feeling_tags: list[WeightFeeling] | None = Field(default=None, max_length=3)
+    photo: PrivatePhotoIn | None = None
 
     @field_validator("measured_at")
     @classmethod
@@ -181,6 +189,10 @@ class WeightOut(BaseModel):
     measured_at: str
     tag: str | None = None
     note: str | None = None
+    feeling_tags: list[WeightFeeling] = Field(default_factory=list)
+    source: Literal["manual", "scale"] = "manual"
+    device_id: int | None = None
+    has_photo: bool = False
 
 
 class WeightPointOut(BaseModel):
@@ -189,6 +201,21 @@ class WeightPointOut(BaseModel):
     kg: float
     weight_id: int
     measured_at: str
+
+
+class MetricSlot(BaseModel):
+    value: float | None = None
+    unit: str
+    status: Literal["available", "missing_height", "not_connected", "no_data", "unsupported"]
+    source: str | None = None
+    measured_at: str | None = None
+
+
+class CycleDayOut(BaseModel):
+    day: date
+    phase: Literal["menstrual", "follicular", "ovulatory", "luteal", "unknown"]
+    basis: Literal["recorded", "estimated", "unknown"]
+    note: str | None = None
 
 
 class WeightSummaryOut(BaseModel):
@@ -201,6 +228,10 @@ class WeightSummaryOut(BaseModel):
     delta_grams: int | None = None
     delta_kg: float | None = None
     suggestion: str | None = None
+    latest_record_id: int | None = None
+    record_days: int = 0
+    metrics: dict[str, MetricSlot] = Field(default_factory=dict)
+    cycle_context: list[CycleDayOut] | None = None
 
 
 class WeightListOut(BaseModel):
@@ -246,6 +277,7 @@ class SkinAnalysisOut(BaseModel):
     model_id: str
     prompt_version: str
     demo_sample: bool = False
+    inference_ms: int | None = None
 
 
 class SkinSaveIn(BaseModel):
@@ -263,6 +295,8 @@ class SkinObservationOut(BaseModel):
     model_id: str
     prompt_version: str
     has_image: bool = True
+    quality: SkinQualityOut | None = None
+    demo_sample: bool = False
 
 
 class SkinSummaryOut(BaseModel):
@@ -270,10 +304,15 @@ class SkinSummaryOut(BaseModel):
     site: str
     captured_at: str
     visible: str
+    demo_sample: bool = False
+
+
+AssistantTopic = Literal["weight", "period", "skin"]
 
 
 class AssistantQueryIn(BaseModel):
     question: str = Field(min_length=1, max_length=500)
+    follow_up_topic: AssistantTopic | None = None
 
     @field_validator("question")
     @classmethod
@@ -282,6 +321,16 @@ class AssistantQueryIn(BaseModel):
         if not stripped:
             raise ValueError("问题不能为空")
         return stripped
+
+
+class AssistantExchange(BaseModel):
+    question: str = Field(min_length=1, max_length=500)
+    answer: str = Field(min_length=1, max_length=4000)
+
+
+class AssistantStreamIn(AssistantQueryIn):
+    mode: Literal["general", "records"]
+    history: list[AssistantExchange] = Field(default_factory=list, max_length=3)
 
 
 class RecordRef(BaseModel):
@@ -300,13 +349,13 @@ class AssistantRange(BaseModel):
 
 class AssistantAnswerOut(BaseModel):
     answer: str
-    domain: Literal["weight", "period", "skin", "record_help", "unsupported"]
+    domain: Literal["weight", "period", "skin", "record_help", "unsupported", "general"]
     range: AssistantRange
     record_refs: list[RecordRef] = Field(default_factory=list)
     model_id: str | None = None
 
 
-def weight_out(row: Any) -> WeightOut:
+def weight_out(row: Any, has_photo: bool = False) -> WeightOut:
     return WeightOut(
         id=row.id,
         client_key=row.client_key,
@@ -315,4 +364,8 @@ def weight_out(row: Any) -> WeightOut:
         measured_at=_as_utc_iso(row.measured_at),
         tag=row.tag,
         note=row.note,
+        feeling_tags=row.feeling_tags or [],
+        source=row.source,
+        device_id=row.device_id,
+        has_photo=has_photo,
     )

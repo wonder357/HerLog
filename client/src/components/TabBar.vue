@@ -1,100 +1,81 @@
 <template>
-  <view class="tabbar">
-    <view
-      v-for="item in items"
-      :key="item.path"
-      class="tab"
-      :class="{ on: item.path === current }"
-      @tap="go(item)"
-    >
-      <view class="tab-ic" :class="{ on: item.path === current }">
-        <image class="tab-img" :src="iconSrc(item)" mode="aspectFit" />
-      </view>
-      <text class="tab-label">{{ item.label }}</text>
-    </view>
-  </view>
+  <nav class="tabbar" aria-label="主导航">
+    <H5Button v-for="item in items" :key="item.path" class="tab"
+      :class="{ active: item.path === current }" :aria-current="item.path === current ? 'page' : undefined"
+      @click="go(item.path)">
+      <span class="tab-symbol"><HerlogIcon :name="item.icon" :active="item.path === current" class="icon" /></span>
+      <span class="label">{{ item.label }}</span>
+    </H5Button>
+  </nav>
 </template>
 
+<script lang="ts">
+let switchingTab = false
+</script>
+
 <script setup lang="ts">
-interface TabItem {
-  path: string
-  label: string
-  icon: string
-}
+import H5Button from './H5Button'
+import HerlogIcon from './HerlogIcon.vue'
 
 const props = defineProps<{ current: string }>()
-
-// 五个一级页共用一份配置，路径变化只改这里。
-// 图标取自「图标套-豆包改版/icons」：未选中线性 / 选中实心，同一套 27×27。
-const items: TabItem[] = [
+const items = [
   { path: '/pages/home/index', label: '首页', icon: 'home' },
   { path: '/pages/period/index', label: '经期', icon: 'period' },
   { path: '/pages/weight/index', label: '体重', icon: 'weight' },
   { path: '/pages/skin/index', label: '皮肤', icon: 'skin' },
-  { path: '/pages/me/index', label: '我的', icon: 'me' }
-]
+  { path: '/pages/me/index', label: '我的', icon: 'me' },
+] as const
 
-function iconSrc(item: TabItem): string {
-  const state = item.path === props.current ? '-active' : ''
-  return `/static/icons/${item.icon}${state}.svg`
-}
-
-function go(item: TabItem) {
-  if (item.path === props.current) {
-    return
-  }
-  uni.switchTab({ url: item.path })
+function go(path: string) {
+  if (path === props.current || switchingTab) return
+  switchingTab = true
+  uni.switchTab({ url: path, complete: () => { switchingTab = false } })
 }
 </script>
 
 <style scoped>
 .tabbar {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
   z-index: 10;
-  display: flex;
-  padding: 8px 0 18px;
-  padding-bottom: calc(18px + env(safe-area-inset-bottom));
-  background: rgba(255, 255, 255, 0.86);
-  -webkit-backdrop-filter: blur(16px) saturate(1.6);
-  backdrop-filter: blur(16px) saturate(1.6);
-  border-top: 1px solid var(--line);
-  box-shadow: 0 -12px 30px -18px rgba(192, 86, 107, 0.4);
+  left: 50%;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 3px;
+  width: min(calc(100% - 24px), var(--hr-shell-width));
+  min-height: calc(var(--hr-tab-height) - 10px);
+  padding: 4px;
+  background: linear-gradient(145deg, #fff, #fff7fa);
+  border: 1px solid var(--hr-line);
+  border-radius: 22px;
+  box-shadow: var(--hr-glass-shadow);
 }
 .tab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: grid;
+  justify-items: center;
+  align-content: center;
   gap: 2px;
-}
-.tab-ic {
-  width: 44px;
-  height: 44px;
+  padding: 3px 0;
+  min-height: 48px;
+  min-width: 0;
+  border: 0;
   border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: transparent;
+  color: var(--hr-ink-2);
 }
-.tab-ic.on {
-  background: var(--tabon-grad);
-  box-shadow: 0 8px 16px -8px rgba(192, 86, 107, 0.4);
+.tab-symbol {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 28px;
+  border-radius: 999px;
 }
-.tab-img {
-  width: 27px;
-  height: 27px;
-  display: block;
-}
-.tab-label {
-  font-size: 11px;
-  line-height: 16px;
-  color: var(--outline);
-  letter-spacing: 0.5px;
-}
-.tab.on .tab-label {
-  color: var(--berry);
-  font-weight: 600;
-}
+.tab.active { color: var(--hr-rose-deep); }
+.tab.active .tab-symbol { background: var(--hr-rose-soft); }
+.tab:not(:disabled):active { filter: none; }
+.icon { width: 21px; height: 21px; }
+.label { font-size: 12px; line-height: 1.25; }
+.tab.active .label { font-weight: 700; }
 </style>

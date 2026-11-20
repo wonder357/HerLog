@@ -3,7 +3,9 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from fastapi.testclient import TestClient
+from pytest import MonkeyPatch
 
+from app.core.clock import local_today
 from app.logic import period as period_logic
 from tests.conftest import auth_headers, register_and_login
 
@@ -69,7 +71,8 @@ def _create_period(client: TestClient, headers: dict, start: str, end: str | Non
     return response.json()["data"]
 
 
-def test_period_crud_updates_history_and_prediction(client: TestClient) -> None:
+def test_period_crud_updates_history_and_prediction(client: TestClient, monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr("app.services.period_service.local_today", lambda: date(2026, 12, 1))
     headers = auth_headers(register_and_login(client))
     first = _create_period(client, headers, "2026-10-03", "2026-10-07")
     assert first["duration_days"] == 5
@@ -87,8 +90,19 @@ def test_period_crud_updates_history_and_prediction(client: TestClient) -> None:
 
     _create_period(client, headers, "2026-11-30")
     listing = client.get("/api/v1/c/herlog/periods", headers=headers).json()["data"]
-    assert listing["prediction"]["status"] in {"upcoming", "overdue"}
+    assert listing["prediction"]["status"] == "upcoming"
     assert listing["prediction"]["estimate_days"] == 29
+    assert listing["prediction"]["ovulatory_window"] is None
+
+    latest = listing["items"][0]
+    edited = client.put(
+        f"/api/v1/c/herlog/periods/{latest['id']}",
+        json={"start_day": "2026-11-30", "end_day": "2026-11-30"},
+        headers=headers,
+    )
+    assert edited.status_code == 200
+    listing = client.get("/api/v1/c/herlog/periods", headers=headers).json()["data"]
+    assert listing["prediction"]["ovulatory_window"] == {"start_day": "2026-12-13", "end_day": "2026-12-17"}
 
 
 def test_overlapping_period_is_rejected_with_the_conflicting_date(client: TestClient) -> None:
@@ -201,7 +215,7 @@ def test_unknown_symptom_is_rejected(client: TestClient) -> None:
 
 def test_status_shows_current_day_index(client: TestClient) -> None:
     headers = auth_headers(register_and_login(client))
-    today = date.today()
+    today = local_today()
     start = today - timedelta(days=1)
     client.post(
         "/api/v1/c/herlog/periods",
@@ -211,3 +225,52 @@ def test_status_shows_current_day_index(client: TestClient) -> None:
     status = client.get("/api/v1/c/herlog/periods", headers=headers).json()["data"]["status"]
     assert status["in_period"] is True
     assert status["message"] == "经期第 2 天"
+
+
+def test_old_open_period_does_not_override_newer_closed_record(client: TestClient) -> None:
+    headers = auth_headers(register_and_login(client))
+    today = local_today()
+    _create_period(client, headers, (today - timedelta(days=40)).isoformat(), None)
+    latest = (today - timedelta(days=10)).isoformat()
+    _create_period(client, headers, latest, (today - timedelta(days=6)).isoformat())
+    data = client.get("/api/v1/c/herlog/periods", headers=headers).json()["data"]
+    assert data["status"]["in_period"] is False
+    assert data["status"]["start_day"] == latest
+
+
+def test_overdue_prediction_does_not_extend_unfinished_period(client: TestClient) -> None:
+    headers = auth_headers(register_and_login(client))
+    today = local_today()
+    for age in (85, 57, 29):
+        _create_period(client, headers, (today - timedelta(days=age)).isoformat(), None)
+    data = client.get("/api/v1/c/herlog/periods", headers=headers).json()["data"]
+    assert data["prediction"]["status"] == "overdue"
+    assert data["status"]["in_period"] is False
+
+
+def test_legacy_future_period_does_not_drive_current_prediction(client: TestClient) -> None:
+    headers = auth_headers(register_and_login(client))
+    today = local_today()
+    for age in (57, 29, -1):
+        _create_period(client, headers, (today - timedelta(days=age)).isoformat())
+    data = client.get("/api/v1/c/herlog/periods", headers=headers).json()["data"]
+    assert len(data["items"]) == 3
+    assert data["prediction"]["status"] == "insufficient"
+    assert data["status"]["start_day"] == (today - timedelta(days=29)).isoformat()
+
+
+def test_mood_only_entries_are_private_and_editable_by_new_and_legacy_forms(client: TestClient) -> None:
+    owner = auth_headers(register_and_login(client))
+    other = auth_headers(register_and_login(client, username="another"))
+    day = "2026-11-11"
+    path = f"/api/v1/c/herlog/feelings/{day}"
+    response = client.put(path, json={"mood": "平静"}, headers=owner)
+    assert response.status_code == 200
+    assert response.json()["data"]["mood"] == "平静"
+    params = {"from": day, "to": day}
+    assert client.get("/api/v1/c/herlog/feelings", params=params, headers=other).json()["data"] == []
+    assert client.put(path, json={"mood": "不允许的心情"}, headers=owner).status_code == 422
+    edited = client.put(path, json={"note": "早上写的"}, headers=owner).json()["data"]
+    assert edited["mood"] == "平静"
+    assert edited["note"] == "早上写的"
+    assert client.put(path, json={"mood": None}, headers=owner).json()["data"] is None

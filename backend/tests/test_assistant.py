@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from fastapi.testclient import TestClient
+from pytest import MonkeyPatch
 
 from app.core.clock import local_today
 from tests.conftest import auth_headers, register_and_login
@@ -11,9 +12,9 @@ from tests.conftest import auth_headers, register_and_login
 SHANGHAI = ZoneInfo("Asia/Shanghai")
 
 
-def _ask(client: TestClient, headers: dict, question: str) -> dict:
+def _ask(client: TestClient, headers: dict, question: str, topic: str | None = None) -> dict:
     response = client.post(
-        "/api/v1/c/herlog/assistant/query", json={"question": question}, headers=headers
+        "/api/v1/c/herlog/assistant/query", json={"question": question, "follow_up_topic": topic}, headers=headers
     )
     assert response.status_code == 200, response.text
     return response.json()["data"]
@@ -60,6 +61,24 @@ def test_thirty_day_scope_is_understood(client: TestClient) -> None:
     assert data["range"]["days"] == 30
 
 
+def test_follow_up_uses_the_current_account_and_needs_a_topic(client: TestClient) -> None:
+    owner = auth_headers(register_and_login(client))
+    other = auth_headers(register_and_login(client, username="second"))
+    today = local_today()
+    _post_weight(client, owner, 57.0, today - timedelta(days=12))
+    _post_weight(client, owner, 56.6, today - timedelta(days=1))
+
+    assert _ask(client, owner, "那近 30 天呢？")["domain"] == "unsupported"
+    answer = _ask(client, owner, "那近 30 天呢？", "weight")
+    assert answer["range"]["days"] == 30
+    assert len(answer["record_refs"]) == 2
+    assert _ask(client, other, "那近 30 天呢？", "weight")["record_refs"] == []
+    assert _ask(client, owner, "下次经期什么时候？", "weight")["domain"] == "period"
+    assert _ask(client, owner, "今天天气如何？", "weight")["domain"] == "unsupported"
+    assert _ask(client, owner, "帮我记 56.8 kg", "weight")["domain"] == "record_help"
+    assert client.get("/api/v1/c/herlog/weights", headers=owner).json()["data"]["total"] == 2
+
+
 def test_record_request_points_to_shortcuts_without_writing(client: TestClient) -> None:
     headers = auth_headers(register_and_login(client))
     data = _ask(client, headers, "帮我记 56.8 kg")
@@ -75,7 +94,10 @@ def test_cross_module_attribution_is_refused(client: TestClient) -> None:
     assert "归因" in data["answer"]
 
 
-def test_period_question_reports_estimate(client: TestClient) -> None:
+def test_period_question_reports_estimate(client: TestClient, monkeypatch: MonkeyPatch) -> None:
+    today = lambda: date(2026, 12, 1)
+    monkeypatch.setattr("app.services.period_service.local_today", today)
+    monkeypatch.setattr("app.services.assistant_service.local_today", today)
     headers = auth_headers(register_and_login(client))
     for start in ("2026-10-03", "2026-11-01", "2026-11-30"):
         response = client.post(
@@ -87,6 +109,10 @@ def test_period_question_reports_estimate(client: TestClient) -> None:
     assert "2026-12-29" in data["answer"]
     assert "不作为避孕依据" in data["answer"]
     assert len(data["record_refs"]) == 3
+    actual = _ask(client, headers, "那上次呢？", "period")
+    assert actual["range"]["label"] == "最近一次实际经期"
+    assert "2026-11-30" in actual["answer"]
+    assert "2026-12-29" in _ask(client, headers, "那下次呢？", "period")["answer"]
 
 
 def test_unsupported_question_lists_capabilities(client: TestClient) -> None:

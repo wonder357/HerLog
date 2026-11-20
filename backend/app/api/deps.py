@@ -1,11 +1,17 @@
 from __future__ import annotations
 
-from fastapi import Depends, Header
+from fastapi import Depends, Header, Request
 from sqlalchemy.orm import Session
 
 from app.db.session import get_session
+from app.core.errors import not_found
 from app.services.auth_service import CurrentUser, authenticate
 from app.services.pending_store import PendingStore, get_pending_store
+
+
+def own_account(request: Request) -> None:
+    if "customer_id" in request.query_params or "customerId" in request.query_params:
+        raise not_found()
 
 
 def get_token(

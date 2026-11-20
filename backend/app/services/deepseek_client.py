@@ -112,12 +112,49 @@ async def chat(
         tools=tools,
     )
     data = await _post(payload)
+    return _parse_chat(data, payload["model"])
+
+
+def chat_sync(
+    messages: Sequence[dict[str, Any]],
+    *,
+    model: str | None = None,
+    thinking: bool = True,
+    reasoning_effort: Effort = "high",
+    temperature: float | None = None,
+    max_tokens: int | None = None,
+    json_object: bool = False,
+) -> ChatResult:
+    """同步版非流式调用：体重模块的饮食与教练接口是同步路由，不引入事件循环。"""
+
+    payload = build_payload(
+        messages,
+        model=model,
+        thinking=thinking,
+        reasoning_effort=reasoning_effort,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        json_object=json_object,
+    )
+    try:
+        with httpx.Client(timeout=settings.HERLOG_MODEL_TIMEOUT_SECONDS) as client:
+            response = client.post(endpoint(), headers=headers(), json=payload)
+    except httpx.TimeoutException as exc:
+        raise ApiError(504, "模型响应超时，请重试") from exc
+    except httpx.HTTPError as exc:
+        raise ApiError(503, "模型服务连接失败，请重试") from exc
+    if response.status_code != 200:
+        raise _model_error(response.status_code, response.text)
+    return _parse_chat(response.json(), payload["model"])
+
+
+def _parse_chat(data: dict[str, Any], fallback_model: str) -> ChatResult:
     choices = data.get("choices") or [{}]
     message = choices[0].get("message") or {}
     return ChatResult(
         content=message.get("content") or "",
         reasoning=message.get("reasoning_content") or "",
-        model=data.get("model") or payload["model"],
+        model=data.get("model") or fallback_model,
         usage=data.get("usage") or {},
     )
 
@@ -180,7 +217,11 @@ async def chat_stream(
                         event = json.loads(data)
                     except json.JSONDecodeError:
                         continue
+                    if not isinstance(event, dict) or event.get("error"):
+                        raise ApiError(502, "模型流式回答中断，请重试")
                     choice = (event.get("choices") or [{}])[0]
+                    if choice.get("finish_reason") not in (None, "stop"):
+                        raise ApiError(502, "模型流式回答中断，请重试")
                     delta = choice.get("delta") or {}
                     chunk = StreamChunk(
                         text=delta.get("content") or "",

@@ -1,3 +1,5 @@
+import type { CycleDay, Feeling } from './wellnessService'
+
 export interface MemberInfo {
   customer_id: string
   username: string
@@ -15,6 +17,7 @@ export interface LoginResult extends MemberInfo {
 }
 
 export interface ProfileInfo {
+  has_avatar: boolean
   username: string
   birthday: string | null
   height_cm: string | null
@@ -36,6 +39,7 @@ export interface PeriodPrediction {
   cycle_count: number
   starts_used: number
   message: string
+  ovulatory_window?: { start_day: string; end_day: string } | null
 }
 
 export interface PeriodStatus {
@@ -55,12 +59,17 @@ export interface PeriodOverview {
 export interface FeelingItem {
   day: string
   flow: string | null
+  mood?: string | null
   symptoms: string[]
   impact: string | null
   note: string | null
 }
 
 export interface WeightItem {
+  has_photo?: boolean
+  feeling_tags?: Feeling[]
+  source?: 'manual' | 'scale'
+  device_id?: number | null
   id: number
   client_key: string
   grams: number
@@ -79,6 +88,16 @@ export interface WeightPointItem {
 }
 
 export interface WeightSummary {
+  record_days?: number
+  latest_record_id?: number | null
+  cycle_context?: CycleDay[] | null
+  metrics?: Record<string, {
+    value: number | null
+    unit: string
+    status: string
+    source: string | null
+    measured_at: string | null
+  }>
   days: number
   latest_grams: number | null
   latest_kg: number | null
@@ -114,6 +133,7 @@ export interface SkinAnalysis {
   model_id: string
   prompt_version: string
   demo_sample: boolean
+  inference_ms?: number | null
 }
 
 export interface SkinObservation {
@@ -127,6 +147,8 @@ export interface SkinObservation {
   model_id: string
   prompt_version: string
   has_image: boolean
+  quality?: SkinQuality | null
+  demo_sample?: boolean
 }
 
 export interface SkinSummaryItem {
@@ -134,6 +156,7 @@ export interface SkinSummaryItem {
   site: string
   captured_at: string
   visible: string
+  demo_sample?: boolean
 }
 
 export interface RecordRef {
@@ -145,7 +168,7 @@ export interface RecordRef {
 
 export interface AssistantAnswer {
   answer: string
-  domain: 'weight' | 'period' | 'skin' | 'record_help' | 'unsupported'
+  domain: 'weight' | 'period' | 'skin' | 'record_help' | 'unsupported' | 'general'
   range: { label: string; date_from: string | null; date_to: string | null; days: number | null }
   record_refs: RecordRef[]
   model_id: string | null

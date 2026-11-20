@@ -31,15 +31,21 @@ class DecodedImage:
         if self.brightness < 45 or self.brightness > 235:
             return "limited", "光线偏暗或过曝，部分区域看不清；建议在自然光下重拍。"
         if self.contrast < 18:
-            return "limited", "画面有点模糊或角度不一致，细节看不清；可以重拍一次。"
+            return "limited", "画面对比度较低，部分细节看不清；可以调整光线后重拍。"
         return "good", "画面清晰，光线足够。"
 
 
 def decode_image(image_base64: str, declared_mime: str) -> DecodedImage:
+    if len(image_base64) > 4 * ((settings.SKIN_MAX_UPLOAD_BYTES + 2) // 3):
+        raise invalid("图片超过 3 MiB，请压缩后再试")
     try:
         raw = base64.b64decode(image_base64, validate=True)
     except (binascii.Error, ValueError) as exc:
         raise invalid("图片数据无法解析，请重新选择图片") from exc
+    return inspect_image(raw, declared_mime)
+
+
+def inspect_image(raw: bytes, declared_mime: str) -> DecodedImage:
     if not raw:
         raise invalid("图片为空，请重新选择")
     if len(raw) > settings.SKIN_MAX_UPLOAD_BYTES:
@@ -58,6 +64,8 @@ def decode_image(image_base64: str, declared_mime: str) -> DecodedImage:
             values = list(gray.tobytes())
     except UnidentifiedImageError as exc:
         raise invalid("图片无法解码，请重新选择") from exc
+    except Image.DecompressionBombError as exc:
+        raise invalid("图片像素过大，请缩小后再试") from exc
     except OSError as exc:
         raise invalid("图片无法解码，请重新选择") from exc
     mime = FORMAT_TO_MIME[fmt]

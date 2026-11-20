@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import time
+from threading import Lock
 from typing import Any, Protocol
 
 from app.core.config import settings
@@ -23,28 +24,33 @@ class MemoryPendingStore:
     def __init__(self, max_per_member: int) -> None:
         self._items: dict[tuple[str, str], tuple[float, dict[str, Any]]] = {}
         self._max = max_per_member
+        self._lock = Lock()
 
     def put(self, customer_id: str, analysis_id: str, payload: dict[str, Any], ttl: int) -> None:
         now = time.time()
-        self._items = {key: value for key, value in self._items.items() if value[0] > now}
-        owned = [key for key in self._items if key[0] == customer_id]
-        if len(owned) >= self._max:
-            oldest = min(owned, key=lambda key: self._items[key][0])
-            del self._items[oldest]
-        self._items[(customer_id, analysis_id)] = (now + ttl, payload)
+        with self._lock:
+            self._items = {key: value for key, value in self._items.items() if value[0] > now}
+            owned = [key for key in self._items if key[0] == customer_id]
+            if len(owned) >= self._max:
+                oldest = min(owned, key=lambda key: self._items[key][0])
+                del self._items[oldest]
+            self._items[(customer_id, analysis_id)] = (now + ttl, payload)
 
     def get(self, customer_id: str, analysis_id: str) -> dict[str, Any] | None:
-        item = self._items.get((customer_id, analysis_id))
-        if item is None:
-            return None
-        expires_at, payload = item
-        if expires_at <= time.time():
-            self._items.pop((customer_id, analysis_id), None)
-            return None
-        return payload
+        key = (customer_id, analysis_id)
+        with self._lock:
+            item = self._items.get(key)
+            if item is None:
+                return None
+            expires_at, payload = item
+            if expires_at <= time.time():
+                self._items.pop(key, None)
+                return None
+            return payload
 
     def delete(self, customer_id: str, analysis_id: str) -> None:
-        self._items.pop((customer_id, analysis_id), None)
+        with self._lock:
+            self._items.pop((customer_id, analysis_id), None)
 
 
 class RedisPendingStore:

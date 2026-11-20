@@ -18,6 +18,7 @@ client/src/uni-pages.d.ts
 # editors / os
 .vscode/
 .idea/
+.workbuddy/
 Thumbs.db
 desktop.ini
 
@@ -29,5 +30,5 @@ infra.env
 *.bundle
 
 # 本地资料目录(仅本机使用)
-# /豆包
+/豆包
 # /她记-软件资料汇总-2026-11-19

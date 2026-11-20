@@ -16,6 +16,18 @@ const records = [
   { id: 3, grams: 56600, measuredAt: '2026-11-18T00:00:00Z' } // 11-18 08:00
 ]
 
+test('跨年的两个趋势范围使用相同的已保存测量', () => {
+  const entries = [
+    { id: 1, grams: 58200, measuredAt: '2026-12-06T07:00:00+08:00' },
+    { id: 2, grams: 58500, measuredAt: '2026-12-29T07:00:00+08:00' },
+    { id: 3, grams: 58400, measuredAt: '2027-01-04T07:00:00+08:00' }
+  ]
+  const short = summarize(entries, 7, '2027-01-04')
+  const long = summarize(entries, 30, '2027-01-04')
+  assert.deepEqual(short.points.map(point => point.day), ['2026-12-29', '2027-01-04'])
+  assert.deepEqual(long.points.slice(-2), short.points)
+})
+
 test('kg 输入最多三位小数并转正整数克', () => {
   assert.equal(parseKgToGrams('56.8'), 56800)
   assert.equal(parseKgToGrams('56.800'), 56800)

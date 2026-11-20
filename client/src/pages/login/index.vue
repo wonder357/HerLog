@@ -1,110 +1,103 @@
 <template>
-  <view class="page auth plain-bottom">
-    <view class="auth-hero">
-      <view class="logo">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="8.6" />
-          <path d="M12 7.4c1.9 2.6 3 4 3 5.2a3 3 0 0 1-6 0c0-1.2 1.1-2.6 3-5.2z" />
-        </svg>
-      </view>
-      <view class="auth-title">{{ mode === 'login' ? '欢迎回来' : '建立账号' }}</view>
-      <view class="auth-sub">
-        {{ mode === 'login' ? '用账号继续记录今天' : '用户名加密码，不需要手机号' }}
-      </view>
+  <view class="hr-page auth-page">
+    <view class="auth-shell">
+      <div class="auth-heading">
+        <image class="brand-mark" src="/static/herlog-icon.svg" aria-hidden="true" />
+        <HerlogHeading variant="auth" :title="mode === 'login' ? '欢迎回来' : '创建账号'" eyebrow="她记 HerLog" />
+      </div>
+
+      <H5Form class="card auth-form" novalidate @submit.prevent="submit">
+        <H5Label class="hr-field-label" for="auth-username">用户名</H5Label>
+        <H5Input id="auth-username" ref="usernameInput" v-model="username" class="field"
+          autocomplete="username" autocapitalize="none" :spellcheck="false" maxlength="32"
+          :aria-invalid="fieldIssue === 'username'" :aria-describedby="fieldIssue === 'username' ? 'username-error' : undefined" />
+        <view v-if="fieldIssue === 'username'" id="username-error" class="error" role="alert">{{ fieldError }}</view>
+
+        <H5Label class="hr-field-label" for="auth-password">密码</H5Label>
+        <view class="password-control">
+          <H5Input id="auth-password" ref="passwordInput" v-model="password" class="field"
+            :type="showPassword ? 'text' : 'password'" :autocomplete="mode === 'login' ? 'current-password' : 'new-password'"
+            :aria-invalid="fieldIssue === 'password'"
+            :aria-describedby="fieldIssue === 'password' ? 'password-error' : mode === 'register' ? 'password-help' : undefined"
+            maxlength="72" />
+          <H5Button class="password-toggle" :aria-pressed="showPassword" @click="showPassword = !showPassword">
+            {{ showPassword ? '隐藏密码' : '显示密码' }}
+          </H5Button>
+        </view>
+        <view v-if="fieldIssue === 'password'" id="password-error" class="error" role="alert">{{ fieldError }}</view>
+        <view v-else-if="mode === 'register'" id="password-help" class="muted password-help">至少 8 位字符</view>
+        <view v-if="formError" class="error" role="alert">{{ formError }}</view>
+
+        <H5Button type="submit" class="primary" :disabled="submitting">
+          {{ submitting ? '请稍候…' : mode === 'login' ? '登录' : '注册' }}
+        </H5Button>
+      </H5Form>
+
+      <H5Button class="hr-action mode-switch" :disabled="submitting" @click="switchMode">
+        {{ mode === 'login' ? '还没有账号？注册' : '已有账号？去登录' }}
+      </H5Button>
+      <view class="auth-decoration" aria-hidden="true" />
     </view>
-
-    <view class="auth-card">
-      <view class="field-label">用户名</view>
-      <input
-        v-model="username"
-        class="control"
-        placeholder="2–32 个字符"
-        placeholder-class="ph"
-        maxlength="32"
-      />
-
-      <view class="field-label">密码</view>
-      <input
-        v-model="password"
-        class="control"
-        password
-        :placeholder="mode === 'register' ? '至少 8 位' : '登录密码'"
-        placeholder-class="ph"
-        maxlength="72"
-      />
-
-      <text v-if="fieldError" class="error">{{ fieldError }}</text>
-      <text v-if="formError" class="error">{{ formError }}</text>
-
-      <button class="btn block submit" :disabled="submitting" @tap="submit">
-        {{ submitting ? '请稍候…' : mode === 'login' ? '登录' : '注册' }}
-      </button>
-
-      <view class="auth-note">
-        {{ mode === 'login' ? '登录后才能查看你的记录；退出登录不会删除数据。' : '注册成功后回到登录页，用同一组账号登录。' }}
-      </view>
-    </view>
-
-    <view class="auth-foot" @tap="switchMode">
-      <text>{{ mode === 'login' ? '还没有账号？' : '已有账号？' }}</text>
-      <text class="auth-foot-link">{{ mode === 'login' ? '注册' : '去登录' }}</text>
-    </view>
-
-    <view class="auth-glow" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
+import H5Button from '../../components/H5Button'
+import H5Form, { H5Label } from '../../components/H5Form'
+import H5Input from '../../components/H5Input'
+import HerlogHeading from '../../components/HerlogHeading.vue'
 import { useAuthStore } from '../../stores/auth'
 import { ApiRequestError } from '../../services/httpClient'
 
 const auth = useAuthStore()
-
 const mode = ref<'login' | 'register'>('login')
 const username = ref('')
 const password = ref('')
+const showPassword = ref(false)
+const usernameInput = ref<{ focus: () => void } | null>(null)
+const passwordInput = ref<{ focus: () => void } | null>(null)
+const fieldIssue = ref<'username' | 'password' | null>(null)
 const fieldError = ref('')
 const formError = ref('')
 const submitting = ref(false)
 
 function switchMode() {
   mode.value = mode.value === 'login' ? 'register' : 'login'
+  showPassword.value = false
+  fieldIssue.value = null
   fieldError.value = ''
   formError.value = ''
 }
 
+function invalid(field: 'username' | 'password', message: string): false {
+  fieldIssue.value = field
+  fieldError.value = message
+  void nextTick(() => (field === 'username' ? usernameInput.value : passwordInput.value)?.focus())
+  return false
+}
+
 function validate(): boolean {
+  fieldIssue.value = null
   fieldError.value = ''
   const name = username.value.trim()
-  if (name.length < 2 || name.length > 32) {
-    fieldError.value = '用户名需为 2–32 个字符'
-    return false
-  }
-  if (mode.value === 'register' && password.value.length < 8) {
-    fieldError.value = '密码至少 8 位'
-    return false
-  }
-  if (!password.value) {
-    fieldError.value = '请填写密码'
-    return false
-  }
+  if (name.length < 2 || name.length > 32) return invalid('username', '用户名需为 2–32 个字符')
+  if (!password.value) return invalid('password', '请填写密码')
+  if (mode.value === 'register' && password.value.length < 8) return invalid('password', '密码至少 8 位')
   return true
 }
 
 async function submit() {
-  if (submitting.value || !validate()) {
-    return
-  }
+  if (submitting.value || !validate()) return
   submitting.value = true
   formError.value = ''
   try {
     if (mode.value === 'register') {
       const result = await auth.register(username.value.trim(), password.value)
-      // 注册成功回登录页并带回用户名。
       mode.value = 'login'
       username.value = result.username
       password.value = ''
+      showPassword.value = false
       uni.showToast({ title: '注册成功，请登录', icon: 'none' })
       return
     }
@@ -112,11 +105,8 @@ async function submit() {
     uni.switchTab({ url: '/pages/home/index' })
   } catch (failure) {
     const message = failure instanceof ApiRequestError ? failure.message : '请求失败，请稍后重试'
-    if (failure instanceof ApiRequestError && failure.status === 409) {
-      fieldError.value = message
-      return
-    }
-    formError.value = message
+    if (failure instanceof ApiRequestError && failure.status === 409) invalid('username', message)
+    else formError.value = message
   } finally {
     submitting.value = false
   }
@@ -124,89 +114,30 @@ async function submit() {
 </script>
 
 <style scoped>
-.auth {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 40%, var(--page) 100%),
-    var(--hero-grad);
+.auth-page { padding-top: calc(clamp(42px, 9vh, 86px) + env(safe-area-inset-top)); }
+.auth-shell { width: min(100%, 400px); margin: 0 auto; display: grid; gap: 12px; justify-items: stretch; }
+.auth-heading {
+  text-align: center; margin-bottom: 8px;
 }
-.auth-hero {
-  position: relative;
-  z-index: 1;
-  padding: calc(56px + var(--status-bar-height, 0px)) 16px 26px;
-  text-align: center;
+.brand-mark {
+  display: block; width: 58px; height: 58px; margin: 0 auto 11px; border-radius: 14px;
+  box-shadow: 0 10px 21px -13px #7f3652cc;
 }
-.logo {
-  width: 66px;
-  height: 66px;
-  margin: 0 auto 14px;
-  border-radius: 19px;
-  background: linear-gradient(150deg, #d6788b 0%, #a82760 52%, #9c3b50 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 18px 34px -16px rgba(156, 59, 80, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+.auth-form { padding: 16px; margin: 0; }
+.auth-form .primary { margin-top: 10px; }
+.password-control { position: relative; }
+.password-control .field { padding-right: 92px; }
+.password-toggle {
+  position: absolute; right: 4px; top: 1px; min-height: 44px; border: 0;
+  background: transparent; color: var(--hr-rose-deep); font-size: 13px; border-radius: 10px; padding: 0 7px;
 }
-.auth-title {
-  font-size: 26px;
-  line-height: 34px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  color: var(--ink);
-}
-.auth-sub {
-  margin-top: 6px;
-  font-size: 13px;
-  line-height: 20px;
-  color: var(--ink-2);
-}
-.auth-card {
-  position: relative;
-  z-index: 1;
-  margin: 0 16px;
-  padding: 6px 16px 18px;
-  border-radius: 12px;
-  background: var(--card-grad);
-  border: 1px solid var(--card-line);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), var(--card-shadow);
-}
-.submit {
-  margin-top: 18px;
-}
-.auth-note {
-  margin-top: 12px;
-  font-size: 12px;
-  line-height: 18px;
-  color: var(--ink-2);
-  text-align: center;
-}
-.auth-foot {
-  position: relative;
-  z-index: 1;
-  width: fit-content;
-  margin: 18px auto 0;
-  padding: 7px 14px;
-  border-radius: 16px;
-  background: rgba(255, 252, 250, 0.92);
-  box-shadow: 0 10px 24px -18px rgba(156, 59, 80, 0.5);
-  font-size: 13px;
-  color: var(--ink-2);
-  text-align: center;
-}
-.auth-foot-link {
-  margin-left: 4px;
-  color: var(--berry);
-  font-weight: 600;
-}
-.auth-glow {
-  position: absolute;
-  left: 50%;
-  bottom: -140px;
-  width: 300px;
-  height: 300px;
-  margin-left: -150px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 50%, rgba(242, 180, 188, 0.5) 0%, rgba(242, 180, 188, 0) 70%);
+.password-help { margin-bottom: 6px; }
+.mode-switch { justify-self: center; }
+.auth-decoration {
+  height: clamp(88px, 24svh, 210px);
   pointer-events: none;
+  background: url('/static/home-cosmos.png') center / contain no-repeat;
+  filter: grayscale(1) sepia(1) saturate(1.4) hue-rotate(285deg);
+  opacity: .4;
 }
 </style>

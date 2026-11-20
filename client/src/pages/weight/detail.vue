@@ -1,107 +1,106 @@
 <template>
-  <view class="page plain-bottom">
-    <SubHeader
-      title="记录明细"
-      kicker="体重 / DETAIL"
-      :sub="`共 ${total} 笔 · 同日多笔全部保留`"
-      fallback="/pages/weight/index"
-    />
-
-    <view class="main">
-      <view class="card filters">
-        <view class="filter-row">
-          <view class="filter-cell">
-            <picker mode="date" :value="from" :end="to" @change="onFromChange">
-              <view class="control filter-control">起始 {{ from || '不限' }}</view>
-            </picker>
-          </view>
-          <view class="filter-cell">
-            <picker mode="date" :value="to" :end="today" @change="onToChange">
-              <view class="control filter-control">结束 {{ to || '不限' }}</view>
-            </picker>
-          </view>
-        </view>
-        <input v-model="tag" class="control filter-control tag-input" placeholder="标签筛选（选填）" placeholder-class="ph" @confirm="load" />
-        <view class="filter-actions">
-          <view class="btn ghost sm filter-btn" @tap="resetFilters">重置</view>
-          <view class="btn sm filter-btn" @tap="load">筛选</view>
-        </view>
-      </view>
-
-      <view class="card list">
-        <view v-if="items.length === 0" class="empty">还没有符合条件的记录。</view>
-        <view v-for="item in items" :key="item.id" class="row" @tap="startEdit(item)">
-          <view class="row-main">
-            <view class="row-value">{{ item.kg }}<text class="row-unit"> kg</text></view>
-            <view class="row-meta">
-              {{ formatMoment(item.measured_at) }}<text v-if="item.tag"> · {{ item.tag }}</text>
-            </view>
-            <view v-if="item.note" class="row-meta">{{ item.note }}</view>
-          </view>
-          <view class="row-actions">
-            <text class="act">编辑</text>
-            <text class="act danger" @tap.stop="remove(item)">删除</text>
-          </view>
-        </view>
-      </view>
-
-      <view v-if="total > items.length" class="more" @tap="loadMore">
-        加载更多（{{ items.length }}/{{ total }}）
-      </view>
-
-      <view class="note list-note">只展示已加载的 {{ items.length }} 笔，共 {{ total }} 笔。</view>
-
-      <view class="hintbox">
-        编辑会改动这一笔的数值、时间与标签；删除只移除当前一笔。趋势与统计按「每天最后一次测量」重新计算。
-      </view>
-    </view>
-
-    <view v-if="editVisible" class="sheet-mask" @tap="editVisible = false" />
-    <view v-if="editVisible" class="sheet">
-      <view class="grab" />
-      <view class="sheet-head">
+  <view class="hr-page detail-page">
+    <HerlogHeading title="记录明细" back-to="/pages/weight/index" back-label="体重" />
+    <details class="card filters">
+      <summary>按日期或标签筛选</summary>
+      <view class="filter-grid">
         <view>
-          <view class="sheet-title">修改这笔体重</view>
-          <view class="sheet-sub">{{ editing ? formatMoment(editing.measured_at) : '' }}</view>
+          <H5Label class="hr-field-label" for="filter-start">起始日期</H5Label>
+          <H5Input id="filter-start" v-model="from" class="field" type="date" :max="to || today" />
         </view>
-        <view class="sheet-x" @tap="editVisible = false">×</view>
+        <view>
+          <H5Label class="hr-field-label" for="filter-end">结束日期</H5Label>
+          <H5Input id="filter-end" v-model="to" class="field" type="date" :min="from || undefined" :max="today" />
+        </view>
       </view>
-
-      <view class="sheet-body">
-        <input v-model="editKg" class="control" type="digit" placeholder="体重 kg" placeholder-class="ph" />
-        <picker mode="date" :value="editDay" :end="today" @change="onEditDay">
-          <view class="control picker-line">日期 {{ editDay }}</view>
-        </picker>
-        <picker mode="time" :value="editTime" @change="onEditTime">
-          <view class="control picker-line">时间 {{ editTime }}</view>
-        </picker>
-        <input v-model="editTag" class="control" placeholder="标签（选填，如晨起）" placeholder-class="ph" />
-        <input v-model="editNote" class="control" placeholder="备注（选填）" placeholder-class="ph" />
-        <text v-if="editError" class="error">{{ editError }}</text>
+      <H5Label class="hr-field-label" for="filter-tag">标签</H5Label>
+      <H5Input id="filter-tag" v-model="tag" class="field" placeholder="例如晨起" />
+      <view class="filter-actions">
+        <H5Button class="ghost" @click="resetFilters">重置</H5Button>
+        <H5Button class="primary" @click="applyFilters">筛选</H5Button>
       </view>
-
-      <view class="sheet-foot">
-        <button class="btn block" :disabled="saving" @tap="saveEdit">
-          {{ saving ? '保存中…' : '保存修改' }}
-        </button>
-        <view class="btn ghost block cancel" @tap="editVisible = false">取消</view>
+    </details>
+    <view class="card ledger">
+      <view class="ledger-header">
+        <h2 class="hr-section-title">测量记录</h2>
+        <text class="muted">{{ total }} 笔</text>
       </view>
+      <view v-if="!items.length" class="empty muted">还没有符合条件的记录。</view>
+      <view v-for="item in items" :key="item.id" class="record">
+        <view class="record-main">
+          <view class="record-value hr-number">{{ item.kg }} <text class="unit">kg</text></view>
+          <view class="muted">{{ formatMoment(item.measured_at) }}<text v-if="item.tag"> · {{ item.tag }}</text></view>
+          <view class="muted">{{ item.source === 'scale' ? '设备测量' : '手动记录' }}<text v-if="item.feeling_tags?.length"> · {{ item.feeling_tags.map(code => feelingLabels[code]).join('、') }}</text></view>
+          <view v-if="item.note" class="muted">{{ item.note }}</view>
+          <H5Button v-if="item.has_photo" class="hr-action" @click="startEdit(item, true)">查看照片</H5Button>
+        </view>
+        <view class="record-actions">
+          <H5Button class="hr-action" @click="startEdit(item)" :aria-label="'修改 ' + formatMoment(item.measured_at) + ' 的记录'">编辑</H5Button>
+          <H5Button class="hr-action danger" @click="remove(item)" :aria-label="'删除 ' + formatMoment(item.measured_at) + ' 的记录'">删除</H5Button>
+        </view>
+      </view>
+      <H5Button v-if="total > items.length" class="hr-action more" @click="loadMore">加载更多（{{ items.length }}/{{ total }}）</H5Button>
     </view>
+
+    <view class="card metric">
+      <h2 class="hr-section-title">体成分</h2>
+      <view v-if="bmi?.value != null">最近一次 BMI {{ bmi.value.toFixed(1) }}</view>
+      <H5Button v-else-if="bmi?.status === 'missing_height'" class="hr-action" @click="openProfile">补充身高后可查看 BMI</H5Button>
+      <view v-else class="muted">有了体重和身高记录后，可以在这里查看 BMI。</view>
+      <view class="muted">体成分设备尚未接入</view>
+    </view>
+
+    <HerlogSheet v-if="editVisible" title="修改体重" :context="formatMoment(editing?.measured_at || '')"
+      :busy="saving" @close="closeEdit">
+      <H5Label class="hr-field-label" for="edit-weight">体重（kg）</H5Label>
+      <H5Input id="edit-weight" v-model="editKg" class="field" inputmode="decimal" />
+      <view class="filter-grid">
+        <view><H5Label class="hr-field-label" for="edit-day">日期</H5Label><H5Input id="edit-day" v-model="editDay" class="field" type="date" :max="today" /></view>
+        <view><H5Label class="hr-field-label" for="edit-time">时间</H5Label><H5Input id="edit-time" v-model="editTime" class="field" type="time" /></view>
+      </view>
+      <H5Label class="hr-field-label" for="edit-tag">标签（选填）</H5Label>
+      <H5Input id="edit-tag" v-model="editTag" class="field" maxlength="32" />
+      <H5Label class="hr-field-label" for="edit-note">备注（选填）</H5Label>
+      <H5Input id="edit-note" v-model="editNote" class="field" maxlength="500" />
+      <view class="hr-field-label">身体感受（选填）</view>
+      <view class="edit-feelings">
+        <H5Button v-for="(label, code) in feelingLabels" :key="code" :class="{ chosen: editFeelings.includes(code) }"
+          :aria-pressed="editFeelings.includes(code)" @click="toggleFeeling(code)">{{ label }}</H5Button>
+      </view>
+      <div ref="photoField">
+        <PrivatePhotoEditor v-model="editPhoto" v-model:processing="photoProcessing" label="测量照片" :disabled="saving"
+          :saved-path="editing?.has_photo ? weightPhotoPath(editing.id) : undefined" />
+      </div>
+      <view v-if="editError" class="error" role="alert">{{ editError }}</view>
+      <template #actions>
+        <H5Button class="primary" :disabled="saving || photoProcessing" @click="saveEdit">{{ saving ? '保存中…' : '保存修改' }}</H5Button>
+      </template>
+    </HerlogSheet>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
-import SubHeader from '../../components/SubHeader.vue'
+import { H5Label } from '../../components/H5Form'
+import HerlogHeading from '../../components/HerlogHeading.vue'
+import HerlogSheet from '../../components/HerlogSheet.vue'
+import H5Input from '../../components/H5Input'
+import H5Button from '../../components/H5Button'
+import PrivatePhotoEditor from '../../components/PrivatePhotoEditor.vue'
+import { nextTick, ref } from 'vue'
+import { onHide, onShow } from '@dcloudio/uni-app'
 import { formatMoment, shanghaiDayKey, toZonedIso, todayString } from '../../shared/dates'
 import { parseKgToGrams } from '../../shared/weight'
-import { ApiRequestError, StaleSessionError } from '../../services/httpClient'
-import { deleteWeight, listWeights, updateWeight } from '../../services/weightService'
-import type { WeightItem } from '../../services/types'
+import { ApiRequestError, currentEpoch, StaleSessionError } from '../../services/httpClient'
+import { deleteWeight, getSummary, listWeights, updateWeight } from '../../services/weightService'
+import type { WeightItem, WeightSummary } from '../../services/types'
+import type { Feeling } from '../../services/wellnessService'
+import { weightPhotoPath } from '../../services/privatePhotoService'
+import type { PrivatePhotoPayload } from '../../services/privatePhotoService'
 
 const today = todayString()
 const items = ref<WeightItem[]>([])
+const bmi = ref<NonNullable<WeightSummary['metrics']>[string] | null>(null)
+const feelingLabels = { comfortable: '舒适', tired: '疲惫', bloating: '腹胀', puffy: '感觉浮肿' }
 const total = ref(0)
 const page = ref(1)
 const from = ref('')
@@ -109,12 +108,16 @@ const to = ref('')
 const tag = ref('')
 
 const editVisible = ref(false)
+const editFeelings = ref<Feeling[]>([])
 const editing = ref<WeightItem | null>(null)
 const editKg = ref('')
 const editDay = ref(today)
 const editTime = ref('08:00')
 const editTag = ref('')
 const editNote = ref('')
+const editPhoto = ref<PrivatePhotoPayload | null>()
+const photoField = ref<HTMLElement | null>(null)
+const photoProcessing = ref(false)
 const editError = ref('')
 const saving = ref(false)
 
@@ -145,6 +148,15 @@ function loadMore() {
   load(true)
 }
 
+function applyFilters() {
+  if (from.value && to.value && from.value > to.value) {
+    uni.showToast({ title: '起始日期不能晚于结束日期', icon: 'none' })
+    return
+  }
+  page.value = 1
+  void load()
+}
+
 function resetFilters() {
   from.value = ''
   to.value = ''
@@ -153,40 +165,42 @@ function resetFilters() {
   load()
 }
 
-function onFromChange(event: { detail: { value: string } }) {
-  from.value = event.detail.value
-}
-
-function onToChange(event: { detail: { value: string } }) {
-  to.value = event.detail.value
-}
-
-function startEdit(item: WeightItem) {
+function startEdit(item: WeightItem, focusPhoto = false) {
+  editPhoto.value = undefined
   editing.value = item
   editKg.value = String(item.kg)
   editDay.value = shanghaiDayKey(item.measured_at)
-  const moment = formatMoment(item.measured_at)
-  editTime.value = moment.slice(-5)
+  editTime.value = formatMoment(item.measured_at).slice(-5)
   editTag.value = item.tag ?? ''
   editNote.value = item.note ?? ''
+  editFeelings.value = [...(item.feeling_tags ?? [])]
   editError.value = ''
   editVisible.value = true
+  if (focusPhoto) void nextTick(() => photoField.value?.scrollIntoView({ block: 'start' }))
 }
 
-function onEditDay(event: { detail: { value: string } }) {
-  editDay.value = event.detail.value
+function closeEdit() {
+  editVisible.value = false
+  editPhoto.value = undefined
+  editing.value = null
 }
 
-function onEditTime(event: { detail: { value: string } }) {
-  editTime.value = event.detail.value
+function toggleFeeling(code: Feeling) {
+  if (editFeelings.value.includes(code)) editFeelings.value = editFeelings.value.filter(item => item !== code)
+  else if (editFeelings.value.length < 3) editFeelings.value.push(code)
+  else uni.showToast({ title: '最多选择三项', icon: 'none' })
 }
 
 async function saveEdit() {
   const target = editing.value
-  if (!target || saving.value) {
+  if (!target || saving.value || photoProcessing.value) {
     return
   }
   editError.value = ''
+  if (!editDay.value || !editTime.value) {
+    editError.value = '请选择测量日期和时间'
+    return
+  }
   try {
     parseKgToGrams(editKg.value)
   } catch (validation) {
@@ -194,18 +208,24 @@ async function saveEdit() {
     return
   }
   saving.value = true
+  const sameMoment = editDay.value === shanghaiDayKey(target.measured_at) &&
+    editTime.value === formatMoment(target.measured_at).slice(-5)
   try {
     await updateWeight(target.id, {
       client_key: target.client_key,
       kg: editKg.value.trim(),
-      measured_at: toZonedIso(editDay.value, editTime.value),
+      measured_at: sameMoment ? target.measured_at : toZonedIso(editDay.value, editTime.value),
       tag: editTag.value.trim() || null,
-      note: editNote.value.trim() || null
+      note: editNote.value.trim() || null,
+      feeling_tags: editFeelings.value,
+      ...(editPhoto.value !== undefined ? { photo: editPhoto.value } : {})
     })
-    editVisible.value = false
+    closeEdit()
     page.value = 1
     await load()
+    void loadMetrics()
   } catch (failure) {
+    if (failure instanceof StaleSessionError) return
     editError.value =
       failure instanceof ApiRequestError ? failure.message : '保存失败，请稍后重试'
   } finally {
@@ -216,7 +236,7 @@ async function saveEdit() {
 function remove(item: WeightItem) {
   uni.showModal({
     title: '删除体重记录',
-    content: `${formatMoment(item.measured_at)} 的 ${item.kg} kg 记录将被删除，趋势与明细会同步刷新。`,
+    content: `${formatMoment(item.measured_at)} 的 ${item.kg} kg 记录将被删除。${item.has_photo ? '照片将一并删除。' : ''}趋势与明细会同步刷新。`,
     confirmText: '删除',
     success: async (result) => {
       if (!result.confirm) {
@@ -226,6 +246,7 @@ function remove(item: WeightItem) {
         await deleteWeight(item.id)
         page.value = 1
         await load()
+        void loadMetrics()
       } catch (failure) {
         uni.showToast({
           title: failure instanceof ApiRequestError ? failure.message : '删除失败',
@@ -236,121 +257,52 @@ function remove(item: WeightItem) {
   })
 }
 
+async function loadMetrics() {
+  const epoch = currentEpoch()
+  bmi.value = null
+  try {
+    const data = await getSummary(30)
+    if (epoch === currentEpoch()) bmi.value = data.metrics?.bmi ?? null
+  } catch {
+    // 明细仍可以独立读取。
+  }
+}
+
+function openProfile() {
+  uni.switchTab({ url: '/pages/me/index' })
+}
+
+onHide(closeEdit)
 onShow(() => {
   page.value = 1
   load()
+  void loadMetrics()
 })
 </script>
 
 <style scoped>
-.filters {
-  margin-top: 4px;
-  padding: 14px 16px 16px;
+.filters summary { cursor: pointer; min-height: 44px; color: var(--hr-ink); padding: 8px 0; box-sizing: border-box; font-size: 14px; }
+.filters:not([open]) { padding-block: 4px; }
+.filters[open] summary { margin-bottom: 8px; }
+.filter-grid,.filter-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.filter-grid > view,.filter-grid > uni-view { min-width: 0; }
+.ledger-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+h2 { margin: 0; }
+.record { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--hr-line); }
+.record-main { min-width: 0; }
+.record-actions { display: flex; flex-wrap: wrap; justify-content: end; gap: 0; flex: 0 0 auto; }
+.record-actions .hr-action { padding-inline: 6px; min-width: 44px; }
+.record-value { color: var(--hr-rose-deep); font-size: 25px; line-height: 1.1; }
+.unit { font: 13px var(--hr-font); color: var(--hr-ink-2); }
+.danger { color: var(--hr-danger); }
+.empty { padding: 20px 4px; }
+.more { margin: 0 auto; display: flex; }
+.metric { display: grid; gap: 5px; background: var(--hr-peach); }
+.metric .hr-action { justify-self: start; padding-left: 0; }
+.edit-feelings { display: flex; gap: 8px; flex-wrap: wrap; margin: 7px 0 10px; }
+.edit-feelings button {
+  min-height: 44px; padding: 7px 11px; font-size: 13px; background: var(--hr-paper);
+  color: var(--hr-ink-2); border: 1px solid var(--hr-line); border-radius: 999px;
 }
-.filter-row {
-  display: flex;
-  gap: 10px;
-}
-.filter-cell {
-  flex: 1;
-  min-width: 0;
-}
-.filter-control {
-  height: 40px;
-  font-size: 13px;
-  color: var(--ink);
-  border-radius: 10px;
-}
-.tag-input {
-  margin-top: 10px;
-}
-.filter-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-}
-.filter-btn {
-  flex: 1;
-  height: 38px;
-  font-size: 13px;
-}
-.list {
-  padding: 4px 16px 6px;
-}
-.row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 13px 0;
-  border-bottom: 1px solid var(--card-line);
-}
-.row:last-child {
-  border-bottom: 0;
-  padding-bottom: 6px;
-}
-.row-main {
-  flex: 1;
-  min-width: 0;
-}
-.row-value {
-  font-size: 19px;
-  line-height: 25px;
-  font-weight: 600;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-}
-.row-unit {
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--ink-2);
-}
-.row-meta {
-  margin-top: 2px;
-  font-size: 13px;
-  line-height: 20px;
-  color: var(--ink-2);
-}
-.row-actions {
-  flex: 0 0 auto;
-  display: flex;
-  gap: 12px;
-}
-.act {
-  font-size: 13px;
-  color: var(--berry);
-}
-.act.danger {
-  color: var(--ink-2);
-}
-.empty {
-  padding: 26px 0;
-  text-align: center;
-  color: var(--ink-2);
-  font-size: 13px;
-}
-.more {
-  text-align: center;
-  color: var(--berry);
-  font-size: 13px;
-  padding: 10px 0;
-}
-.list-note {
-  margin-top: 10px;
-}
-.picker-line {
-  margin-top: 10px;
-  font-size: 14px;
-}
-.control {
-  margin-top: 10px;
-}
-.sheet-body .control:first-child {
-  margin-top: 4px;
-}
-.cancel {
-  margin-top: 10px;
-  height: 44px;
-  font-size: 14px;
-}
+.edit-feelings button.chosen { background: var(--hr-rose-soft); border-color: var(--hr-rose); color: var(--hr-rose-deep); }
 </style>
